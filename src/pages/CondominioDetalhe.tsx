@@ -21,6 +21,7 @@ interface CondominioData {
   slug: string;
   description: string;
   hero_image: string;
+  featured_image?: string | null;
   images: string[];
   infrastructure: string[] | null;
   condominio_tags: string[];
