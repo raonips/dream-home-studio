@@ -18,13 +18,14 @@ const navLinks = [
 const SiteHeader = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
-  const { logo_url } = useSiteSettings();
+  const { logo_url, header_logo_url } = useSiteSettings();
+  const displayLogo = header_logo_url || logo_url || logoDefault;
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/90 backdrop-blur-md border-b border-border">
       <div className="container flex items-center justify-between h-16 md:h-20">
         <Link to="/" className="flex items-center m-0 p-0">
-          <img src={logo_url || logoDefault} alt="Imóveis Barra do Jacuípe" className="h-14 md:h-[4.5rem] max-w-[250px] object-contain" width={250} height={72} />
+          <img src={displayLogo} alt="Barra do Jacuípe" className="h-14 md:h-[4.5rem] max-w-[250px] object-contain" width={250} height={72} />
         </Link>
 
         <nav className="hidden md:flex items-center gap-8">

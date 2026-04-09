@@ -6,6 +6,7 @@ import { Loader2, ArrowRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import SafeImage from "@/components/SafeImage";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 interface GuiaPost {
   id: string;
@@ -30,6 +31,7 @@ const GuiaHome = () => {
   const [posts, setPosts] = useState<GuiaPost[]>([]);
   const [categorias, setCategorias] = useState<GuiaCategoria[]>([]);
   const [loading, setLoading] = useState(true);
+  const settings = useSiteSettings();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -58,21 +60,25 @@ const GuiaHome = () => {
   return (
     <>
       <Helmet>
-        <title>Guia Local - Barra do Jacuípe | Praias, Restaurantes e Dicas</title>
-        <meta
-          name="description"
-          content="Descubra o melhor da Barra do Jacuípe: praias, restaurantes, passeios, dicas de turismo e informações locais. Seu guia completo para aproveitar a região."
-        />
-        <meta name="keywords" content="Barra do Jacuípe, guia local, praias, restaurantes, turismo, dicas" />
+        <title>{settings.site_title}</title>
+        <meta name="description" content={settings.site_description} />
+        <meta name="keywords" content={settings.site_keywords} />
       </Helmet>
 
-      <section className="pt-24 pb-12 bg-gradient-to-b from-primary/5 to-background">
-        <div className="container text-center">
-          <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-4">
-            Guia Local — Barra do Jacuípe
+      <section
+        className="pt-24 pb-12 bg-gradient-to-b from-primary/5 to-background relative overflow-hidden"
+        style={settings.hero_bg_desktop ? {
+          backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.45), rgba(0,0,0,0.25)), url(${settings.hero_bg_desktop})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        } : undefined}
+      >
+        <div className="container text-center relative z-10">
+          <h1 className={`text-3xl md:text-5xl font-bold mb-4 ${settings.hero_bg_desktop ? 'text-white' : 'text-foreground'}`}>
+            {settings.hero_title || 'Guia Local — Barra do Jacuípe'}
           </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Tudo o que você precisa saber sobre a região: praias, restaurantes, passeios e muito mais.
+          <p className={`text-lg max-w-2xl mx-auto ${settings.hero_bg_desktop ? 'text-white/90' : 'text-muted-foreground'}`}>
+            {settings.hero_subtitle || 'Tudo o que você precisa saber sobre a região.'}
           </p>
         </div>
       </section>
