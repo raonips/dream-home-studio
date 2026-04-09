@@ -9,7 +9,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import SiteHeader from "@/components/SiteHeader";
 import ScrollToTop from "@/components/ScrollToTop";
-import { SiteSettingsProvider, HeadScripts } from "./hooks/useSiteSettings";
+import { SiteSettingsProvider, HeadScripts, SiteHelmet } from "./hooks/useSiteSettings";
 
 // Critical: Index loads eagerly for fastest FCP/LCP
 import Index from "./pages/Index";
@@ -77,11 +77,12 @@ const App = () => (
       <TooltipProvider>
         <AuthProvider>
           <SiteSettingsProvider>
-          <HeadScripts />
           <Toaster />
           <Sonner />
            <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, '') || '/'}>
             <ScrollToTop />
+            <SiteHelmet />
+            <HeadScripts />
             <Routes>
               {/* Auth */}
               <Route path="/login" element={<Suspense fallback={<RouteLoading />}><Login /></Suspense>} />
