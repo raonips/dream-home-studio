@@ -43,10 +43,13 @@ const AdminSiteConfig = lazy(() => import("./pages/admin/AdminSiteConfig"));
 const AdminTags = lazy(() => import("./pages/admin/AdminTags"));
 const AdminCondominioTags = lazy(() => import("./pages/admin/AdminCondominioTags"));
 const TagPage = lazy(() => import("./pages/TagPage"));
+const LocalDetalhe = lazy(() => import("./pages/LocalDetalhe"));
+const LocaisListagem = lazy(() => import("./pages/LocaisListagem"));
 const AdminGuiaPosts = lazy(() => import("./pages/admin/AdminGuiaPosts"));
 const AdminGuiaCategorias = lazy(() => import("./pages/admin/AdminGuiaCategorias"));
 const AdminGuiaSiteConfig = lazy(() => import("./pages/admin/AdminGuiaSiteConfig"));
 const AdminGuiaSeoSettings = lazy(() => import("./pages/admin/AdminGuiaSeoSettings"));
+const AdminLocais = lazy(() => import("./pages/admin/AdminLocais"));
 
 // Lazy-loaded layout pieces below the fold
 const SiteFooter = lazy(() => import("@/components/SiteFooter"));
