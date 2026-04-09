@@ -30,7 +30,7 @@ const AdminSidebar = () => {
   const path = location.pathname;
 
   // Auto-detect context from route
-  const guiaRoutes = ['/admin/guia-posts', '/admin/guia-categorias', '/admin/guia-config', '/admin/guia-seo', '/admin/locais'];
+  const guiaRoutes = ['/admin/guia-posts', '/admin/guia-categorias', '/admin/guia-config', '/admin/guia-seo', '/admin/locais', '/admin/ad-templates'];
   const isGuiaRoute = guiaRoutes.some((r) => path.startsWith(r));
 
   const [context, setContext] = useState<AdminContext>(isGuiaRoute ? 'guia' : 'imoveis');
@@ -171,14 +171,6 @@ const AdminSidebar = () => {
                     <NavLink to="/admin/blocos" className="hover:bg-muted/50" activeClassName="bg-muted text-primary font-medium">
                       <LayoutGrid className="mr-2 h-4 w-4" />
                       {!collapsed && <span>Blocos HTML</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <NavLink to="/admin/ad-templates" className="hover:bg-muted/50" activeClassName="bg-muted text-primary font-medium">
-                      <Megaphone className="mr-2 h-4 w-4" />
-                      {!collapsed && <span>Templates de Publicidade</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
