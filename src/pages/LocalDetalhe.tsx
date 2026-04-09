@@ -123,9 +123,9 @@ const LocalDetalhe = () => {
             </div>
           )}
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-[1fr_320px] gap-8 overflow-hidden">
             {/* ── Main Content ── */}
-            <div className="md:col-span-2 space-y-8 min-w-0">
+            <div className="min-w-0 space-y-8">
               {/* Gallery */}
               {extraImages.length > 0 && (
                 <div>
@@ -148,7 +148,8 @@ const LocalDetalhe = () => {
               {local.descricao && (
                 <div>
                   <div
-                    className="prose prose-lg max-w-none prose-headings:text-foreground prose-p:text-muted-foreground prose-strong:text-foreground prose-a:text-primary"
+                    className="prose prose-lg max-w-none prose-slate prose-headings:text-foreground prose-p:text-muted-foreground prose-strong:text-foreground prose-a:text-primary"
+                    style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}
                     dangerouslySetInnerHTML={{ __html: local.descricao }}
                   />
                 </div>
