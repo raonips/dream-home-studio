@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Plus, Pencil, Trash2, Loader2, AlertTriangle } from 'lucide-react';
+import { Plus, Pencil, Trash2, Loader2, AlertTriangle, LayoutTemplate } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -9,6 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import AdTemplateFormDialog from '@/components/admin/AdTemplateFormDialog';
+import AdTemplateGalleryDialog from '@/components/admin/AdTemplateGalleryDialog';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -47,6 +48,7 @@ const AdminAdTemplates = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<AdTemplateRow | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [galleryOpen, setGalleryOpen] = useState(false);
   const { toast } = useToast();
 
   const fetchTemplates = useCallback(async () => {
@@ -97,9 +99,14 @@ const AdminAdTemplates = () => {
               Crie esqueletos de banners vinculados a categorias. Cada local usa sua imagem e URL próprias.
             </p>
           </div>
-          <Button onClick={() => { setEditing(null); setDialogOpen(true); }}>
-            <Plus className="h-4 w-4 mr-2" /> Novo Template
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setGalleryOpen(true)} disabled={loading || items.length === 0}>
+              <LayoutTemplate className="h-4 w-4 mr-2" /> Ver Modelos Existentes
+            </Button>
+            <Button onClick={() => { setEditing(null); setDialogOpen(true); }}>
+              <Plus className="h-4 w-4 mr-2" /> Novo Template
+            </Button>
+          </div>
         </div>
 
         <Card>
@@ -158,6 +165,16 @@ const AdminAdTemplates = () => {
       </div>
 
       <AdTemplateFormDialog open={dialogOpen} onOpenChange={setDialogOpen} editing={editing} onSuccess={fetchTemplates} />
+
+      <AdTemplateGalleryDialog
+        open={galleryOpen}
+        onOpenChange={setGalleryOpen}
+        items={items}
+        onEdit={(t) => { setGalleryOpen(false); setEditing(t); setDialogOpen(true); }}
+        onDelete={(id) => { setGalleryOpen(false); setDeleteId(id); }}
+        onToggle={handleToggle}
+        onCreateNew={() => { setGalleryOpen(false); setEditing(null); setDialogOpen(true); }}
+      />
 
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
