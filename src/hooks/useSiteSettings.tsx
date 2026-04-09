@@ -1,5 +1,6 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useMemo, type ReactNode } from 'react';
 import { Helmet } from 'react-helmet-async';
+import { useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 
 interface SiteSettings {
@@ -11,6 +12,7 @@ interface SiteSettings {
   body_scripts: string;
   favicon_url: string;
   logo_url: string;
+  header_logo_url: string;
   hero_image_url: string;
   hero_bg_desktop: string;
   hero_bg_mobile: string;
@@ -27,7 +29,7 @@ interface SiteSettings {
   watermark_scale: number;
 }
 
-const defaultSettings: SiteSettings = {
+const defaultImoveisSettings: SiteSettings = {
   site_title: 'Imóveis Barra do Jacuípe | Casas de Alto Padrão no Litoral Norte',
   site_description: 'Encontre imóveis de alto padrão em Barra do Jacuípe, Litoral Norte da Bahia.',
   site_keywords: 'imóveis barra do jacuípe, casas litoral norte bahia',
@@ -36,6 +38,7 @@ const defaultSettings: SiteSettings = {
   body_scripts: '',
   favicon_url: '',
   logo_url: '',
+  header_logo_url: '',
   hero_image_url: '',
   hero_bg_desktop: '',
   hero_bg_mobile: '',
@@ -52,63 +55,103 @@ const defaultSettings: SiteSettings = {
   watermark_scale: 0.5,
 };
 
-const SiteSettingsContext = createContext<SiteSettings>(defaultSettings);
+const defaultGuiaSettings: SiteSettings = {
+  ...defaultImoveisSettings,
+  site_title: 'Barra do Jacuípe | Guia Local — Praias, Restaurantes e Dicas',
+  site_description: 'Descubra o melhor da Barra do Jacuípe: praias, restaurantes, passeios e dicas de turismo.',
+  site_keywords: 'barra do jacuípe, guia local, praias, restaurantes, turismo',
+  hero_title: 'Guia Local — Barra do Jacuípe',
+  hero_subtitle: 'Tudo o que você precisa saber sobre a região.',
+};
 
-export const useSiteSettings = () => useContext(SiteSettingsContext);
+interface AllSettings {
+  imoveis: SiteSettings;
+  guia: SiteSettings;
+}
+
+const AllSettingsContext = createContext<AllSettings>({
+  imoveis: defaultImoveisSettings,
+  guia: defaultGuiaSettings,
+});
+
+/** Returns settings for the CURRENT route context (Guia or Imóveis) */
+export const useSiteSettings = () => {
+  const all = useContext(AllSettingsContext);
+  try {
+    const location = useLocation();
+    const isImoveis = location.pathname.startsWith('/imoveis');
+    return isImoveis ? all.imoveis : all.guia;
+  } catch {
+    // Outside router (e.g. HeadScripts before BrowserRouter) — return imoveis as fallback
+    return all.imoveis;
+  }
+};
+
+/** Returns both settings sets for components that need explicit access */
+export const useAllSiteSettings = () => useContext(AllSettingsContext);
+
+function parseSettings(d: any, defaults: SiteSettings, condList: { slug: string; name: string }[]): SiteSettings {
+  if (!d) return { ...defaults, condominios_list: condList };
+  return {
+    site_title: d.site_title || defaults.site_title,
+    site_description: d.site_description || defaults.site_description,
+    site_keywords: d.site_keywords || defaults.site_keywords,
+    og_image_url: d.og_image_url || '',
+    head_scripts: d.head_scripts || '',
+    body_scripts: d.body_scripts || '',
+    favicon_url: d.favicon_url || '',
+    logo_url: d.logo_url || '',
+    header_logo_url: d.header_logo_url || '',
+    hero_image_url: d.hero_image_url || '',
+    hero_bg_desktop: d.hero_bg_desktop || '',
+    hero_bg_mobile: d.hero_bg_mobile || '',
+    hero_title: d.hero_title || defaults.hero_title,
+    hero_subtitle: d.hero_subtitle || defaults.hero_subtitle,
+    map_provider: d.map_provider || 'leaflet',
+    google_maps_api_key: d.google_maps_api_key || '',
+    whatsapp_number: d.whatsapp_number || '5571991089039',
+    instagram_url: d.instagram_url || '',
+    condominios_list: condList,
+    watermark_url: d.watermark_url || '',
+    watermark_position: d.watermark_position || 'center',
+    watermark_opacity: Number(d.watermark_opacity) || 0.3,
+    watermark_scale: Number(d.watermark_scale) || 0.5,
+  };
+}
 
 export const SiteSettingsProvider = ({ children }: { children: ReactNode }) => {
-  const [settings, setSettings] = useState<SiteSettings>(defaultSettings);
+  const [allSettings, setAllSettings] = useState<AllSettings>({
+    imoveis: defaultImoveisSettings,
+    guia: defaultGuiaSettings,
+  });
 
   useEffect(() => {
-    // Fetch site_settings and condominios list in parallel
-    const fetchSettings = supabase
-      .from('site_settings')
-      .select('*')
-      .limit(1)
-      .single();
-
-    const fetchCondominios = supabase
-      .from('condominios')
-      .select('slug, name')
-      .order('name');
-
-    Promise.all([fetchSettings, fetchCondominios]).then(([settingsRes, condominiosRes]) => {
-      const d = settingsRes.data as any;
+    Promise.all([
+      supabase.from('site_settings').select('*').limit(1).single(),
+      supabase.from('guia_site_settings').select('*').limit(1).single(),
+      supabase.from('condominios').select('slug, name').order('name'),
+    ]).then(([imoveisRes, guiaRes, condominiosRes]) => {
       const condList = (condominiosRes.data as { slug: string; name: string }[]) || [];
-
-      if (d) {
-        setSettings({
-          site_title: d.site_title || defaultSettings.site_title,
-          site_description: d.site_description || defaultSettings.site_description,
-          site_keywords: d.site_keywords || defaultSettings.site_keywords,
-          og_image_url: d.og_image_url || '',
-          head_scripts: d.head_scripts || '',
-          body_scripts: d.body_scripts || '',
-          favicon_url: d.favicon_url || '',
-          logo_url: d.logo_url || '',
-          hero_image_url: d.hero_image_url || '',
-          hero_bg_desktop: d.hero_bg_desktop || '',
-          hero_bg_mobile: d.hero_bg_mobile || '',
-          hero_title: d.hero_title || defaultSettings.hero_title,
-          hero_subtitle: d.hero_subtitle || defaultSettings.hero_subtitle,
-          map_provider: d.map_provider || 'leaflet',
-          google_maps_api_key: d.google_maps_api_key || '',
-          whatsapp_number: d.whatsapp_number || '5571991089039',
-          instagram_url: d.instagram_url || '',
-          condominios_list: condList,
-          watermark_url: d.watermark_url || '',
-          watermark_position: d.watermark_position || 'center',
-          watermark_opacity: Number(d.watermark_opacity) || 0.3,
-          watermark_scale: Number(d.watermark_scale) || 0.5,
-        });
-      } else {
-        setSettings(prev => ({ ...prev, condominios_list: condList }));
-      }
+      setAllSettings({
+        imoveis: parseSettings(imoveisRes.data, defaultImoveisSettings, condList),
+        guia: parseSettings(guiaRes.data, defaultGuiaSettings, condList),
+      });
     });
   }, []);
 
   return (
-    <SiteSettingsContext.Provider value={settings}>
+    <AllSettingsContext.Provider value={allSettings}>
+      {children}
+    </AllSettingsContext.Provider>
+  );
+};
+
+/** Injects correct Helmet meta tags based on route */
+export const SiteHelmet = () => {
+  const settings = useSiteSettings();
+
+  return (
+    <>
       <Helmet defaultTitle={settings.site_title} titleTemplate={`%s | ${settings.site_title}`}>
         <meta name="description" content={settings.site_description} />
         <meta name="keywords" content={settings.site_keywords} />
@@ -118,40 +161,8 @@ export const SiteSettingsProvider = ({ children }: { children: ReactNode }) => {
         <meta property="og:type" content="website" />
         {settings.favicon_url && <link rel="icon" href={settings.favicon_url} />}
       </Helmet>
-      {settings.head_scripts && (
-        <Helmet>
-          <script>{`/* head_scripts_marker */`}</script>
-        </Helmet>
-      )}
-      {settings.body_scripts && (
-        <BodyScripts html={settings.body_scripts} />
-      )}
-      {children}
-    </SiteSettingsContext.Provider>
+    </>
   );
-};
-
-const BodyScripts = ({ html }: { html: string }) => {
-  useEffect(() => {
-    if (!html) return;
-    const container = document.createElement('div');
-    container.id = 'custom-body-scripts';
-    container.innerHTML = html;
-    const scripts = container.querySelectorAll('script');
-    scripts.forEach((origScript) => {
-      const newScript = document.createElement('script');
-      Array.from(origScript.attributes).forEach((attr) =>
-        newScript.setAttribute(attr.name, attr.value)
-      );
-      newScript.textContent = origScript.textContent;
-      origScript.replaceWith(newScript);
-    });
-    document.body.insertBefore(container, document.body.firstChild);
-    return () => {
-      document.getElementById('custom-body-scripts')?.remove();
-    };
-  }, [html]);
-  return null;
 };
 
 export const HeadScripts = () => {
@@ -178,5 +189,28 @@ export const HeadScripts = () => {
       document.querySelectorAll('[data-custom-head]').forEach((el) => el.remove());
     };
   }, [settings.head_scripts]);
+  return null;
+};
+
+const BodyScripts = ({ html }: { html: string }) => {
+  useEffect(() => {
+    if (!html) return;
+    const container = document.createElement('div');
+    container.id = 'custom-body-scripts';
+    container.innerHTML = html;
+    const scripts = container.querySelectorAll('script');
+    scripts.forEach((origScript) => {
+      const newScript = document.createElement('script');
+      Array.from(origScript.attributes).forEach((attr) =>
+        newScript.setAttribute(attr.name, attr.value)
+      );
+      newScript.textContent = origScript.textContent;
+      origScript.replaceWith(newScript);
+    });
+    document.body.insertBefore(container, document.body.firstChild);
+    return () => {
+      document.getElementById('custom-body-scripts')?.remove();
+    };
+  }, [html]);
   return null;
 };
