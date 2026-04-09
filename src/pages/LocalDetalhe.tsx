@@ -233,14 +233,12 @@ const LocalDetalhe = () => {
       </div>
 
       {/* Lightbox */}
-      {lightboxOpen && extraImages.length > 0 && (
-        <Lightbox
-          images={extraImages}
-          currentIndex={lightboxIndex}
-          onClose={() => setLightboxOpen(false)}
-          onNavigate={setLightboxIndex}
-        />
-      )}
+      <Lightbox
+        images={extraImages}
+        initialIndex={lightboxIndex}
+        open={lightboxOpen}
+        onClose={() => setLightboxOpen(false)}
+      />
     </>
   );
 };

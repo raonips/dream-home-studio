@@ -130,7 +130,7 @@ const LocalFormDialog = ({ open, onOpenChange, editing, onSuccess }: Props) => {
 
     const coverUrl = images[0] || null;
 
-    const payload: Record<string, any> = {
+    const payload = {
       nome,
       slug: form.slug.trim() || generateSlug(nome),
       descricao: form.descricao.trim() || null,
