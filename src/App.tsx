@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider } from "@/hooks/useAuth";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -133,6 +133,12 @@ const App = () => (
                         <Route path="/imoveis/venda/:slug" element={<ImovelDetalhe />} />
                         <Route path="/imoveis/temporada/:slug" element={<ImovelDetalhe />} />
                         <Route path="/imoveis/imovel/:id" element={<ImovelDetalhe />} />
+
+                        {/* Legacy redirects (old URLs without /imoveis prefix) */}
+                        <Route path="/venda/:slug" element={<LegacyRedirect prefix="venda" />} />
+                        <Route path="/temporada/:slug" element={<LegacyRedirect prefix="temporada" />} />
+                        <Route path="/imovel/:id" element={<LegacyRedirect prefix="imovel" />} />
+                        <Route path="/condominio/:slug" element={<LegacyRedirect prefix="condominio" />} />
 
                         {/* Guia post catch-all (must be last) */}
                         <Route path="/:slug" element={<GuiaPostDetalhe />} />
