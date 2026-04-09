@@ -101,6 +101,16 @@ const CondominioDetalhe = () => {
         setProperties(propertiesData as PropertyData[]);
       }
 
+      // Fetch ad template for condominio category
+      const { data: tplData } = await supabase
+        .from('ad_templates')
+        .select('heading, subtitle, button_text, overlay_style')
+        .eq('target_category', 'condominio')
+        .eq('is_active', true)
+        .limit(1)
+        .maybeSingle();
+      if (!cancelled && tplData) setAdTemplate(tplData as any);
+
       setLoading(false);
     };
 
