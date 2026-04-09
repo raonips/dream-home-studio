@@ -70,7 +70,7 @@ const GuiaPostFormDialog = ({ open, onOpenChange, post, categorias, onSaved }: P
     if (!form.titulo.trim()) return;
     setSaving(true);
 
-    const payload: Record<string, unknown> = {
+    const payload = {
       titulo: form.titulo.trim(),
       slug: form.slug.trim() || slugify(form.titulo),
       resumo: form.resumo.trim() || null,
