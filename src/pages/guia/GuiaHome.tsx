@@ -193,7 +193,7 @@ const GuiaHome = () => {
                     className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                     loading="lazy"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-purple-600/80 via-purple-500/40 to-purple-400/20 group-hover:from-purple-700/85 transition-colors" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[hsl(var(--navy))]/75 via-black/30 to-black/10 group-hover:from-[hsl(var(--navy))]/85 transition-colors" />
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-4">
                     {cat.icone ? (
                       <span className="text-4xl">{cat.icone}</span>
@@ -220,7 +220,7 @@ const GuiaHome = () => {
                     className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                     loading="lazy"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-purple-600/75 via-purple-500/35 to-transparent group-hover:from-purple-700/80 transition-colors" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[hsl(var(--navy))]/75 via-black/30 to-transparent group-hover:from-[hsl(var(--navy))]/85 transition-colors" />
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-3">
                     {cat.icone ? (
                       <span className="text-3xl">{cat.icone}</span>
