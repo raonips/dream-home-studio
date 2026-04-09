@@ -125,7 +125,7 @@ const LocalDetalhe = () => {
 
           <div className="grid md:grid-cols-3 gap-8">
             {/* ── Main Content ── */}
-            <div className="md:col-span-2 space-y-8">
+            <div className="md:col-span-2 space-y-8 min-w-0">
               {/* Gallery */}
               {extraImages.length > 0 && (
                 <div>
