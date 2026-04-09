@@ -52,6 +52,11 @@ const AdminGuiaSeoSettings = lazy(() => import("./pages/admin/AdminGuiaSeoSettin
 const SiteFooter = lazy(() => import("@/components/SiteFooter"));
 const WhatsAppButton = lazy(() => import("@/components/WhatsAppButton"));
 
+const LegacyRedirect = ({ prefix }: { prefix: string }) => {
+  const slug = window.location.pathname.split('/').pop() || '';
+  return <Navigate to={`/imoveis/${prefix}/${slug}`} replace />;
+};
+
 const RouteLoading = () => (
   <div className="min-h-[60vh] flex items-center justify-center">
     <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
