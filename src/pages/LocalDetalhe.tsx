@@ -6,6 +6,8 @@ import { MapPin, Phone, Clock, Globe, ExternalLink, ArrowLeft } from "lucide-rea
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
+import SmartMap from "@/components/SmartMap";
+import Lightbox from "@/components/Lightbox";
 
 interface Local {
   id: string;
@@ -17,9 +19,12 @@ interface Local {
   whatsapp: string | null;
   google_maps_link: string | null;
   imagem_destaque: string | null;
+  imagens: string[] | null;
   endereco: string | null;
   horario_funcionamento: string | null;
   website: string | null;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 const CATEGORIA_LABELS: Record<string, string> = {
@@ -39,6 +44,8 @@ const LocalDetalhe = () => {
   const { slug } = useParams<{ slug: string }>();
   const [local, setLocal] = useState<Local | null>(null);
   const [loading, setLoading] = useState(true);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
 
   useEffect(() => {
     if (!slug) return;
@@ -65,55 +72,107 @@ const LocalDetalhe = () => {
   if (!local) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center pt-20 gap-4">
-        <h1 className="text-2xl font-bold">Local não encontrado</h1>
+        <h1 className="text-2xl font-bold text-foreground">Local não encontrado</h1>
         <Link to="/" className="text-primary hover:underline">Voltar ao início</Link>
       </div>
     );
   }
 
+  const galleryImages = local.imagens?.filter(Boolean) || [];
+  const extraImages = galleryImages.filter(img => img !== local.imagem_destaque);
+
   return (
     <>
       <Helmet>
         <title>{local.nome} — Barra do Jacuípe</title>
-        <meta name="description" content={local.descricao?.slice(0, 160) || `${local.nome} em Barra do Jacuípe`} />
+        <meta name="description" content={local.descricao?.replace(/<[^>]+>/g, '').slice(0, 160) || `${local.nome} em Barra do Jacuípe`} />
       </Helmet>
 
       <div className="pt-20 pb-16">
-        {/* Hero */}
+        {/* ── Hero / Capa ── */}
         {local.imagem_destaque && (
-          <div className="relative h-[300px] md:h-[400px] overflow-hidden">
-            <img src={local.imagem_destaque} alt={local.nome} className="w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+          <div className="relative h-[300px] md:h-[420px] overflow-hidden">
+            <img src={local.imagem_destaque} alt={local.nome} className="w-full h-full object-cover" loading="eager" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
             <div className="absolute bottom-6 left-0 right-0 container">
-              <Badge className="bg-white/20 text-white backdrop-blur-sm mb-2">
+              <Badge className="bg-primary/80 text-primary-foreground backdrop-blur-sm mb-2 border-0">
                 {CATEGORIA_LABELS[local.categoria] || local.categoria}
               </Badge>
               <h1 className="text-3xl md:text-4xl font-bold text-white drop-shadow-lg">{local.nome}</h1>
+              {local.endereco && (
+                <p className="text-white/80 text-sm mt-1 flex items-center gap-1.5">
+                  <MapPin className="h-3.5 w-3.5" /> {local.endereco}
+                </p>
+              )}
             </div>
           </div>
         )}
 
         <div className="container mt-8">
           {!local.imagem_destaque && (
-            <>
-              <Badge variant="secondary" className="mb-3">
+            <div className="mb-6">
+              <Badge className="bg-primary/10 text-primary border-primary/20 mb-3">
                 {CATEGORIA_LABELS[local.categoria] || local.categoria}
               </Badge>
-              <h1 className="text-3xl font-bold text-foreground mb-6">{local.nome}</h1>
-            </>
+              <h1 className="text-3xl font-bold text-foreground">{local.nome}</h1>
+              {local.endereco && (
+                <p className="text-muted-foreground text-sm mt-1 flex items-center gap-1.5">
+                  <MapPin className="h-3.5 w-3.5" /> {local.endereco}
+                </p>
+              )}
+            </div>
           )}
 
           <div className="grid md:grid-cols-3 gap-8">
-            {/* Main content */}
-            <div className="md:col-span-2">
+            {/* ── Main Content ── */}
+            <div className="md:col-span-2 space-y-8">
+              {/* Gallery */}
+              {extraImages.length > 0 && (
+                <div>
+                  <h2 className="text-lg font-semibold text-foreground mb-3">Fotos</h2>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {extraImages.map((img, i) => (
+                      <button
+                        key={i}
+                        onClick={() => { setLightboxIndex(i); setLightboxOpen(true); }}
+                        className="aspect-[4/3] rounded-lg overflow-hidden border border-border hover:opacity-90 transition-opacity"
+                      >
+                        <img src={img} alt={`${local.nome} foto ${i + 1}`} className="w-full h-full object-cover" loading="lazy" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Rich text description */}
               {local.descricao && (
-                <div className="prose prose-lg max-w-none" dangerouslySetInnerHTML={{ __html: local.descricao }} />
+                <div>
+                  <div
+                    className="prose prose-lg max-w-none prose-headings:text-foreground prose-p:text-muted-foreground prose-strong:text-foreground prose-a:text-primary"
+                    dangerouslySetInnerHTML={{ __html: local.descricao }}
+                  />
+                </div>
+              )}
+
+              {/* Map on public page */}
+              {local.latitude && local.longitude && (
+                <div>
+                  <h2 className="text-lg font-semibold text-foreground mb-3">Localização</h2>
+                  <SmartMap
+                    latitude={local.latitude}
+                    longitude={local.longitude}
+                    title={local.nome}
+                    zoom={15}
+                    interactive={false}
+                    className="w-full h-[300px] rounded-xl border border-border"
+                  />
+                </div>
               )}
             </div>
 
-            {/* Sidebar */}
+            {/* ── Sidebar ── */}
             <div className="space-y-4">
-              <div className="bg-card rounded-xl border border-border p-6 space-y-4">
+              <div className="bg-card rounded-xl border border-border p-6 space-y-4 sticky top-24">
                 <h3 className="font-semibold text-foreground">Informações</h3>
 
                 {local.endereco && (
@@ -125,7 +184,7 @@ const LocalDetalhe = () => {
                 {local.telefone && (
                   <div className="flex items-center gap-3 text-sm">
                     <Phone className="h-4 w-4 text-primary shrink-0" />
-                    <a href={`tel:${local.telefone}`} className="text-muted-foreground hover:text-primary">{local.telefone}</a>
+                    <a href={`tel:${local.telefone}`} className="text-muted-foreground hover:text-primary transition-colors">{local.telefone}</a>
                   </div>
                 )}
                 {local.horario_funcionamento && (
@@ -137,15 +196,18 @@ const LocalDetalhe = () => {
                 {local.website && (
                   <div className="flex items-center gap-3 text-sm">
                     <Globe className="h-4 w-4 text-primary shrink-0" />
-                    <a href={local.website} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate">{local.website.replace(/^https?:\/\//, "")}</a>
+                    <a href={local.website} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate">
+                      {local.website.replace(/^https?:\/\//, "")}
+                    </a>
                   </div>
                 )}
+
                 {local.whatsapp && (
                   <a
                     href={`https://wa.me/${local.whatsapp}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-2 w-full py-2.5 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors text-sm"
+                    className="flex items-center justify-center gap-2 w-full py-2.5 bg-[#25D366] text-white rounded-lg font-medium hover:bg-[#1da851] transition-colors text-sm"
                   >
                     WhatsApp
                   </a>
@@ -169,6 +231,16 @@ const LocalDetalhe = () => {
           </div>
         </div>
       </div>
+
+      {/* Lightbox */}
+      {lightboxOpen && extraImages.length > 0 && (
+        <Lightbox
+          images={extraImages}
+          currentIndex={lightboxIndex}
+          onClose={() => setLightboxOpen(false)}
+          onNavigate={setLightboxIndex}
+        />
+      )}
     </>
   );
 };
