@@ -411,6 +411,8 @@ export type Database = {
           id: string
           imagem_destaque: string | null
           imagens: string[] | null
+          latitude: number | null
+          longitude: number | null
           nome: string
           ordem: number | null
           slug: string
@@ -430,6 +432,8 @@ export type Database = {
           id?: string
           imagem_destaque?: string | null
           imagens?: string[] | null
+          latitude?: number | null
+          longitude?: number | null
           nome: string
           ordem?: number | null
           slug: string
@@ -449,6 +453,8 @@ export type Database = {
           id?: string
           imagem_destaque?: string | null
           imagens?: string[] | null
+          latitude?: number | null
+          longitude?: number | null
           nome?: string
           ordem?: number | null
           slug?: string

@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import RichTextEditor from '@/components/admin/RichTextEditor';
 import ImageGalleryUpload from '@/components/admin/ImageGalleryUpload';
+import SmartMap from '@/components/SmartMap';
 import { Loader2, FileText, Settings, MapPin, Phone } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -29,6 +30,8 @@ export interface LocalRow {
   website: string | null;
   ativo: boolean;
   ordem: number;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 const CATEGORIAS = [
@@ -43,6 +46,10 @@ const CATEGORIAS = [
   { value: 'farmacia', label: 'Farmácia' },
   { value: 'utilidade', label: 'Utilidade' },
 ];
+
+// Default center: Barra do Jacuípe
+const DEFAULT_LAT = -12.6946;
+const DEFAULT_LNG = -38.1345;
 
 interface Props {
   open: boolean;
@@ -64,6 +71,7 @@ const LocalFormDialog = ({ open, onOpenChange, editing, onSuccess }: Props) => {
     endereco: '', horario_funcionamento: '', website: '',
     ativo: true, ordem: 0,
     seo_title: '', seo_description: '',
+    latitude: DEFAULT_LAT, longitude: DEFAULT_LNG,
   });
 
   useEffect(() => {
@@ -83,6 +91,8 @@ const LocalFormDialog = ({ open, onOpenChange, editing, onSuccess }: Props) => {
         ordem: editing.ordem,
         seo_title: '',
         seo_description: '',
+        latitude: editing.latitude ?? DEFAULT_LAT,
+        longitude: editing.longitude ?? DEFAULT_LNG,
       });
       const editImages: string[] = [];
       if (editing.imagem_destaque) editImages.push(editing.imagem_destaque);
@@ -98,6 +108,7 @@ const LocalFormDialog = ({ open, onOpenChange, editing, onSuccess }: Props) => {
         telefone: '', whatsapp: '', google_maps_link: '',
         endereco: '', horario_funcionamento: '', website: '',
         ativo: true, ordem: 0, seo_title: '', seo_description: '',
+        latitude: DEFAULT_LAT, longitude: DEFAULT_LNG,
       });
       setImages([]);
     }
@@ -120,7 +131,7 @@ const LocalFormDialog = ({ open, onOpenChange, editing, onSuccess }: Props) => {
     const coverUrl = images[0] || null;
 
     const payload = {
-      nome: nome,
+      nome,
       slug: form.slug.trim() || generateSlug(nome),
       descricao: form.descricao.trim() || null,
       categoria: form.categoria,
@@ -134,7 +145,9 @@ const LocalFormDialog = ({ open, onOpenChange, editing, onSuccess }: Props) => {
       website: form.website.trim() || null,
       ativo: form.ativo,
       ordem: form.ordem,
-    };
+      latitude: form.latitude || null,
+      longitude: form.longitude || null,
+    } as any;
 
     let error;
     if (editing) {
@@ -155,25 +168,25 @@ const LocalFormDialog = ({ open, onOpenChange, editing, onSuccess }: Props) => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{editing ? 'Editar Local' : 'Novo Local'}</DialogTitle>
-          <DialogDescription>Preencha os dados do estabelecimento. Fotos são opcionais no primeiro cadastro.</DialogDescription>
+          <DialogDescription>Preencha os dados do estabelecimento.</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <Tabs defaultValue="main" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="main" className="flex items-center gap-2">
-                <FileText className="h-4 w-4" />
-                Dados
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="main" className="flex items-center gap-1.5 text-xs">
+                <FileText className="h-3.5 w-3.5" /> Dados
               </TabsTrigger>
-              <TabsTrigger value="contact" className="flex items-center gap-2">
-                <Phone className="h-4 w-4" />
-                Contato
+              <TabsTrigger value="contact" className="flex items-center gap-1.5 text-xs">
+                <Phone className="h-3.5 w-3.5" /> Contato
               </TabsTrigger>
-              <TabsTrigger value="seo" className="flex items-center gap-2">
-                <Settings className="h-4 w-4" />
-                SEO
+              <TabsTrigger value="map" className="flex items-center gap-1.5 text-xs">
+                <MapPin className="h-3.5 w-3.5" /> Mapa
+              </TabsTrigger>
+              <TabsTrigger value="seo" className="flex items-center gap-1.5 text-xs">
+                <Settings className="h-3.5 w-3.5" /> SEO
               </TabsTrigger>
             </TabsList>
 
@@ -232,7 +245,7 @@ const LocalFormDialog = ({ open, onOpenChange, editing, onSuccess }: Props) => {
               </div>
             </TabsContent>
 
-            {/* ── Tab: Contato & Localização ── */}
+            {/* ── Tab: Contato ── */}
             <TabsContent value="contact" className="space-y-4 mt-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -277,12 +290,51 @@ const LocalFormDialog = ({ open, onOpenChange, editing, onSuccess }: Props) => {
               </div>
             </TabsContent>
 
+            {/* ── Tab: Mapa / Geolocalização ── */}
+            <TabsContent value="map" className="space-y-4 mt-4">
+              <div className="rounded-lg bg-muted p-4 mb-2">
+                <p className="text-sm text-muted-foreground">
+                  Clique no mapa para definir a localização exata do estabelecimento. As coordenadas serão salvas automaticamente.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Latitude</Label>
+                  <Input
+                    type="number"
+                    step="any"
+                    value={form.latitude}
+                    onChange={(e) => setForm((f) => ({ ...f, latitude: parseFloat(e.target.value) || 0 }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Longitude</Label>
+                  <Input
+                    type="number"
+                    step="any"
+                    value={form.longitude}
+                    onChange={(e) => setForm((f) => ({ ...f, longitude: parseFloat(e.target.value) || 0 }))}
+                  />
+                </div>
+              </div>
+
+              <SmartMap
+                latitude={form.latitude}
+                longitude={form.longitude}
+                zoom={15}
+                interactive
+                onLocationSelect={(lat, lng) => setForm((f) => ({ ...f, latitude: lat, longitude: lng }))}
+                className="w-full h-[350px] rounded-xl border border-border"
+                title={form.nome || 'Local'}
+              />
+            </TabsContent>
+
             {/* ── Tab: SEO ── */}
             <TabsContent value="seo" className="space-y-4 mt-4">
               <div className="rounded-lg bg-muted p-4 mb-4">
                 <p className="text-sm text-muted-foreground">
                   Configure os campos abaixo para otimizar a página nos mecanismos de busca.
-                  Se deixados em branco, serão usados o Nome e a Descrição automaticamente.
                 </p>
               </div>
               <div className="space-y-2">
