@@ -1,12 +1,11 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, ArrowRight, ChevronLeft, ChevronRight, Search, MapPin, Home, ShoppingCart, UtensilsCrossed, Hotel, Croissant, HeartPulse, Map } from "lucide-react";
+import { Loader2, ArrowRight, Search, MapPin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import SafeImage from "@/components/SafeImage";
-import PropertyCard, { type PropertyData } from "@/components/PropertyCard";
-import PropertyCardSkeleton from "@/components/PropertyCardSkeleton";
+import { type PropertyData } from "@/components/PropertyCard";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 interface GuiaPost {
