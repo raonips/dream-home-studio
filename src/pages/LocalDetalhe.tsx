@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
 import SmartMap from "@/components/SmartMap";
 import Lightbox from "@/components/Lightbox";
+import ctaBgImage from "@/assets/cta-condominio-bg.jpg";
 
 interface Local {
   id: string;
