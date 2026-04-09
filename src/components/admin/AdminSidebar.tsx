@@ -209,10 +209,13 @@ const AdminSidebar = () => {
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
-                    <NavLink to="/admin/guia-config" className="hover:bg-[hsl(var(--guia-accent))]" activeClassName="bg-[hsl(var(--guia-accent))] text-[hsl(var(--guia-primary))] font-medium">
-                      <Settings className="mr-2 h-4 w-4" />
-                      {!collapsed && <span>Configurações</span>}
+                    <NavLink to="/admin/ad-templates" className="hover:bg-[hsl(var(--guia-accent))]" activeClassName="bg-[hsl(var(--guia-accent))] text-[hsl(var(--guia-primary))] font-medium">
+                      <Megaphone className="mr-2 h-4 w-4" />
+                      {!collapsed && <span>Publicidade</span>}
                     </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
