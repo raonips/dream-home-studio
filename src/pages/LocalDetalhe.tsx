@@ -35,6 +35,8 @@ interface AdTemplate {
   subtitle: string;
   button_text: string;
   overlay_style: string;
+  layout_model: string;
+  custom_html: string;
 }
 
 const CATEGORIA_LABELS: Record<string, string> = {
@@ -81,7 +83,7 @@ const LocalDetalhe = () => {
         if (localData) {
           supabase
             .from("ad_templates")
-            .select("heading, subtitle, button_text, overlay_style")
+            .select("heading, subtitle, button_text, overlay_style, layout_model, custom_html")
             .eq("target_category", localData.categoria)
             .eq("is_active", true)
             .limit(1)
@@ -230,7 +232,61 @@ const LocalDetalhe = () => {
         </div>
 
         {/* ── CTA Banner — shows when there's an active template for this category ── */}
-        {adTemplate && (
+        {adTemplate && adTemplate.layout_model === 'html_custom' && (
+          <div className="mt-16">
+            <div
+              dangerouslySetInnerHTML={{
+                __html: (adTemplate.custom_html || '').replace(/\{nome\}/gi, local.nome),
+              }}
+            />
+          </div>
+        )}
+
+        {adTemplate && adTemplate.layout_model === 'split' && (
+          <div className="relative mt-16 overflow-hidden group">
+            <div className="grid md:grid-cols-2 min-h-[360px]">
+              {/* Text side */}
+              <div className={`flex flex-col justify-center px-8 py-12 md:px-16 bg-gradient-to-br ${overlayClass.replace('/90', '/95').replace('/80', '/90').replace('/70', '/85')} bg-[hsl(200,60%,12%)]`}>
+                <p className="text-white/60 text-xs font-semibold tracking-[0.3em] uppercase mb-4">
+                  Oportunidade exclusiva
+                </p>
+                <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white leading-tight tracking-tight mb-4">
+                  {bannerHeading.includes(local.nome) ? (
+                    <>
+                      {bannerHeading.split(local.nome)[0]}
+                      <span className="text-[hsl(39,80%,65%)]">{local.nome}</span>
+                      {bannerHeading.split(local.nome).slice(1).join(local.nome)}
+                    </>
+                  ) : bannerHeading}
+                </h2>
+                {bannerSubtitle && (
+                  <p className="text-white/70 text-sm md:text-base mb-6">{bannerSubtitle}</p>
+                )}
+                <Link
+                  to={local.url_vendas || `/imoveis?condominio=${local.slug}`}
+                  className="inline-flex items-center gap-2 px-8 py-4 font-bold text-sm tracking-widest uppercase self-start
+                    bg-gradient-to-r from-[hsl(39,70%,55%)] to-[hsl(39,80%,65%)] text-[hsl(200,60%,10%)]
+                    shadow-[0_0_20px_hsl(39,70%,55%,0.3)] hover:shadow-[0_0_35px_hsl(39,70%,55%,0.5)]
+                    transition-all duration-300 hover:scale-105"
+                >
+                  {bannerButtonText}
+                  <ExternalLink className="h-4 w-4" />
+                </Link>
+              </div>
+              {/* Image side */}
+              <div className="relative min-h-[240px] md:min-h-0">
+                <img
+                  src={local.banner_publicidade || local.imagem_destaque || ctaBgImage}
+                  alt="Banner publicitário"
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {adTemplate && (!adTemplate.layout_model || adTemplate.layout_model === 'full_banner') && (
           <div className="relative mt-16 overflow-hidden group">
             <div className="absolute inset-0 overflow-hidden">
               <img
