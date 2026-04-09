@@ -18,9 +18,11 @@ export type Database = {
         Row: {
           button_text: string
           created_at: string
+          custom_html: string
           heading: string
           id: string
           is_active: boolean
+          layout_model: string
           overlay_style: string
           subtitle: string | null
           target_category: string
@@ -30,9 +32,11 @@ export type Database = {
         Insert: {
           button_text?: string
           created_at?: string
+          custom_html?: string
           heading?: string
           id?: string
           is_active?: boolean
+          layout_model?: string
           overlay_style?: string
           subtitle?: string | null
           target_category?: string
@@ -42,9 +46,11 @@ export type Database = {
         Update: {
           button_text?: string
           created_at?: string
+          custom_html?: string
           heading?: string
           id?: string
           is_active?: boolean
+          layout_model?: string
           overlay_style?: string
           subtitle?: string | null
           target_category?: string
