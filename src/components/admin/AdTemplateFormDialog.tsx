@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
+
 import { Loader2, AlignCenter, PanelLeft, Code2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -103,6 +103,8 @@ const AdTemplateFormDialog = ({ open, onOpenChange, editing, onSuccess, initialL
       overlay_style: form.overlay_style,
       target_category: form.target_category,
       is_active: form.is_active,
+      layout_model: form.layout_model,
+      custom_html: form.custom_html,
     };
 
     let error;
@@ -136,13 +138,26 @@ const AdTemplateFormDialog = ({ open, onOpenChange, editing, onSuccess, initialL
           </DialogDescription>
         </DialogHeader>
 
-        {/* Layout indicator */}
-        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/50 border border-border">
-          {LAYOUT_ICON[form.layout_model]}
-          <span className="text-sm font-medium text-foreground">Layout: {LAYOUT_LABELS[form.layout_model]}</span>
-          <Badge variant="outline" className="ml-auto text-[10px]">
-            {form.layout_model === 'full_banner' ? 'Texto no Centro' : form.layout_model === 'split' ? 'Texto na Lateral' : 'Código Livre'}
-          </Badge>
+        {/* Layout selector */}
+        <div className="space-y-2">
+          <Label>Modelo de Layout</Label>
+          <div className="grid grid-cols-3 gap-2">
+            {(['full_banner', 'split', 'html_custom'] as LayoutModel[]).map(model => (
+              <button
+                key={model}
+                type="button"
+                onClick={() => set('layout_model', model)}
+                className={`flex flex-col items-center gap-1.5 p-3 rounded-lg border-2 transition-all ${
+                  form.layout_model === model
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-border bg-muted/30 text-muted-foreground hover:border-primary/40'
+                }`}
+              >
+                {LAYOUT_ICON[model]}
+                <span className="text-xs font-medium">{LAYOUT_LABELS[model]}</span>
+              </button>
+            ))}
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
