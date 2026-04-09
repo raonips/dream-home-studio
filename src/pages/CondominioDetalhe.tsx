@@ -358,7 +358,7 @@ className="prose prose-description max-w-[85ch] mx-auto text-center break-words 
       )}
 
       {/* Properties for Sale */}
-      <section className="py-14 md:py-20 bg-muted">
+      <section id="imoveis-venda" className="py-14 md:py-20 bg-muted">
         <div className="container">
           <h2 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-8 text-center">
             Imóveis para Comprar no {condo.name}
