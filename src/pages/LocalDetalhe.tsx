@@ -26,6 +26,8 @@ interface Local {
   website: string | null;
   latitude: number | null;
   longitude: number | null;
+  url_vendas: string | null;
+  banner_publicidade: string | null;
 }
 
 const CATEGORIA_LABELS: Record<string, string> = {
@@ -235,11 +237,11 @@ const LocalDetalhe = () => {
 
         {/* ── CTA Banner — only for condominios ── */}
         {local.categoria === "condominio" && (
-          <div className="relative mt-16 rounded-2xl overflow-hidden group">
-            {/* Background image with parallax-like zoom */}
+          <div className="relative mt-16 overflow-hidden group">
+            {/* Background image with zoom effect */}
             <div className="absolute inset-0 overflow-hidden">
               <img
-                src={ctaBgImage}
+                src={local.banner_publicidade || ctaBgImage}
                 alt="Casa de alto padrão em Barra do Jacuípe"
                 className="w-full h-full object-cover transition-transform duration-[3s] ease-out group-hover:scale-110"
                 loading="lazy"
@@ -262,8 +264,8 @@ const LocalDetalhe = () => {
                 Encontre a casa perfeita neste condomínio com localização privilegiada em Barra do Jacuípe.
               </p>
               <Link
-                to={`/imoveis?condominio=${local.slug}`}
-                className="mt-2 inline-flex items-center gap-2 px-8 py-4 rounded-full font-bold text-sm md:text-base tracking-widest uppercase
+                to={local.url_vendas || `/imoveis?condominio=${local.slug}`}
+                className="mt-2 inline-flex items-center gap-2 px-8 py-4 font-bold text-sm md:text-base tracking-widest uppercase
                   bg-gradient-to-r from-[hsl(39,70%,55%)] to-[hsl(39,80%,65%)] text-[hsl(200,60%,10%)]
                   shadow-[0_0_20px_hsl(39,70%,55%,0.3)] hover:shadow-[0_0_35px_hsl(39,70%,55%,0.5)]
                   transition-all duration-300 hover:scale-105"

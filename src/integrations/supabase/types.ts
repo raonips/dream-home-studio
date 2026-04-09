@@ -402,6 +402,7 @@ export type Database = {
       locais: {
         Row: {
           ativo: boolean
+          banner_publicidade: string | null
           categoria: string
           created_at: string
           descricao: string | null
@@ -418,11 +419,13 @@ export type Database = {
           slug: string
           telefone: string | null
           updated_at: string
+          url_vendas: string | null
           website: string | null
           whatsapp: string | null
         }
         Insert: {
           ativo?: boolean
+          banner_publicidade?: string | null
           categoria?: string
           created_at?: string
           descricao?: string | null
@@ -439,11 +442,13 @@ export type Database = {
           slug: string
           telefone?: string | null
           updated_at?: string
+          url_vendas?: string | null
           website?: string | null
           whatsapp?: string | null
         }
         Update: {
           ativo?: boolean
+          banner_publicidade?: string | null
           categoria?: string
           created_at?: string
           descricao?: string | null
@@ -460,6 +465,7 @@ export type Database = {
           slug?: string
           telefone?: string | null
           updated_at?: string
+          url_vendas?: string | null
           website?: string | null
           whatsapp?: string | null
         }
