@@ -147,7 +147,7 @@ const LocalFormDialog = ({ open, onOpenChange, editing, onSuccess }: Props) => {
       ordem: form.ordem,
       latitude: form.latitude || null,
       longitude: form.longitude || null,
-    };
+    } as any;
 
     let error;
     if (editing) {
