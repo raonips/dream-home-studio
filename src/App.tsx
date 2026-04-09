@@ -43,10 +43,13 @@ const AdminSiteConfig = lazy(() => import("./pages/admin/AdminSiteConfig"));
 const AdminTags = lazy(() => import("./pages/admin/AdminTags"));
 const AdminCondominioTags = lazy(() => import("./pages/admin/AdminCondominioTags"));
 const TagPage = lazy(() => import("./pages/TagPage"));
+const LocalDetalhe = lazy(() => import("./pages/LocalDetalhe"));
+const LocaisListagem = lazy(() => import("./pages/LocaisListagem"));
 const AdminGuiaPosts = lazy(() => import("./pages/admin/AdminGuiaPosts"));
 const AdminGuiaCategorias = lazy(() => import("./pages/admin/AdminGuiaCategorias"));
 const AdminGuiaSiteConfig = lazy(() => import("./pages/admin/AdminGuiaSiteConfig"));
 const AdminGuiaSeoSettings = lazy(() => import("./pages/admin/AdminGuiaSeoSettings"));
+const AdminLocais = lazy(() => import("./pages/admin/AdminLocais"));
 
 // Lazy-loaded layout pieces below the fold
 const SiteFooter = lazy(() => import("@/components/SiteFooter"));
@@ -110,6 +113,7 @@ const App = () => (
                 <Route path="guia-categorias" element={<Suspense fallback={<RouteLoading />}><AdminGuiaCategorias /></Suspense>} />
                 <Route path="guia-config" element={<Suspense fallback={<RouteLoading />}><AdminGuiaSiteConfig /></Suspense>} />
                 <Route path="guia-seo" element={<Suspense fallback={<RouteLoading />}><AdminGuiaSeoSettings /></Suspense>} />
+                <Route path="locais" element={<Suspense fallback={<RouteLoading />}><AdminLocais /></Suspense>} />
               </Route>
 
               {/* Public routes */}
@@ -138,6 +142,14 @@ const App = () => (
                         <Route path="/imoveis/venda/:slug" element={<ImovelDetalhe />} />
                         <Route path="/imoveis/temporada/:slug" element={<ImovelDetalhe />} />
                         <Route path="/imoveis/imovel/:id" element={<ImovelDetalhe />} />
+
+                        {/* Locais - listing by category */}
+                        <Route path="/locais/gastronomia" element={<LocaisListagem />} />
+                        <Route path="/locais/hospedagem" element={<LocaisListagem />} />
+                        <Route path="/locais/utilidades" element={<LocaisListagem />} />
+                        <Route path="/locais/condominios" element={<LocaisListagem />} />
+                        {/* Locais - detail */}
+                        <Route path="/locais/:slug" element={<LocalDetalhe />} />
 
                         {/* Legacy redirects (old URLs without /imoveis prefix) */}
                         <Route path="/venda/:slug" element={<LegacyRedirect prefix="venda" />} />

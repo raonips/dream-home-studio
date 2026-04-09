@@ -399,6 +399,66 @@ export type Database = {
           },
         ]
       }
+      locais: {
+        Row: {
+          ativo: boolean
+          categoria: string
+          created_at: string
+          descricao: string | null
+          endereco: string | null
+          google_maps_link: string | null
+          horario_funcionamento: string | null
+          id: string
+          imagem_destaque: string | null
+          imagens: string[] | null
+          nome: string
+          ordem: number | null
+          slug: string
+          telefone: string | null
+          updated_at: string
+          website: string | null
+          whatsapp: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          categoria?: string
+          created_at?: string
+          descricao?: string | null
+          endereco?: string | null
+          google_maps_link?: string | null
+          horario_funcionamento?: string | null
+          id?: string
+          imagem_destaque?: string | null
+          imagens?: string[] | null
+          nome: string
+          ordem?: number | null
+          slug: string
+          telefone?: string | null
+          updated_at?: string
+          website?: string | null
+          whatsapp?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          categoria?: string
+          created_at?: string
+          descricao?: string | null
+          endereco?: string | null
+          google_maps_link?: string | null
+          horario_funcionamento?: string | null
+          id?: string
+          imagem_destaque?: string | null
+          imagens?: string[] | null
+          nome?: string
+          ordem?: number | null
+          slug?: string
+          telefone?: string | null
+          updated_at?: string
+          website?: string | null
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
       properties: {
         Row: {
           area: number | null
