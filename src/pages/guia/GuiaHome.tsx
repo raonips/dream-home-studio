@@ -278,7 +278,7 @@ const GuiaHome = () => {
             >
               {properties.map((property) => (
                 <div key={property.id} className="min-w-[300px] sm:min-w-[340px] snap-start flex-shrink-0">
-                  <PropertyCard property={property} linkPrefix="/imoveis" />
+                  <PropertyCard property={property} />
                 </div>
               ))}
             </div>
