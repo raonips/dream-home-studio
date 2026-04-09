@@ -4,7 +4,7 @@ import { useSiteSettings } from "@/hooks/useSiteSettings";
 import logoDefault from "@/assets/site-logo-imoveis-barra-do-jacuipe.webp";
 
 const SiteFooter = () => {
-  const { whatsapp_number, instagram_url } = useSiteSettings();
+  const { whatsapp_number, instagram_url, logo_url } = useSiteSettings();
   const phone = whatsapp_number || '5571991089039';
   const phoneFormatted = phone.replace(/^55(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3');
 
@@ -14,7 +14,7 @@ const SiteFooter = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
           <div>
             <div className="mb-4">
-              <img src={logoDefault} alt="Imóveis Barra do Jacuípe" className="h-12 max-w-[180px] object-contain brightness-0 invert" width={180} height={48} />
+              <img src={logo_url || logoDefault} alt="Barra do Jacuípe" className="h-12 max-w-[180px] object-contain brightness-0 invert" width={180} height={48} />
             </div>
             <p className="text-sm text-primary-foreground/70 leading-relaxed">
               Seu portal de imóveis exclusivos no Litoral Norte da Bahia. 
