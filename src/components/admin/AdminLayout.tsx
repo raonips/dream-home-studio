@@ -27,7 +27,7 @@ const AdminLayout = () => {
           <header className="h-14 flex items-center border-b bg-background px-4 gap-3">
             <SidebarTrigger />
             <span className="text-sm text-muted-foreground">
-              Bem-vindo, <span className="font-semibold text-foreground">Administrador</span>
+              Painel <span className="font-semibold text-foreground">Administrativo</span>
             </span>
           </header>
           <main className="flex-1 p-4 md:p-6 overflow-auto">
