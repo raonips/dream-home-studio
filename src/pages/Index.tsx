@@ -1,16 +1,21 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { lazy, Suspense } from "react";
+import HeroSection from "@/components/HeroSection";
 
-// IMPORTANT: Fully REPLACE this with your own code
-const PlaceholderIndex = () => {
-  // PLACEHOLDER: Replace this entire return statement with the user's app.
-  // The inline background color is intentionally not part of the design system.
+const FeaturedProperties = lazy(() => import("@/components/FeaturedProperties"));
+const TrustSection = lazy(() => import("@/components/TrustSection"));
+
+const Index = () => {
   return (
-    <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: '#fcfbf8' }}>
-      <img data-lovable-blank-page-placeholder="REMOVE_THIS" src="/placeholder.svg" alt="Your app will live here!" />
-    </div>
+    <>
+      <HeroSection />
+      <Suspense fallback={<div className="min-h-[700px] md:min-h-[600px]" />}>
+        <FeaturedProperties />
+      </Suspense>
+      <Suspense fallback={<div className="min-h-[400px]" />}>
+        <TrustSection />
+      </Suspense>
+    </>
   );
 };
-
-const Index = PlaceholderIndex;
 
 export default Index;
