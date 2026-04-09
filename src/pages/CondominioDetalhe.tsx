@@ -21,6 +21,7 @@ interface CondominioData {
   slug: string;
   description: string;
   hero_image: string;
+  featured_image?: string | null;
   images: string[];
   infrastructure: string[] | null;
   condominio_tags: string[];
@@ -50,6 +51,9 @@ const CondominioDetalhe = () => {
   const [formData, setFormData] = useState({ name: "", whatsapp: "", search: "Casa pronta" });
   const [formSubmitted, setFormSubmitted] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
+  const [adTemplate, setAdTemplate] = useState<{
+    heading: string; subtitle: string | null; button_text: string; overlay_style: string;
+  } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -97,6 +101,16 @@ const CondominioDetalhe = () => {
       if (propertiesData) {
         setProperties(propertiesData as PropertyData[]);
       }
+
+      // Fetch ad template for condominio category
+      const { data: tplData } = await supabase
+        .from('ad_templates')
+        .select('heading, subtitle, button_text, overlay_style')
+        .eq('target_category', 'condominio')
+        .eq('is_active', true)
+        .limit(1)
+        .maybeSingle();
+      if (!cancelled && tplData) setAdTemplate(tplData as any);
 
       setLoading(false);
     };
@@ -344,7 +358,7 @@ className="prose prose-description max-w-[85ch] mx-auto text-center break-words 
       )}
 
       {/* Properties for Sale */}
-      <section className="py-14 md:py-20 bg-muted">
+      <section id="imoveis-venda" className="py-14 md:py-20 bg-muted">
         <div className="container">
           <h2 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-8 text-center">
             Imóveis para Comprar no {condo.name}
@@ -381,6 +395,42 @@ className="prose prose-description max-w-[85ch] mx-auto text-center break-words 
             </div>
           </div>
         </section>
+      )}
+
+      {/* Ad Banner from Template */}
+      {adTemplate && (
+        (() => {
+          const overlayMap: Record<string, string> = {
+            oceanic: 'from-[#0c2d48]/90 via-[#0c2d48]/70 to-[#0c2d48]/90',
+            dark: 'from-foreground/90 via-foreground/70 to-foreground/90',
+            warm: 'from-[#3d2b1f]/90 via-[#3d2b1f]/70 to-[#3d2b1f]/90',
+          };
+          const overlay = overlayMap[adTemplate.overlay_style] || overlayMap.oceanic;
+          const heading = adTemplate.heading.replace(/\{nome\}/gi, condo.name);
+          const subtitle = adTemplate.subtitle?.replace(/\{nome\}/gi, condo.name) || '';
+          const bannerImg = optimizeHero(condo.featured_image || condo.hero_image || condo.images?.[0] || '/placeholder.svg');
+
+          return (
+            <section className="relative w-full overflow-hidden">
+              <img src={bannerImg} alt="" className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
+              <div className={`absolute inset-0 bg-gradient-to-r ${overlay}`} />
+              <div className="relative z-10 flex flex-col items-center justify-center text-center py-16 md:py-24 px-4">
+                <h2 className="font-display text-2xl md:text-4xl lg:text-5xl font-bold text-white mb-4 max-w-3xl leading-tight drop-shadow-lg">
+                  {heading}
+                </h2>
+                {subtitle && (
+                  <p className="text-white/80 text-base md:text-lg mb-8 max-w-2xl">{subtitle}</p>
+                )}
+                <a
+                  href="#imoveis-venda"
+                  className="relative inline-flex items-center justify-center gap-2 bg-white text-[#0c2d48] font-bold text-base md:text-lg px-8 py-4 rounded-lg shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(255,255,255,0.4)]"
+                >
+                  {adTemplate.button_text}
+                </a>
+              </div>
+            </section>
+          );
+        })()
       )}
 
       {/* Lead Capture */}
