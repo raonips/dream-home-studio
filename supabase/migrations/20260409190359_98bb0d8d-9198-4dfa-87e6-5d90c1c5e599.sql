@@ -1,0 +1,1 @@
+ALTER TABLE public.locais ADD CONSTRAINT locais_slug_unique UNIQUE (slug);
