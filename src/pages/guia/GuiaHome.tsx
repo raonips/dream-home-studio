@@ -62,7 +62,6 @@ const GuiaHome = () => {
   const [propsLoading, setPropsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const settings = useSiteSettings();
-  const carouselRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -107,11 +106,6 @@ const GuiaHome = () => {
   const getCategoriaName = (id: string | null) =>
     categorias.find((c) => c.id === id)?.nome ?? "";
 
-  const scrollCarousel = (dir: "left" | "right") => {
-    if (!carouselRef.current) return;
-    const amount = carouselRef.current.offsetWidth * 0.7;
-    carouselRef.current.scrollBy({ left: dir === "left" ? -amount : amount, behavior: "smooth" });
-  };
 
   /* ── Bento grid sizing: first 2 items are large, rest are smaller ── */
   const getBentoClass = (index: number, total: number) => {
