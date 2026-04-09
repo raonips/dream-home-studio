@@ -54,7 +54,7 @@ const PropertyCard = forwardRef<HTMLDivElement, PropertyCardProps>(
 
     return (
       <div ref={ref} className="group bg-card rounded-xl overflow-hidden shadow-card hover:shadow-card-hover transition-all duration-300 border border-border">
-        <Link to={`/${isTemporada ? 'temporada' : 'venda'}/${property.slug || property.id}`} className="relative overflow-hidden aspect-[4/3] block cursor-pointer">
+        <Link to={`/imoveis/${isTemporada ? 'temporada' : 'venda'}/${property.slug || property.id}`} className="relative overflow-hidden aspect-[4/3] block cursor-pointer">
           <LazyImage
             src={coverImage}
             alt={property.title}
@@ -97,7 +97,7 @@ const PropertyCard = forwardRef<HTMLDivElement, PropertyCardProps>(
           </div>
 
           <div className="flex gap-3">
-            <Link to={`/${isTemporada ? 'temporada' : 'venda'}/${property.slug || property.id}`} className="flex-1 text-center bg-primary text-primary-foreground text-sm font-semibold py-2.5 rounded-lg hover:bg-primary/90 transition-colors">
+            <Link to={`/imoveis/${isTemporada ? 'temporada' : 'venda'}/${property.slug || property.id}`} className="flex-1 text-center bg-primary text-primary-foreground text-sm font-semibold py-2.5 rounded-lg hover:bg-primary/90 transition-colors">
               Ver Detalhes
             </Link>
             <a
