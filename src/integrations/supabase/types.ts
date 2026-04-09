@@ -134,6 +134,104 @@ export type Database = {
         }
         Relationships: []
       }
+      guia_categorias: {
+        Row: {
+          created_at: string
+          descricao: string | null
+          icone: string | null
+          id: string
+          nome: string
+          ordem: number | null
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          descricao?: string | null
+          icone?: string | null
+          id?: string
+          nome: string
+          ordem?: number | null
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          descricao?: string | null
+          icone?: string | null
+          id?: string
+          nome?: string
+          ordem?: number | null
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      guia_posts: {
+        Row: {
+          autor: string | null
+          categoria_id: string | null
+          conteudo: string | null
+          created_at: string
+          id: string
+          imagem_destaque: string | null
+          published_at: string | null
+          resumo: string | null
+          seo_description: string | null
+          seo_keywords: string | null
+          seo_title: string | null
+          slug: string
+          status: string
+          tags: string[] | null
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          autor?: string | null
+          categoria_id?: string | null
+          conteudo?: string | null
+          created_at?: string
+          id?: string
+          imagem_destaque?: string | null
+          published_at?: string | null
+          resumo?: string | null
+          seo_description?: string | null
+          seo_keywords?: string | null
+          seo_title?: string | null
+          slug: string
+          status?: string
+          tags?: string[] | null
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          autor?: string | null
+          categoria_id?: string | null
+          conteudo?: string | null
+          created_at?: string
+          id?: string
+          imagem_destaque?: string | null
+          published_at?: string | null
+          resumo?: string | null
+          seo_description?: string | null
+          seo_keywords?: string | null
+          seo_title?: string | null
+          slug?: string
+          status?: string
+          tags?: string[] | null
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guia_posts_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "guia_categorias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
           arquivado: boolean | null
