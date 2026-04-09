@@ -32,6 +32,8 @@ export interface LocalRow {
   ordem: number;
   latitude?: number | null;
   longitude?: number | null;
+  url_vendas?: string | null;
+  banner_publicidade?: string | null;
 }
 
 const CATEGORIAS = [
@@ -72,6 +74,7 @@ const LocalFormDialog = ({ open, onOpenChange, editing, onSuccess }: Props) => {
     ativo: true, ordem: 0,
     seo_title: '', seo_description: '',
     latitude: DEFAULT_LAT, longitude: DEFAULT_LNG,
+    url_vendas: '', banner_publicidade: '',
   });
 
   useEffect(() => {
@@ -93,6 +96,8 @@ const LocalFormDialog = ({ open, onOpenChange, editing, onSuccess }: Props) => {
         seo_description: '',
         latitude: editing.latitude ?? DEFAULT_LAT,
         longitude: editing.longitude ?? DEFAULT_LNG,
+        url_vendas: editing.url_vendas || '',
+        banner_publicidade: editing.banner_publicidade || '',
       });
       const editImages: string[] = [];
       if (editing.imagem_destaque) editImages.push(editing.imagem_destaque);
@@ -109,6 +114,7 @@ const LocalFormDialog = ({ open, onOpenChange, editing, onSuccess }: Props) => {
         endereco: '', horario_funcionamento: '', website: '',
         ativo: true, ordem: 0, seo_title: '', seo_description: '',
         latitude: DEFAULT_LAT, longitude: DEFAULT_LNG,
+        url_vendas: '', banner_publicidade: '',
       });
       setImages([]);
     }
@@ -147,6 +153,8 @@ const LocalFormDialog = ({ open, onOpenChange, editing, onSuccess }: Props) => {
       ordem: form.ordem,
       latitude: form.latitude || null,
       longitude: form.longitude || null,
+      url_vendas: form.url_vendas?.trim() || null,
+      banner_publicidade: form.banner_publicidade?.trim() || null,
     } as any;
 
     let error;
@@ -223,6 +231,31 @@ const LocalFormDialog = ({ open, onOpenChange, editing, onSuccess }: Props) => {
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* ── Campos de Publicidade (só para condomínio) ── */}
+              {form.categoria === 'condominio' && (
+                <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-4">
+                  <h3 className="text-sm font-semibold text-primary">🏠 Publicidade Imobiliária</h3>
+                  <div className="space-y-2">
+                    <Label>URL de Vendas</Label>
+                    <Input
+                      value={form.url_vendas}
+                      onChange={set('url_vendas')}
+                      placeholder="Ex: /imoveis?condominio=villas-do-jacuipe ou https://..."
+                    />
+                    <p className="text-xs text-muted-foreground">Link do botão "Ver Imóveis Disponíveis" no banner.</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>URL do Banner de Publicidade</Label>
+                    <Input
+                      value={form.banner_publicidade}
+                      onChange={set('banner_publicidade')}
+                      placeholder="https://... (URL da imagem de fundo do banner)"
+                    />
+                    <p className="text-xs text-muted-foreground">Se vazio, será usada uma imagem padrão de luxo.</p>
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label>Descrição</Label>
