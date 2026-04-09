@@ -113,6 +113,7 @@ const App = () => (
                 <Route path="guia-categorias" element={<Suspense fallback={<RouteLoading />}><AdminGuiaCategorias /></Suspense>} />
                 <Route path="guia-config" element={<Suspense fallback={<RouteLoading />}><AdminGuiaSiteConfig /></Suspense>} />
                 <Route path="guia-seo" element={<Suspense fallback={<RouteLoading />}><AdminGuiaSeoSettings /></Suspense>} />
+                <Route path="locais" element={<Suspense fallback={<RouteLoading />}><AdminLocais /></Suspense>} />
               </Route>
 
               {/* Public routes */}
@@ -141,6 +142,10 @@ const App = () => (
                         <Route path="/imoveis/venda/:slug" element={<ImovelDetalhe />} />
                         <Route path="/imoveis/temporada/:slug" element={<ImovelDetalhe />} />
                         <Route path="/imoveis/imovel/:id" element={<ImovelDetalhe />} />
+
+                        {/* Locais */}
+                        <Route path="/locais/:categoria" element={<LocaisListagem />} />
+                        <Route path="/locais/:slug" element={<LocalDetalhe />} />
 
                         {/* Legacy redirects (old URLs without /imoveis prefix) */}
                         <Route path="/venda/:slug" element={<LegacyRedirect prefix="venda" />} />
