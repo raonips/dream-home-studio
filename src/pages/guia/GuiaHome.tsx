@@ -363,7 +363,7 @@ const GuiaHome = () => {
                 {properties.slice(0, 8).map((property) => (
                   <Link
                     key={property.id}
-                    to={`/imoveis/${property.slug}`}
+                    to={`/imoveis/${property.transaction_type === 'temporada' ? 'temporada' : 'venda'}/${property.slug || property.id}`}
                     className="group block"
                   >
                     <div className="rounded-3xl overflow-hidden bg-card border border-border/40 shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-card-hover)] transition-all duration-500">

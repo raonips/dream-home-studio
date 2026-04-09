@@ -343,7 +343,7 @@ const ImovelDetalhe = () => {
     itemListElement: [
       { "@type": "ListItem", position: 1, name: "Início", item: BASE },
       { "@type": "ListItem", position: 2, name: "Imóveis à Venda", item: `${BASE}/imoveis` },
-      ...(condo ? [{ "@type": "ListItem", position: 3, name: condo.name, item: `${BASE}/condominio/${condo.slug}` }] : []),
+      ...(condo ? [{ "@type": "ListItem", position: 3, name: condo.name, item: `${BASE}/imoveis/condominio/${condo.slug}` }] : []),
       { "@type": "ListItem", position: condo ? 4 : 3, name: property.title },
     ],
   };
@@ -380,7 +380,7 @@ const ImovelDetalhe = () => {
                   <BreadcrumbSeparator />
                   <BreadcrumbItem>
                     <BreadcrumbLink asChild>
-                      <Link to={`/condominio/${condo.slug}`}>{condo.name}</Link>
+                      <Link to={`/imoveis/condominio/${condo.slug}`}>{condo.name}</Link>
                     </BreadcrumbLink>
                   </BreadcrumbItem>
                 </>
