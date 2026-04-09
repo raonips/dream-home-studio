@@ -231,6 +231,48 @@ const LocalDetalhe = () => {
             </div>
           </div>
         </div>
+
+        {/* ── CTA Banner — only for condominios ── */}
+        {local.categoria === "condominio" && (
+          <div className="relative mt-16 rounded-2xl overflow-hidden group">
+            {/* Background image with parallax-like zoom */}
+            <div className="absolute inset-0 overflow-hidden">
+              <img
+                src={ctaBgImage}
+                alt="Casa de alto padrão em Barra do Jacuípe"
+                className="w-full h-full object-cover transition-transform duration-[3s] ease-out group-hover:scale-110"
+                loading="lazy"
+                width={1920}
+                height={640}
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-[hsl(200,60%,12%)]/90 via-[hsl(200,50%,18%)]/80 to-[hsl(200,40%,25%)]/70" />
+            </div>
+
+            {/* Content */}
+            <div className="relative z-10 px-8 py-16 md:py-20 md:px-16 flex flex-col items-center text-center gap-6">
+              <p className="text-white/60 text-xs md:text-sm font-semibold tracking-[0.3em] uppercase">
+                Oportunidade exclusiva
+              </p>
+              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-tight tracking-tight max-w-3xl">
+                Confira as melhores casas disponíveis à venda no{" "}
+                <span className="text-[hsl(39,80%,65%)]">{local.nome}</span>
+              </h2>
+              <p className="text-white/70 text-sm md:text-base max-w-xl">
+                Encontre a casa perfeita neste condomínio com localização privilegiada em Barra do Jacuípe.
+              </p>
+              <Link
+                to={`/imoveis?condominio=${local.slug}`}
+                className="mt-2 inline-flex items-center gap-2 px-8 py-4 rounded-full font-bold text-sm md:text-base tracking-widest uppercase
+                  bg-gradient-to-r from-[hsl(39,70%,55%)] to-[hsl(39,80%,65%)] text-[hsl(200,60%,10%)]
+                  shadow-[0_0_20px_hsl(39,70%,55%,0.3)] hover:shadow-[0_0_35px_hsl(39,70%,55%,0.5)]
+                  transition-all duration-300 hover:scale-105"
+              >
+                VER IMÓVEIS DISPONÍVEIS
+                <ExternalLink className="h-4 w-4" />
+              </Link>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Lightbox */}
