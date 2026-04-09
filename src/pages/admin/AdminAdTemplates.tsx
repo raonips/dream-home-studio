@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import AdTemplateFormDialog from '@/components/admin/AdTemplateFormDialog';
 import AdTemplateGalleryDialog from '@/components/admin/AdTemplateGalleryDialog';
+import type { LayoutModel } from '@/components/admin/AdTemplateGalleryDialog';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -49,6 +50,7 @@ const AdminAdTemplates = () => {
   const [editing, setEditing] = useState<AdTemplateRow | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [galleryOpen, setGalleryOpen] = useState(false);
+  const [selectedLayout, setSelectedLayout] = useState<LayoutModel | undefined>(undefined);
   const { toast } = useToast();
 
   const fetchTemplates = useCallback(async () => {
@@ -77,34 +79,41 @@ const AdminAdTemplates = () => {
     const { error } = await supabase.from('ad_templates').update({ is_active: !current } as any).eq('id', id);
     if (error) { toast({ variant: 'destructive', title: 'Erro', description: error.message }); return; }
     setItems(prev => prev.map(t => t.id === id ? { ...t, is_active: !current } : t));
-    toast({ title: !current ? 'Template ativado' : 'Template desativado' });
+    toast({ title: !current ? 'Publicidade ativada' : 'Publicidade desativada' });
   }, [toast]);
 
   const handleDelete = useCallback(async () => {
     if (!deleteId) return;
     const { error } = await supabase.from('ad_templates').delete().eq('id', deleteId);
     if (error) { toast({ variant: 'destructive', title: 'Erro', description: error.message }); }
-    else { toast({ title: 'Template excluído' }); fetchTemplates(); }
+    else { toast({ title: 'Publicidade excluída' }); fetchTemplates(); }
     setDeleteId(null);
   }, [deleteId, toast, fetchTemplates]);
 
+  const openNewWithLayout = (layout?: LayoutModel) => {
+    setGalleryOpen(false);
+    setEditing(null);
+    setSelectedLayout(layout);
+    setDialogOpen(true);
+  };
+
   return (
     <>
-      <Helmet><title>Templates de Publicidade | Admin</title></Helmet>
+      <Helmet><title>Publicidade | Admin</title></Helmet>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold font-display text-foreground">Templates de Publicidade</h1>
+            <h1 className="text-2xl font-bold font-display text-foreground">Publicidade</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Crie esqueletos de banners vinculados a categorias. Cada local usa sua imagem e URL próprias.
+              Crie banners vinculados a categorias. Cada local usa sua imagem e URL próprias.
             </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setGalleryOpen(true)} disabled={loading || items.length === 0}>
+            <Button variant="outline" onClick={() => setGalleryOpen(true)}>
               <LayoutTemplate className="h-4 w-4 mr-2" /> Ver Modelos Existentes
             </Button>
-            <Button onClick={() => { setEditing(null); setDialogOpen(true); }}>
-              <Plus className="h-4 w-4 mr-2" /> Novo Template
+            <Button onClick={() => openNewWithLayout(undefined)}>
+              <Plus className="h-4 w-4 mr-2" /> Nova Publicidade
             </Button>
           </div>
         </div>
@@ -121,7 +130,7 @@ const AdminAdTemplates = () => {
               </div>
             ) : items.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
-                Nenhum template criado ainda. Clique em "Novo Template" para começar.
+                Nenhuma publicidade criada ainda. Clique em "Nova Publicidade" para começar.
               </div>
             ) : (
               <Table>
@@ -147,7 +156,7 @@ const AdminAdTemplates = () => {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
-                          <Button variant="ghost" size="icon" onClick={() => { setEditing(t); setDialogOpen(true); }}>
+                          <Button variant="ghost" size="icon" onClick={() => { setEditing(t); setSelectedLayout(undefined); setDialogOpen(true); }}>
                             <Pencil className="h-4 w-4" />
                           </Button>
                           <Button variant="ghost" size="icon" className="text-destructive" onClick={() => setDeleteId(t.id)}>
@@ -164,22 +173,28 @@ const AdminAdTemplates = () => {
         </Card>
       </div>
 
-      <AdTemplateFormDialog open={dialogOpen} onOpenChange={setDialogOpen} editing={editing} onSuccess={fetchTemplates} />
+      <AdTemplateFormDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        editing={editing}
+        onSuccess={fetchTemplates}
+        initialLayout={selectedLayout}
+      />
 
       <AdTemplateGalleryDialog
         open={galleryOpen}
         onOpenChange={setGalleryOpen}
         items={items}
-        onEdit={(t) => { setGalleryOpen(false); setEditing(t); setDialogOpen(true); }}
+        onEdit={(t) => { setGalleryOpen(false); setEditing(t); setSelectedLayout(undefined); setDialogOpen(true); }}
         onDelete={(id) => { setGalleryOpen(false); setDeleteId(id); }}
         onToggle={handleToggle}
-        onCreateNew={() => { setGalleryOpen(false); setEditing(null); setDialogOpen(true); }}
+        onCreateNew={openNewWithLayout}
       />
 
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir template?</AlertDialogTitle>
+            <AlertDialogTitle>Excluir publicidade?</AlertDialogTitle>
             <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
