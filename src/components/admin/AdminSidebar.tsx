@@ -1,4 +1,4 @@
-import { LayoutDashboard, Building2, Home, Users, LogOut, LayoutGrid, Globe, Settings, Kanban, Tag, BookOpen, FolderOpen, Briefcase, Newspaper, MapPinned } from 'lucide-react';
+import { LayoutDashboard, Building2, Home, Users, LogOut, LayoutGrid, Globe, Settings, Kanban, Tag, BookOpen, FolderOpen, Briefcase, Newspaper, MapPinned, Megaphone } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -170,7 +170,15 @@ const AdminSidebar = () => {
                   <SidebarMenuButton asChild>
                     <NavLink to="/admin/blocos" className="hover:bg-muted/50" activeClassName="bg-muted text-primary font-medium">
                       <LayoutGrid className="mr-2 h-4 w-4" />
-                      {!collapsed && <span>Blocos & Publicidade</span>}
+                      {!collapsed && <span>Blocos HTML</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink to="/admin/ad-templates" className="hover:bg-muted/50" activeClassName="bg-muted text-primary font-medium">
+                      <Megaphone className="mr-2 h-4 w-4" />
+                      {!collapsed && <span>Templates de Publicidade</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
