@@ -1,0 +1,160 @@
+import { LayoutDashboard, Building2, Home, Users, LogOut, LayoutGrid, Globe, Settings, Kanban, Tag, ChevronDown } from 'lucide-react';
+import { NavLink } from '@/components/NavLink';
+import { useAuth } from '@/hooks/useAuth';
+import { useNavigate, useLocation } from 'react-router-dom';
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarFooter,
+  useSidebar,
+} from '@/components/ui/sidebar';
+import { Button } from '@/components/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+
+const AdminSidebar = () => {
+  const { signOut } = useAuth();
+  const navigate = useNavigate();
+  const { state } = useSidebar();
+  const collapsed = state === 'collapsed';
+  const location = useLocation();
+  const path = location.pathname;
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/login');
+  };
+
+  const simpleItems = [
+    { title: 'Visão Geral', url: '/admin', icon: LayoutDashboard, end: true },
+  ];
+
+  const imoveisOpen = path.startsWith('/admin/imoveis') || path.startsWith('/admin/tags');
+  const condominiosOpen = path.startsWith('/admin/condominios') || path.startsWith('/admin/condominio-tags');
+
+  const bottomItems = [
+    { title: 'CRM / Funil', url: '/admin/crm', icon: Kanban },
+    { title: 'Leads / Contatos', url: '/admin/leads', icon: Users },
+    { title: 'Blocos & Publicidade', url: '/admin/blocos', icon: LayoutGrid },
+    { title: 'Configurações do Site', url: '/admin/site-config', icon: Settings },
+    { title: 'SEO Geral', url: '/admin/seo', icon: Globe },
+  ];
+
+  return (
+    <Sidebar collapsible="icon">
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel>Menu</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {/* Simple items */}
+              {simpleItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild>
+                    <NavLink to={item.url} end={item.end} className="hover:bg-muted/50" activeClassName="bg-muted text-primary font-medium">
+                      <item.icon className="mr-2 h-4 w-4" />
+                      {!collapsed && <span>{item.title}</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+
+              {/* Imóveis with sub-menu */}
+              <Collapsible defaultOpen={imoveisOpen} className="group/collapsible">
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton className="hover:bg-muted/50 cursor-pointer">
+                      <Home className="mr-2 h-4 w-4" />
+                      {!collapsed && (
+                        <>
+                          <span className="flex-1">Imóveis</span>
+                          <ChevronDown className="h-4 w-4 transition-transform group-data-[state=open]/collapsible:rotate-180" />
+                        </>
+                      )}
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <SidebarMenuSub>
+                      <SidebarMenuSubItem>
+                        <NavLink to="/admin/imoveis" className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-md hover:bg-muted/50 w-full" activeClassName="bg-muted text-primary font-medium">
+                          Listagem
+                        </NavLink>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <NavLink to="/admin/tags" className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-md hover:bg-muted/50 w-full" activeClassName="bg-muted text-primary font-medium">
+                          <Tag className="h-3.5 w-3.5" /> Tags / Características
+                        </NavLink>
+                      </SidebarMenuSubItem>
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
+                </SidebarMenuItem>
+              </Collapsible>
+
+              {/* Condomínios with sub-menu */}
+              <Collapsible defaultOpen={condominiosOpen} className="group/collapsible">
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton className="hover:bg-muted/50 cursor-pointer">
+                      <Building2 className="mr-2 h-4 w-4" />
+                      {!collapsed && (
+                        <>
+                          <span className="flex-1">Condomínios</span>
+                          <ChevronDown className="h-4 w-4 transition-transform group-data-[state=open]/collapsible:rotate-180" />
+                        </>
+                      )}
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <SidebarMenuSub>
+                      <SidebarMenuSubItem>
+                        <NavLink to="/admin/condominios" className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-md hover:bg-muted/50 w-full" activeClassName="bg-muted text-primary font-medium">
+                          Listagem
+                        </NavLink>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <NavLink to="/admin/condominio-tags" className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-md hover:bg-muted/50 w-full" activeClassName="bg-muted text-primary font-medium">
+                          <Tag className="h-3.5 w-3.5" /> Tags / Condomínios
+                        </NavLink>
+                      </SidebarMenuSubItem>
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
+                </SidebarMenuItem>
+              </Collapsible>
+
+              {/* Bottom items */}
+              {bottomItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild>
+                    <NavLink to={item.url} className="hover:bg-muted/50" activeClassName="bg-muted text-primary font-medium">
+                      <item.icon className="mr-2 h-4 w-4" />
+                      {!collapsed && <span>{item.title}</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+      <SidebarFooter className="p-2">
+        <Button
+          variant="ghost"
+          className="w-full justify-start text-destructive hover:text-destructive"
+          onClick={handleSignOut}
+        >
+          <LogOut className="mr-2 h-4 w-4" />
+          {!collapsed && 'Sair'}
+        </Button>
+      </SidebarFooter>
+    </Sidebar>
+  );
+};
+
+export default AdminSidebar;
