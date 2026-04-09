@@ -143,8 +143,12 @@ const App = () => (
                         <Route path="/imoveis/temporada/:slug" element={<ImovelDetalhe />} />
                         <Route path="/imoveis/imovel/:id" element={<ImovelDetalhe />} />
 
-                        {/* Locais */}
-                        <Route path="/locais/:categoria" element={<LocaisListagem />} />
+                        {/* Locais - listing by category */}
+                        <Route path="/locais/gastronomia" element={<LocaisListagem />} />
+                        <Route path="/locais/hospedagem" element={<LocaisListagem />} />
+                        <Route path="/locais/utilidades" element={<LocaisListagem />} />
+                        <Route path="/locais/condominios" element={<LocaisListagem />} />
+                        {/* Locais - detail */}
                         <Route path="/locais/:slug" element={<LocalDetalhe />} />
 
                         {/* Legacy redirects (old URLs without /imoveis prefix) */}
