@@ -45,6 +45,8 @@ const AdminCondominioTags = lazy(() => import("./pages/admin/AdminCondominioTags
 const TagPage = lazy(() => import("./pages/TagPage"));
 const AdminGuiaPosts = lazy(() => import("./pages/admin/AdminGuiaPosts"));
 const AdminGuiaCategorias = lazy(() => import("./pages/admin/AdminGuiaCategorias"));
+const AdminGuiaSiteConfig = lazy(() => import("./pages/admin/AdminGuiaSiteConfig"));
+const AdminGuiaSeoSettings = lazy(() => import("./pages/admin/AdminGuiaSeoSettings"));
 
 // Lazy-loaded layout pieces below the fold
 const SiteFooter = lazy(() => import("@/components/SiteFooter"));
@@ -100,6 +102,8 @@ const App = () => (
                 {/* Guia Local admin */}
                 <Route path="guia-posts" element={<Suspense fallback={<RouteLoading />}><AdminGuiaPosts /></Suspense>} />
                 <Route path="guia-categorias" element={<Suspense fallback={<RouteLoading />}><AdminGuiaCategorias /></Suspense>} />
+                <Route path="guia-config" element={<Suspense fallback={<RouteLoading />}><AdminGuiaSiteConfig /></Suspense>} />
+                <Route path="guia-seo" element={<Suspense fallback={<RouteLoading />}><AdminGuiaSeoSettings /></Suspense>} />
               </Route>
 
               {/* Public routes */}

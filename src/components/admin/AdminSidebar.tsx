@@ -30,7 +30,7 @@ const AdminSidebar = () => {
   const path = location.pathname;
 
   // Auto-detect context from route
-  const guiaRoutes = ['/admin/guia-posts', '/admin/guia-categorias'];
+  const guiaRoutes = ['/admin/guia-posts', '/admin/guia-categorias', '/admin/guia-config', '/admin/guia-seo'];
   const isGuiaRoute = guiaRoutes.some((r) => path.startsWith(r));
 
   const [context, setContext] = useState<AdminContext>(isGuiaRoute ? 'guia' : 'imoveis');
@@ -199,35 +199,53 @@ const AdminSidebar = () => {
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink to="/admin/guia-config" className="hover:bg-[hsl(var(--guia-accent))]" activeClassName="bg-[hsl(var(--guia-accent))] text-[hsl(var(--guia-primary))] font-medium">
+                      <Settings className="mr-2 h-4 w-4" />
+                      {!collapsed && <span>Configurações</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink to="/admin/guia-seo" className="hover:bg-[hsl(var(--guia-accent))]" activeClassName="bg-[hsl(var(--guia-accent))] text-[hsl(var(--guia-primary))] font-medium">
+                      <Globe className="mr-2 h-4 w-4" />
+                      {!collapsed && <span>SEO do Guia</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
         )}
 
-        {/* Shared settings - always visible */}
-        <SidebarGroup>
-          <SidebarGroupLabel>Sistema</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <NavLink to="/admin/site-config" className="hover:bg-muted/50" activeClassName="bg-muted text-primary font-medium">
-                    <Settings className="mr-2 h-4 w-4" />
-                    {!collapsed && <span>Configurações</span>}
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <NavLink to="/admin/seo" className="hover:bg-muted/50" activeClassName="bg-muted text-primary font-medium">
-                    <Globe className="mr-2 h-4 w-4" />
-                    {!collapsed && <span>SEO Geral</span>}
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {/* Settings - context-specific */}
+        {!isGuia && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Sistema</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink to="/admin/site-config" className="hover:bg-muted/50" activeClassName="bg-muted text-primary font-medium">
+                      <Settings className="mr-2 h-4 w-4" />
+                      {!collapsed && <span>Configurações</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink to="/admin/seo" className="hover:bg-muted/50" activeClassName="bg-muted text-primary font-medium">
+                      <Globe className="mr-2 h-4 w-4" />
+                      {!collapsed && <span>SEO Geral</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
 
       <SidebarFooter className="p-2">

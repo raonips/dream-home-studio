@@ -232,6 +232,117 @@ export type Database = {
           },
         ]
       }
+      guia_site_settings: {
+        Row: {
+          address: string | null
+          body_scripts: string | null
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string | null
+          facebook_url: string | null
+          favicon_url: string | null
+          google_maps_api_key: string | null
+          head_scripts: string | null
+          header_logo_url: string | null
+          hero_bg_desktop: string | null
+          hero_bg_mobile: string | null
+          hero_desktop_low: string
+          hero_image_url: string | null
+          hero_mobile_low: string
+          hero_subtitle: string | null
+          hero_title: string | null
+          id: string
+          instagram_url: string | null
+          logo_url: string | null
+          map_provider: string | null
+          og_image_url: string | null
+          primary_color: string | null
+          site_description: string | null
+          site_keywords: string | null
+          site_name: string | null
+          site_title: string | null
+          updated_at: string | null
+          watermark_opacity: number | null
+          watermark_position: string | null
+          watermark_scale: number | null
+          watermark_url: string | null
+          whatsapp_number: string
+          youtube_url: string | null
+        }
+        Insert: {
+          address?: string | null
+          body_scripts?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string | null
+          facebook_url?: string | null
+          favicon_url?: string | null
+          google_maps_api_key?: string | null
+          head_scripts?: string | null
+          header_logo_url?: string | null
+          hero_bg_desktop?: string | null
+          hero_bg_mobile?: string | null
+          hero_desktop_low?: string
+          hero_image_url?: string | null
+          hero_mobile_low?: string
+          hero_subtitle?: string | null
+          hero_title?: string | null
+          id?: string
+          instagram_url?: string | null
+          logo_url?: string | null
+          map_provider?: string | null
+          og_image_url?: string | null
+          primary_color?: string | null
+          site_description?: string | null
+          site_keywords?: string | null
+          site_name?: string | null
+          site_title?: string | null
+          updated_at?: string | null
+          watermark_opacity?: number | null
+          watermark_position?: string | null
+          watermark_scale?: number | null
+          watermark_url?: string | null
+          whatsapp_number?: string
+          youtube_url?: string | null
+        }
+        Update: {
+          address?: string | null
+          body_scripts?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string | null
+          facebook_url?: string | null
+          favicon_url?: string | null
+          google_maps_api_key?: string | null
+          head_scripts?: string | null
+          header_logo_url?: string | null
+          hero_bg_desktop?: string | null
+          hero_bg_mobile?: string | null
+          hero_desktop_low?: string
+          hero_image_url?: string | null
+          hero_mobile_low?: string
+          hero_subtitle?: string | null
+          hero_title?: string | null
+          id?: string
+          instagram_url?: string | null
+          logo_url?: string | null
+          map_provider?: string | null
+          og_image_url?: string | null
+          primary_color?: string | null
+          site_description?: string | null
+          site_keywords?: string | null
+          site_name?: string | null
+          site_title?: string | null
+          updated_at?: string | null
+          watermark_opacity?: number | null
+          watermark_position?: string | null
+          watermark_scale?: number | null
+          watermark_url?: string | null
+          whatsapp_number?: string
+          youtube_url?: string | null
+        }
+        Relationships: []
+      }
       leads: {
         Row: {
           arquivado: boolean | null
