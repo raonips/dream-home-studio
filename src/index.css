@@ -194,6 +194,26 @@
   min-height: 120px;
 }
 
+/* Ken Burns slow zoom */
+@keyframes ken-burns {
+  0% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(1.12);
+  }
+}
+
+.animate-ken-burns {
+  animation: ken-burns 20s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+/* Hide scrollbar for carousel */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 @keyframes pulse-whatsapp {
   0%, 100% {
     transform: scale(1);
