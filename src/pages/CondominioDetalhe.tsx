@@ -50,6 +50,9 @@ const CondominioDetalhe = () => {
   const [formData, setFormData] = useState({ name: "", whatsapp: "", search: "Casa pronta" });
   const [formSubmitted, setFormSubmitted] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
+  const [adTemplate, setAdTemplate] = useState<{
+    heading: string; subtitle: string | null; button_text: string; overlay_style: string;
+  } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
