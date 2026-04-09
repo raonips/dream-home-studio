@@ -14,7 +14,7 @@ import { SiteSettingsProvider, HeadScripts } from "./hooks/useSiteSettings";
 // Critical: Index loads eagerly for fastest FCP/LCP
 import Index from "./pages/Index";
 
-// Lazy-loaded routes
+// Lazy-loaded routes — Imóveis
 const Imoveis = lazy(() => import("./pages/Imoveis"));
 const Vendas = lazy(() => import("./pages/Vendas"));
 const Temporada = lazy(() => import("./pages/Temporada"));
@@ -25,7 +25,12 @@ const ImovelDetalhe = lazy(() => import("./pages/ImovelDetalhe"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Login = lazy(() => import("./pages/Login"));
 
-// Admin chunk — all admin pages in one lazy boundary
+// Lazy-loaded routes — Guia Local
+const GuiaHome = lazy(() => import("./pages/guia/GuiaHome"));
+const GuiaPostDetalhe = lazy(() => import("./pages/guia/GuiaPostDetalhe"));
+const GuiaCategoriaPage = lazy(() => import("./pages/guia/GuiaCategoria"));
+
+// Admin chunk
 const AdminLayout = lazy(() => import("./components/admin/AdminLayout"));
 const Dashboard = lazy(() => import("./pages/admin/Dashboard"));
 const AdminProperties = lazy(() => import("./pages/admin/AdminProperties"));
@@ -38,6 +43,8 @@ const AdminSiteConfig = lazy(() => import("./pages/admin/AdminSiteConfig"));
 const AdminTags = lazy(() => import("./pages/admin/AdminTags"));
 const AdminCondominioTags = lazy(() => import("./pages/admin/AdminCondominioTags"));
 const TagPage = lazy(() => import("./pages/TagPage"));
+const AdminGuiaPosts = lazy(() => import("./pages/admin/AdminGuiaPosts"));
+const AdminGuiaCategorias = lazy(() => import("./pages/admin/AdminGuiaCategorias"));
 
 // Lazy-loaded layout pieces below the fold
 const SiteFooter = lazy(() => import("@/components/SiteFooter"));
@@ -80,6 +87,7 @@ const App = () => (
               {/* Admin routes */}
               <Route path="/admin" element={<Suspense fallback={<RouteLoading />}><ErrorBoundary fallbackTitle="Erro no painel admin"><AdminLayout /></ErrorBoundary></Suspense>}>
                 <Route index element={<Suspense fallback={<RouteLoading />}><Dashboard /></Suspense>} />
+                {/* Imóveis admin */}
                 <Route path="imoveis" element={<Suspense fallback={<RouteLoading />}><AdminProperties /></Suspense>} />
                 <Route path="condominios" element={<Suspense fallback={<RouteLoading />}><AdminCondominios /></Suspense>} />
                 <Route path="crm" element={<Suspense fallback={<RouteLoading />}><AdminCRM /></Suspense>} />
@@ -89,6 +97,9 @@ const App = () => (
                 <Route path="seo" element={<Suspense fallback={<RouteLoading />}><AdminSeoSettings /></Suspense>} />
                 <Route path="tags" element={<Suspense fallback={<RouteLoading />}><AdminTags /></Suspense>} />
                 <Route path="condominio-tags" element={<Suspense fallback={<RouteLoading />}><AdminCondominioTags /></Suspense>} />
+                {/* Guia Local admin */}
+                <Route path="guia-posts" element={<Suspense fallback={<RouteLoading />}><AdminGuiaPosts /></Suspense>} />
+                <Route path="guia-categorias" element={<Suspense fallback={<RouteLoading />}><AdminGuiaCategorias /></Suspense>} />
               </Route>
 
               {/* Public routes */}
@@ -101,17 +112,26 @@ const App = () => (
                       <ErrorBoundary fallbackTitle="Erro ao carregar a página">
                       <Suspense fallback={<RouteLoading />}>
                       <Routes>
-                        <Route path="/" element={<Index />} />
-                        <Route path="/imoveis" element={<Imoveis />} />
+                        {/* Guia Local — root */}
+                        <Route path="/" element={<GuiaHome />} />
+                        <Route path="/guia/categoria/:slug" element={<GuiaCategoriaPage />} />
+
+                        {/* Imóveis — moved under /imoveis */}
+                        <Route path="/imoveis" element={<Index />} />
+                        <Route path="/imoveis/listagem" element={<Imoveis />} />
                         <Route path="/imoveis/tags/:tagSlug" element={<TagPage />} />
-                        <Route path="/vendas" element={<Vendas />} />
-                        <Route path="/temporada" element={<Temporada />} />
-                        <Route path="/condominios" element={<Condominios />} />
-                        <Route path="/condominio/:slug" element={<CondominioDetalhe />} />
-                        <Route path="/contato" element={<Contato />} />
-                        <Route path="/venda/:slug" element={<ImovelDetalhe />} />
-                        <Route path="/temporada/:slug" element={<ImovelDetalhe />} />
-                        <Route path="/imovel/:id" element={<ImovelDetalhe />} />
+                        <Route path="/imoveis/vendas" element={<Vendas />} />
+                        <Route path="/imoveis/temporada" element={<Temporada />} />
+                        <Route path="/imoveis/condominios" element={<Condominios />} />
+                        <Route path="/imoveis/condominio/:slug" element={<CondominioDetalhe />} />
+                        <Route path="/imoveis/contato" element={<Contato />} />
+                        <Route path="/imoveis/venda/:slug" element={<ImovelDetalhe />} />
+                        <Route path="/imoveis/temporada/:slug" element={<ImovelDetalhe />} />
+                        <Route path="/imoveis/imovel/:id" element={<ImovelDetalhe />} />
+
+                        {/* Guia post catch-all (must be last) */}
+                        <Route path="/:slug" element={<GuiaPostDetalhe />} />
+
                         <Route path="*" element={<NotFound />} />
                       </Routes>
                       </Suspense>

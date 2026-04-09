@@ -6,11 +6,12 @@ import { useSiteSettings } from "@/hooks/useSiteSettings";
 import logoDefault from "@/assets/site-logo-imoveis-barra-do-jacuipe.webp";
 
 const navLinks = [
-  { label: "Início", href: "/", external: false },
-  { label: "Imóveis à Venda", href: "/vendas", external: false },
-  { label: "Temporada", href: "/temporada", external: false },
-  { label: "Condomínios", href: "/condominios", external: false },
-  { label: "Contato", href: "/contato", external: false },
+  { label: "Guia Local", href: "/", external: false },
+  { label: "Imóveis", href: "/imoveis", external: false },
+  { label: "Imóveis à Venda", href: "/imoveis/vendas", external: false },
+  { label: "Temporada", href: "/imoveis/temporada", external: false },
+  { label: "Condomínios", href: "/imoveis/condominios", external: false },
+  { label: "Contato", href: "/imoveis/contato", external: false },
   { label: "Portal Barra", href: "https://www.barradojacuipe.com.br/", external: true },
 ];
 
