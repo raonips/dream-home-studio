@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Helmet } from "react-helmet-async";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { MapPin, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -38,7 +38,8 @@ const CATEGORIA_MAPPING: Record<string, string[]> = {
 };
 
 const LocaisListagem = () => {
-  const { categoria } = useParams<{ categoria: string }>();
+  const location = useLocation();
+  const categoria = location.pathname.split("/").pop() || "";
   const [locais, setLocais] = useState<Local[]>([]);
   const [loading, setLoading] = useState(true);
 
