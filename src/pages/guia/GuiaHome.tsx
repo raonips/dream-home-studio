@@ -1,12 +1,11 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, ArrowRight, ChevronLeft, ChevronRight, Search, MapPin, Home, ShoppingCart, UtensilsCrossed, Hotel, Croissant, HeartPulse, Map } from "lucide-react";
+import { Loader2, ArrowRight, Search, MapPin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import SafeImage from "@/components/SafeImage";
-import PropertyCard, { type PropertyData } from "@/components/PropertyCard";
-import PropertyCardSkeleton from "@/components/PropertyCardSkeleton";
+import { type PropertyData } from "@/components/PropertyCard";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 interface GuiaPost {
@@ -63,7 +62,6 @@ const GuiaHome = () => {
   const [propsLoading, setPropsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const settings = useSiteSettings();
-  const carouselRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -108,11 +106,6 @@ const GuiaHome = () => {
   const getCategoriaName = (id: string | null) =>
     categorias.find((c) => c.id === id)?.nome ?? "";
 
-  const scrollCarousel = (dir: "left" | "right") => {
-    if (!carouselRef.current) return;
-    const amount = carouselRef.current.offsetWidth * 0.7;
-    carouselRef.current.scrollBy({ left: dir === "left" ? -amount : amount, behavior: "smooth" });
-  };
 
   /* ── Bento grid sizing: first 2 items are large, rest are smaller ── */
   const getBentoClass = (index: number, total: number) => {
@@ -303,64 +296,120 @@ const GuiaHome = () => {
         </section>
       )}
 
-      {/* ════════════════ IMÓVEIS EM DESTAQUE ════════════════ */}
-      <section className="py-12 md:py-16">
+      {/* ════════════════ CTA BANNER ════════════════ */}
+      <section className="mt-20 md:mt-28 relative h-[340px] md:h-[400px] overflow-hidden">
+        <img
+          src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1600&q=80"
+          alt="Barra do Jacuípe lifestyle"
+          className="absolute inset-0 w-full h-full object-cover"
+          loading="lazy"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-[hsl(var(--navy))]/70 via-[hsl(var(--navy))]/40 to-transparent" />
+        <div className="relative z-10 h-full flex flex-col items-start justify-center container">
+          <p className="text-white/70 text-sm tracking-[0.25em] uppercase font-medium mb-3">
+            Investimento & Lifestyle
+          </p>
+          <h2
+            className="text-3xl md:text-5xl font-bold text-white max-w-lg leading-tight mb-6"
+            style={{ fontFamily: "'Playfair Display', serif" }}
+          >
+            O estilo de vida que você merece
+          </h2>
+          <Link
+            to="/imoveis"
+            className="inline-flex items-center gap-3 px-8 py-3.5 rounded-full bg-white/15 backdrop-blur-md border border-white/30 text-white font-medium hover:bg-white/25 transition-all duration-300"
+          >
+            Explorar Catálogo Completo <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+      </section>
+
+      {/* ════════════════ VITRINE CURADA ════════════════ */}
+      <section className="py-20 md:py-28">
         <div className="container">
-          <div className="text-center mb-10">
-            <h2 className="text-2xl md:text-3xl font-bold text-foreground">
-              Imóveis a venda
-            </h2>
-            <p className="text-muted-foreground mt-2">Procurando imóveis comprar?</p>
+          <div className="flex items-end justify-between mb-12">
+            <div>
+              <p className="text-sm tracking-[0.2em] uppercase text-muted-foreground font-medium mb-2">
+                Seleção exclusiva
+              </p>
+              <h2
+                className="text-2xl md:text-3xl font-bold text-foreground"
+                style={{ fontFamily: "'Playfair Display', serif" }}
+              >
+                Oportunidades em Destaque
+              </h2>
+            </div>
+            <Link
+              to="/imoveis"
+              className="hidden md:inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Ver todos <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
           </div>
 
           {propsLoading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <PropertyCardSkeleton key={i} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="animate-pulse rounded-3xl bg-muted h-[380px]" />
               ))}
             </div>
           ) : properties.length === 0 ? (
-            <div className="text-center py-12 bg-muted/30 rounded-xl border border-border">
+            <div className="text-center py-16 bg-muted/30 rounded-3xl border border-border/50">
               <p className="text-muted-foreground">Nenhum imóvel em destaque no momento.</p>
             </div>
           ) : (
             <>
-              <div className="relative">
-                {/* Nav buttons */}
-                <button
-                  onClick={() => scrollCarousel("left")}
-                  className="absolute -left-4 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-card border border-border shadow-md hover:bg-muted transition-colors hidden md:flex"
-                  aria-label="Anterior"
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </button>
-                <button
-                  onClick={() => scrollCarousel("right")}
-                  className="absolute -right-4 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-card border border-border shadow-md hover:bg-muted transition-colors hidden md:flex"
-                  aria-label="Próximo"
-                >
-                  <ChevronRight className="h-5 w-5" />
-                </button>
-
-                <div
-                  ref={carouselRef}
-                  className="flex gap-6 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide"
-                  style={{ scrollbarWidth: "none" }}
-                >
-                  {properties.map((property) => (
-                    <div key={property.id} className="min-w-[300px] sm:min-w-[340px] snap-start flex-shrink-0">
-                      <PropertyCard property={property} />
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                {properties.slice(0, 8).map((property) => (
+                  <Link
+                    key={property.id}
+                    to={`/imoveis/${property.slug}`}
+                    className="group block"
+                  >
+                    <div className="rounded-3xl overflow-hidden bg-card border border-border/40 shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-card-hover)] transition-all duration-500">
+                      {/* Image */}
+                      <div className="aspect-[4/3] overflow-hidden relative">
+                        <img
+                          src={property.thumbnail_url || property.image_url || "/placeholder.svg"}
+                          alt={property.title || "Imóvel"}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                          loading="lazy"
+                        />
+                        {property.highlight_tag && (
+                          <span className="absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-medium bg-white/90 backdrop-blur-sm text-foreground shadow-sm">
+                            {property.highlight_tag}
+                          </span>
+                        )}
+                      </div>
+                      {/* Info */}
+                      <div className="p-5">
+                        <h3 className="font-semibold text-foreground text-base line-clamp-1 group-hover:text-primary transition-colors">
+                          {property.title}
+                        </h3>
+                        {property.location && (
+                          <p className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1.5">
+                            <MapPin className="h-3.5 w-3.5 shrink-0" />
+                            <span className="line-clamp-1">{property.location}</span>
+                          </p>
+                        )}
+                        <p
+                          className="mt-3 text-lg font-bold text-primary"
+                          style={{ fontFamily: "'DM Sans', sans-serif" }}
+                        >
+                          {property.price_formatted || (property.price ? `R$ ${property.price.toLocaleString("pt-BR")}` : "Consulte")}
+                        </p>
+                      </div>
                     </div>
-                  ))}
-                </div>
+                  </Link>
+                ))}
               </div>
 
-              <div className="text-center mt-8">
+              <div className="text-center mt-12 md:hidden">
                 <Link
                   to="/imoveis"
-                  className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors"
+                  className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  Ver Todos os Imóveis <ArrowRight className="h-4 w-4" />
+                  Ver todos os imóveis <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
               </div>
             </>
