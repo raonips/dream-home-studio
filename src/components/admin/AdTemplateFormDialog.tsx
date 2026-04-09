@@ -1,0 +1,173 @@
+import { useEffect, useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import type { AdTemplateRow } from '@/pages/admin/AdminAdTemplates';
+
+interface Props {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  editing: AdTemplateRow | null;
+  onSuccess: () => void;
+}
+
+const CATEGORY_OPTIONS = [
+  { value: 'condominio', label: 'Condomínio' },
+  { value: 'mercado', label: 'Mercado' },
+  { value: 'padaria', label: 'Padaria' },
+  { value: 'restaurante', label: 'Restaurante' },
+  { value: 'hospedagem', label: 'Hospedagem' },
+  { value: 'saude', label: 'Saúde' },
+  { value: 'gas', label: 'Gás' },
+  { value: 'limpeza', label: 'Materiais de Limpeza' },
+  { value: 'farmacia', label: 'Farmácia' },
+  { value: 'utilidade', label: 'Utilidade' },
+];
+
+const OVERLAY_OPTIONS = [
+  { value: 'oceanic', label: 'Oceânico (azul escuro)' },
+  { value: 'dark', label: 'Escuro (preto)' },
+  { value: 'warm', label: 'Quente (marrom dourado)' },
+];
+
+const AdTemplateFormDialog = ({ open, onOpenChange, editing, onSuccess }: Props) => {
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const [form, setForm] = useState({
+    title: '',
+    heading: '',
+    subtitle: '',
+    button_text: 'VER IMÓVEIS DISPONÍVEIS',
+    overlay_style: 'oceanic',
+    target_category: 'condominio',
+    is_active: true,
+  });
+
+  useEffect(() => {
+    if (editing) {
+      setForm({
+        title: editing.title,
+        heading: editing.heading,
+        subtitle: editing.subtitle || '',
+        button_text: editing.button_text,
+        overlay_style: editing.overlay_style,
+        target_category: editing.target_category,
+        is_active: editing.is_active,
+      });
+    } else {
+      setForm({ title: '', heading: '', subtitle: '', button_text: 'VER IMÓVEIS DISPONÍVEIS', overlay_style: 'oceanic', target_category: 'condominio', is_active: true });
+    }
+  }, [editing, open]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.title.trim()) { toast({ variant: 'destructive', title: 'Informe o nome do template' }); return; }
+    if (!form.heading.trim()) { toast({ variant: 'destructive', title: 'Informe o título do banner' }); return; }
+
+    setLoading(true);
+    const payload = {
+      title: form.title.trim(),
+      heading: form.heading.trim(),
+      subtitle: form.subtitle.trim(),
+      button_text: form.button_text.trim() || 'VER IMÓVEIS DISPONÍVEIS',
+      overlay_style: form.overlay_style,
+      target_category: form.target_category,
+      is_active: form.is_active,
+    };
+
+    let error;
+    if (editing) {
+      ({ error } = await supabase.from('ad_templates').update(payload as any).eq('id', editing.id));
+    } else {
+      ({ error } = await supabase.from('ad_templates').insert(payload as any));
+    }
+
+    if (error) {
+      toast({ variant: 'destructive', title: 'Erro ao salvar', description: error.message });
+    } else {
+      toast({ title: editing ? 'Template atualizado' : 'Template criado' });
+      onOpenChange(false);
+      onSuccess();
+    }
+    setLoading(false);
+  };
+
+  const set = (key: string, val: any) => setForm(f => ({ ...f, [key]: val }));
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{editing ? 'Editar Template' : 'Novo Template de Publicidade'}</DialogTitle>
+          <DialogDescription>
+            Defina o esqueleto do banner. Cada local individual terá sua própria imagem e URL de destino.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="space-y-2">
+            <Label>Nome Interno</Label>
+            <Input value={form.title} onChange={e => set('title', e.target.value)} placeholder="Ex: Venda de Casas" maxLength={200} required />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Título Principal do Banner</Label>
+            <Textarea value={form.heading} onChange={e => set('heading', e.target.value)} placeholder='Ex: As melhores casas estão aqui no {nome}' rows={2} />
+            <p className="text-xs text-muted-foreground">Use <code className="bg-muted px-1 rounded">{'{nome}'}</code> para inserir o nome do local automaticamente.</p>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Subtítulo (opcional)</Label>
+            <Input value={form.subtitle} onChange={e => set('subtitle', e.target.value)} placeholder="Ex: Localização privilegiada em Barra do Jacuípe" />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Texto do Botão</Label>
+            <Input value={form.button_text} onChange={e => set('button_text', e.target.value)} placeholder="VER IMÓVEIS DISPONÍVEIS" />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Categoria Alvo</Label>
+              <Select value={form.target_category} onValueChange={v => set('target_category', v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {CATEGORY_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Estilo do Overlay</Label>
+              <Select value={form.overlay_style} onValueChange={v => set('overlay_style', v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {OVERLAY_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between p-3 rounded-lg border border-border">
+            <div>
+              <p className="text-sm font-medium text-foreground">Template Ativo</p>
+              <p className="text-xs text-muted-foreground">Desative para ocultar todos os banners desta categoria</p>
+            </div>
+            <Switch checked={form.is_active} onCheckedChange={c => set('is_active', c)} />
+          </div>
+
+          <Button type="submit" className="w-full" size="lg" disabled={loading}>
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : editing ? 'Salvar Template' : 'Criar Template'}
+          </Button>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+export default AdTemplateFormDialog;

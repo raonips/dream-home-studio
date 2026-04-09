@@ -50,6 +50,7 @@ const AdminGuiaCategorias = lazy(() => import("./pages/admin/AdminGuiaCategorias
 const AdminGuiaSiteConfig = lazy(() => import("./pages/admin/AdminGuiaSiteConfig"));
 const AdminGuiaSeoSettings = lazy(() => import("./pages/admin/AdminGuiaSeoSettings"));
 const AdminLocais = lazy(() => import("./pages/admin/AdminLocais"));
+const AdminAdTemplates = lazy(() => import("./pages/admin/AdminAdTemplates"));
 
 // Lazy-loaded layout pieces below the fold
 const SiteFooter = lazy(() => import("@/components/SiteFooter"));
@@ -104,6 +105,7 @@ const App = () => (
                 <Route path="crm" element={<Suspense fallback={<RouteLoading />}><AdminCRM /></Suspense>} />
                 <Route path="leads" element={<Suspense fallback={<RouteLoading />}><AdminLeads /></Suspense>} />
                 <Route path="blocos" element={<Suspense fallback={<RouteLoading />}><AdminBlocks /></Suspense>} />
+                <Route path="ad-templates" element={<Suspense fallback={<RouteLoading />}><AdminAdTemplates /></Suspense>} />
                 <Route path="site-config" element={<Suspense fallback={<RouteLoading />}><AdminSiteConfig /></Suspense>} />
                 <Route path="seo" element={<Suspense fallback={<RouteLoading />}><AdminSeoSettings /></Suspense>} />
                 <Route path="tags" element={<Suspense fallback={<RouteLoading />}><AdminTags /></Suspense>} />

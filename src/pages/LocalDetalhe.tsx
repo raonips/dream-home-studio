@@ -30,6 +30,13 @@ interface Local {
   banner_publicidade: string | null;
 }
 
+interface AdTemplate {
+  heading: string;
+  subtitle: string;
+  button_text: string;
+  overlay_style: string;
+}
+
 const CATEGORIA_LABELS: Record<string, string> = {
   condominio: "Condomínio",
   mercado: "Mercado",
@@ -43,9 +50,16 @@ const CATEGORIA_LABELS: Record<string, string> = {
   utilidade: "Utilidade",
 };
 
+const OVERLAY_STYLES: Record<string, string> = {
+  oceanic: "from-[hsl(200,60%,12%)]/90 via-[hsl(200,50%,18%)]/80 to-[hsl(200,40%,25%)]/70",
+  dark: "from-black/90 via-black/75 to-black/60",
+  warm: "from-[hsl(30,40%,15%)]/90 via-[hsl(30,30%,20%)]/80 to-[hsl(30,25%,25%)]/70",
+};
+
 const LocalDetalhe = () => {
   const { slug } = useParams<{ slug: string }>();
   const [local, setLocal] = useState<Local | null>(null);
+  const [adTemplate, setAdTemplate] = useState<AdTemplate | null>(null);
   const [loading, setLoading] = useState(true);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
@@ -59,8 +73,23 @@ const LocalDetalhe = () => {
       .eq("ativo", true)
       .maybeSingle()
       .then(({ data }) => {
-        setLocal(data as Local | null);
+        const localData = data as Local | null;
+        setLocal(localData);
         setLoading(false);
+
+        // Fetch matching ad template for this category
+        if (localData) {
+          supabase
+            .from("ad_templates")
+            .select("heading, subtitle, button_text, overlay_style")
+            .eq("target_category", localData.categoria)
+            .eq("is_active", true)
+            .limit(1)
+            .maybeSingle()
+            .then(({ data: tpl }) => {
+              setAdTemplate(tpl as AdTemplate | null);
+            });
+        }
       });
   }, [slug]);
 
@@ -83,6 +112,14 @@ const LocalDetalhe = () => {
 
   const galleryImages = local.imagens?.filter(Boolean) || [];
   const extraImages = galleryImages.filter(img => img !== local.imagem_destaque);
+
+  // Build banner heading with {nome} interpolation
+  const bannerHeading = adTemplate
+    ? adTemplate.heading.replace(/\{nome\}/gi, local.nome)
+    : `Confira as melhores casas disponíveis à venda no ${local.nome}`;
+  const bannerSubtitle = adTemplate?.subtitle?.replace(/\{nome\}/gi, local.nome) || '';
+  const bannerButtonText = adTemplate?.button_text || 'VER IMÓVEIS DISPONÍVEIS';
+  const overlayClass = OVERLAY_STYLES[adTemplate?.overlay_style || 'oceanic'] || OVERLAY_STYLES.oceanic;
 
   return (
     <>
@@ -129,7 +166,6 @@ const LocalDetalhe = () => {
           <div className="grid md:grid-cols-[1fr_320px] gap-8 overflow-hidden">
             {/* ── Main Content ── */}
             <div className="min-w-0 space-y-8">
-              {/* Gallery */}
               {extraImages.length > 0 && (
                 <div>
                   <h2 className="text-lg font-semibold text-foreground mb-3">Fotos</h2>
@@ -147,7 +183,6 @@ const LocalDetalhe = () => {
                 </div>
               )}
 
-              {/* Rich text description */}
               {local.descricao && (
                 <div>
                   <div
@@ -158,18 +193,10 @@ const LocalDetalhe = () => {
                 </div>
               )}
 
-              {/* Map on public page */}
               {local.latitude && local.longitude && (
                 <div>
                   <h2 className="text-lg font-semibold text-foreground mb-3">Localização</h2>
-                  <SmartMap
-                    latitude={local.latitude}
-                    longitude={local.longitude}
-                    title={local.nome}
-                    zoom={15}
-                    interactive={false}
-                    className="w-full h-[300px] rounded-xl border border-border"
-                  />
+                  <SmartMap latitude={local.latitude} longitude={local.longitude} title={local.nome} zoom={15} interactive={false} className="w-full h-[300px] rounded-xl border border-border" />
                 </div>
               )}
             </div>
@@ -178,91 +205,61 @@ const LocalDetalhe = () => {
             <div className="space-y-4">
               <div className="bg-card rounded-xl border border-border p-6 space-y-4 sticky top-24">
                 <h3 className="font-semibold text-foreground">Informações</h3>
-
                 {local.endereco && (
-                  <div className="flex items-start gap-3 text-sm">
-                    <MapPin className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                    <span className="text-muted-foreground">{local.endereco}</span>
-                  </div>
+                  <div className="flex items-start gap-3 text-sm"><MapPin className="h-4 w-4 text-primary mt-0.5 shrink-0" /><span className="text-muted-foreground">{local.endereco}</span></div>
                 )}
                 {local.telefone && (
-                  <div className="flex items-center gap-3 text-sm">
-                    <Phone className="h-4 w-4 text-primary shrink-0" />
-                    <a href={`tel:${local.telefone}`} className="text-muted-foreground hover:text-primary transition-colors">{local.telefone}</a>
-                  </div>
+                  <div className="flex items-center gap-3 text-sm"><Phone className="h-4 w-4 text-primary shrink-0" /><a href={`tel:${local.telefone}`} className="text-muted-foreground hover:text-primary transition-colors">{local.telefone}</a></div>
                 )}
                 {local.horario_funcionamento && (
-                  <div className="flex items-start gap-3 text-sm">
-                    <Clock className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                    <span className="text-muted-foreground">{local.horario_funcionamento}</span>
-                  </div>
+                  <div className="flex items-start gap-3 text-sm"><Clock className="h-4 w-4 text-primary mt-0.5 shrink-0" /><span className="text-muted-foreground">{local.horario_funcionamento}</span></div>
                 )}
                 {local.website && (
-                  <div className="flex items-center gap-3 text-sm">
-                    <Globe className="h-4 w-4 text-primary shrink-0" />
-                    <a href={local.website} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate">
-                      {local.website.replace(/^https?:\/\//, "")}
-                    </a>
-                  </div>
+                  <div className="flex items-center gap-3 text-sm"><Globe className="h-4 w-4 text-primary shrink-0" /><a href={local.website} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate">{local.website.replace(/^https?:\/\//, "")}</a></div>
                 )}
-
                 {local.whatsapp && (
-                  <a
-                    href={`https://wa.me/${local.whatsapp}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-2 w-full py-2.5 bg-[#25D366] text-white rounded-lg font-medium hover:bg-[#1da851] transition-colors text-sm"
-                  >
-                    WhatsApp
-                  </a>
+                  <a href={`https://wa.me/${local.whatsapp}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full py-2.5 bg-[#25D366] text-white rounded-lg font-medium hover:bg-[#1da851] transition-colors text-sm">WhatsApp</a>
                 )}
                 {local.google_maps_link && (
-                  <a
-                    href={local.google_maps_link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-2 w-full py-2.5 bg-muted text-foreground rounded-lg font-medium hover:bg-muted/80 transition-colors text-sm"
-                  >
-                    <ExternalLink className="h-4 w-4" /> Ver no Google Maps
-                  </a>
+                  <a href={local.google_maps_link} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full py-2.5 bg-muted text-foreground rounded-lg font-medium hover:bg-muted/80 transition-colors text-sm"><ExternalLink className="h-4 w-4" /> Ver no Google Maps</a>
                 )}
               </div>
-
-              <Link to="/" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors">
-                <ArrowLeft className="h-4 w-4" /> Voltar ao Guia
-              </Link>
+              <Link to="/" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"><ArrowLeft className="h-4 w-4" /> Voltar ao Guia</Link>
             </div>
           </div>
         </div>
 
-        {/* ── CTA Banner — only for condominios ── */}
-        {local.categoria === "condominio" && (
+        {/* ── CTA Banner — shows when there's an active template for this category ── */}
+        {adTemplate && (
           <div className="relative mt-16 overflow-hidden group">
-            {/* Background image with zoom effect */}
             <div className="absolute inset-0 overflow-hidden">
               <img
                 src={local.banner_publicidade || ctaBgImage}
-                alt="Casa de alto padrão em Barra do Jacuípe"
+                alt="Banner publicitário"
                 className="w-full h-full object-cover transition-transform duration-[3s] ease-out group-hover:scale-110"
                 loading="lazy"
                 width={1920}
                 height={640}
               />
-              <div className="absolute inset-0 bg-gradient-to-r from-[hsl(200,60%,12%)]/90 via-[hsl(200,50%,18%)]/80 to-[hsl(200,40%,25%)]/70" />
+              <div className={`absolute inset-0 bg-gradient-to-r ${overlayClass}`} />
             </div>
 
-            {/* Content */}
             <div className="relative z-10 px-8 py-16 md:py-20 md:px-16 flex flex-col items-center text-center gap-6">
               <p className="text-white/60 text-xs md:text-sm font-semibold tracking-[0.3em] uppercase">
                 Oportunidade exclusiva
               </p>
               <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-tight tracking-tight max-w-3xl">
-                Confira as melhores casas disponíveis à venda no{" "}
-                <span className="text-[hsl(39,80%,65%)]">{local.nome}</span>
+                {bannerHeading.includes(local.nome) ? (
+                  <>
+                    {bannerHeading.split(local.nome)[0]}
+                    <span className="text-[hsl(39,80%,65%)]">{local.nome}</span>
+                    {bannerHeading.split(local.nome).slice(1).join(local.nome)}
+                  </>
+                ) : bannerHeading}
               </h2>
-              <p className="text-white/70 text-sm md:text-base max-w-xl">
-                Encontre a casa perfeita neste condomínio com localização privilegiada em Barra do Jacuípe.
-              </p>
+              {bannerSubtitle && (
+                <p className="text-white/70 text-sm md:text-base max-w-xl">{bannerSubtitle}</p>
+              )}
               <Link
                 to={local.url_vendas || `/imoveis?condominio=${local.slug}`}
                 className="mt-2 inline-flex items-center gap-2 px-8 py-4 font-bold text-sm md:text-base tracking-widest uppercase
@@ -270,7 +267,7 @@ const LocalDetalhe = () => {
                   shadow-[0_0_20px_hsl(39,70%,55%,0.3)] hover:shadow-[0_0_35px_hsl(39,70%,55%,0.5)]
                   transition-all duration-300 hover:scale-105"
               >
-                VER IMÓVEIS DISPONÍVEIS
+                {bannerButtonText}
                 <ExternalLink className="h-4 w-4" />
               </Link>
             </div>
@@ -278,13 +275,7 @@ const LocalDetalhe = () => {
         )}
       </div>
 
-      {/* Lightbox */}
-      <Lightbox
-        images={extraImages}
-        initialIndex={lightboxIndex}
-        open={lightboxOpen}
-        onClose={() => setLightboxOpen(false)}
-      />
+      <Lightbox images={extraImages} initialIndex={lightboxIndex} open={lightboxOpen} onClose={() => setLightboxOpen(false)} />
     </>
   );
 };

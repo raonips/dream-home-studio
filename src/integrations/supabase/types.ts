@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      ad_templates: {
+        Row: {
+          button_text: string
+          created_at: string
+          heading: string
+          id: string
+          is_active: boolean
+          overlay_style: string
+          subtitle: string | null
+          target_category: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          button_text?: string
+          created_at?: string
+          heading?: string
+          id?: string
+          is_active?: boolean
+          overlay_style?: string
+          subtitle?: string | null
+          target_category?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          button_text?: string
+          created_at?: string
+          heading?: string
+          id?: string
+          is_active?: boolean
+          overlay_style?: string
+          subtitle?: string | null
+          target_category?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       condominio_tags: {
         Row: {
           created_at: string
