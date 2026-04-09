@@ -1,9 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { Helmet } from "react-helmet-async";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Loader2, ArrowRight, ChevronLeft, ChevronRight, Search, MapPin, Home, ShoppingCart, UtensilsCrossed, Hotel, Croissant, HeartPulse, Map } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import SafeImage from "@/components/SafeImage";
 import PropertyCard, { type PropertyData } from "@/components/PropertyCard";
@@ -29,7 +28,14 @@ interface GuiaCategoria {
   icone: string | null;
 }
 
-/* ── Category placeholder images (fallback when no real photo exists) ── */
+/* ── Category style map: icon + gradient color ── */
+const categoryStyle: Record<string, { icon: React.ReactNode; gradient: string }> = {
+  default: { icon: <MapPin className="h-10 w-10 text-white" />, gradient: "from-primary/80 to-primary" },
+};
+
+const getCategoryStyle = (slug: string) =>
+  categoryStyle[slug] ?? categoryStyle.default;
+
 const categoryImages: Record<string, string> = {
   gastronomia: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600&q=80",
   praias: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&q=80",
@@ -38,6 +44,12 @@ const categoryImages: Record<string, string> = {
   lazer: "https://images.unsplash.com/photo-1530549387789-4c1017266635?w=600&q=80",
   cultura: "https://images.unsplash.com/photo-1533669955142-6a73332af4db?w=600&q=80",
   natureza: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=600&q=80",
+  mercados: "https://images.unsplash.com/photo-1604719312566-8912e9227c6a?w=600&q=80",
+  restaurantes: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&q=80",
+  padarias: "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=600&q=80",
+  saude: "https://images.unsplash.com/photo-1538108149393-fbbd81895907?w=600&q=80",
+  hospedagem: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&q=80",
+  imoveis: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=600&q=80",
 };
 
 const getFallbackImage = (slug: string) =>
@@ -49,8 +61,10 @@ const GuiaHome = () => {
   const [loading, setLoading] = useState(true);
   const [properties, setProperties] = useState<PropertyData[]>([]);
   const [propsLoading, setPropsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
   const settings = useSiteSettings();
   const carouselRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -60,7 +74,7 @@ const GuiaHome = () => {
           .select("id, titulo, slug, resumo, imagem_destaque, published_at, categoria_id, tags")
           .eq("status", "publicado")
           .order("published_at", { ascending: false })
-          .limit(20),
+          .limit(6),
         supabase
           .from("guia_categorias")
           .select("*")
@@ -100,6 +114,14 @@ const GuiaHome = () => {
     carouselRef.current.scrollBy({ left: dir === "left" ? -amount : amount, behavior: "smooth" });
   };
 
+  /* ── Bento grid sizing: first 2 items are large, rest are smaller ── */
+  const getBentoClass = (index: number, total: number) => {
+    if (total <= 2) return "col-span-1";
+    if (index === 0) return "col-span-2 row-span-1 md:col-span-1";
+    if (index === 1) return "col-span-2 row-span-1 md:col-span-1";
+    return "col-span-1";
+  };
+
   return (
     <>
       <Helmet>
@@ -108,63 +130,111 @@ const GuiaHome = () => {
         <meta name="keywords" content={settings.site_keywords} />
       </Helmet>
 
-      {/* ════════════════ HERO — Ken Burns ════════════════ */}
-      <section className="relative h-[70vh] min-h-[480px] max-h-[720px] overflow-hidden">
-        {/* Background image with Ken Burns */}
+      {/* ════════════════ HERO ════════════════ */}
+      <section className="relative h-[85vh] min-h-[560px] max-h-[800px] overflow-hidden">
+        {/* Background */}
         <div
-          className="absolute inset-0 animate-ken-burns"
-          style={settings.hero_bg_desktop ? {
-            backgroundImage: `url(${settings.hero_bg_desktop})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-          } : {
-            backgroundImage: "url(https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1600&q=80)",
-            backgroundSize: "cover",
-            backgroundPosition: "center",
+          className="absolute inset-0 bg-cover bg-center"
+          style={{
+            backgroundImage: settings.hero_bg_desktop
+              ? `url(${settings.hero_bg_desktop})`
+              : "url(https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1600&q=80)",
           }}
         />
-        {/* Gradient overlay for text readability */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-black/10" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/30 to-transparent" />
+        {/* Gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/50" />
 
-        <div className="relative z-10 h-full flex flex-col justify-end pb-12 md:pb-16">
-          <div className="container">
-            <h1 className="text-4xl md:text-6xl font-bold text-white mb-4 drop-shadow-lg max-w-3xl leading-tight">
-              {settings.hero_title || "Guia Local — Barra do Jacuípe"}
-            </h1>
-            <p className="text-lg md:text-xl text-white/90 max-w-2xl drop-shadow-md">
-              {settings.hero_subtitle || "Tudo o que você precisa saber sobre a região."}
-            </p>
+        {/* Centered content */}
+        <div className="relative z-10 h-full flex flex-col items-center justify-center text-center px-4">
+          {/* Logo text — large cursive style via Playfair Display */}
+          <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold text-white drop-shadow-xl mb-2 leading-tight" style={{ fontFamily: "'Playfair Display', serif" }}>
+            {settings.hero_title || "Barra do Jacuípe"}
+          </h1>
+          <p className="text-lg md:text-xl text-white/90 drop-shadow-md max-w-xl italic mb-10">
+            {settings.hero_subtitle || "Descubra as maravilhas naturais e culturais de Barra do Jacuípe!"}
+          </p>
+
+          {/* Search bar */}
+          <div className="w-full max-w-2xl bg-white rounded-xl shadow-hero p-2 flex flex-col sm:flex-row gap-2">
+            <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-muted/50 rounded-lg">
+              <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+              <input
+                type="text"
+                placeholder="O que você está procurando?"
+                className="bg-transparent outline-none w-full text-sm text-foreground placeholder:text-muted-foreground"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && searchQuery.trim() && navigate(`/busca?q=${encodeURIComponent(searchQuery.trim())}`)}
+              />
+            </div>
+            <button
+              onClick={() => searchQuery.trim() && navigate(`/busca?q=${encodeURIComponent(searchQuery.trim())}`)}
+              className="bg-primary text-primary-foreground px-6 py-2.5 rounded-lg font-medium text-sm hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
+            >
+              <Search className="h-4 w-4" />
+              Pesquisar
+            </button>
           </div>
         </div>
       </section>
 
-      {/* ════════════════ CATEGORIAS — Photo Cards ════════════════ */}
+      {/* ════════════════ CATEGORIAS — Bento Grid ════════════════ */}
       {categorias.length > 0 && (
         <section className="py-12 md:py-16">
           <div className="container">
-            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-8 text-center">
-              Explore por Experiência
-            </h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {categorias.map((cat) => (
+            <div className={`grid gap-4 ${
+              categorias.length <= 2
+                ? "grid-cols-1 md:grid-cols-2"
+                : "grid-cols-2 md:grid-cols-4"
+            }`}>
+              {/* First 2 items: large (span 2 cols on mobile, 1 on md+) in a 2-col top row on md */}
+              {categorias.slice(0, 2).map((cat, i) => (
                 <Link
                   key={cat.id}
                   to={`/guia/categoria/${cat.slug}`}
-                  className="group relative aspect-[4/3] rounded-xl overflow-hidden"
+                  className="group relative overflow-hidden rounded-2xl col-span-2 md:col-span-2 aspect-[16/7]"
                 >
                   <img
                     src={getFallbackImage(cat.slug)}
                     alt={cat.nome}
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                     loading="lazy"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent transition-colors group-hover:from-black/80" />
-                  <div className="absolute inset-0 flex flex-col items-center justify-end p-4">
-                    {cat.icone && (
-                      <span className="text-2xl mb-1">{cat.icone}</span>
+                  <div className="absolute inset-0 bg-gradient-to-t from-purple-600/80 via-purple-500/40 to-purple-400/20 group-hover:from-purple-700/85 transition-colors" />
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-4">
+                    {cat.icone ? (
+                      <span className="text-4xl">{cat.icone}</span>
+                    ) : (
+                      <MapPin className="h-12 w-12 text-white drop-shadow-md" />
                     )}
-                    <span className="text-white font-semibold text-sm md:text-base text-center drop-shadow-md">
+                    <span className="text-white font-bold text-lg md:text-xl drop-shadow-md">
+                      {cat.nome}
+                    </span>
+                  </div>
+                </Link>
+              ))}
+
+              {/* Remaining items: smaller cards, 4 per row on desktop */}
+              {categorias.slice(2).map((cat) => (
+                <Link
+                  key={cat.id}
+                  to={`/guia/categoria/${cat.slug}`}
+                  className="group relative overflow-hidden rounded-2xl aspect-[4/3]"
+                >
+                  <img
+                    src={getFallbackImage(cat.slug)}
+                    alt={cat.nome}
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-purple-600/75 via-purple-500/35 to-transparent group-hover:from-purple-700/80 transition-colors" />
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-3">
+                    {cat.icone ? (
+                      <span className="text-3xl">{cat.icone}</span>
+                    ) : (
+                      <MapPin className="h-10 w-10 text-white drop-shadow-md" />
+                    )}
+                    <span className="text-white font-semibold text-sm md:text-base drop-shadow-md text-center">
                       {cat.nome}
                     </span>
                   </div>
@@ -176,27 +246,22 @@ const GuiaHome = () => {
       )}
 
       {/* ════════════════ POSTS RECENTES ════════════════ */}
-      <section className="py-12 md:py-16 bg-muted/30">
-        <div className="container">
-          <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-8 text-center">
-            Últimas Dicas & Novidades
-          </h2>
-
-          {loading ? (
-            <div className="flex justify-center py-20">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      {!loading && posts.length > 0 && (
+        <section className="py-12 md:py-16 bg-muted/30">
+          <div className="container">
+            <div className="text-center mb-10">
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground">
+                Últimas Dicas & Novidades
+              </h2>
+              <p className="text-muted-foreground mt-2">Conteúdo selecionado sobre a região</p>
             </div>
-          ) : posts.length === 0 ? (
-            <p className="text-center text-muted-foreground py-20">
-              Nenhum artigo publicado ainda. Volte em breve!
-            </p>
-          ) : (
+
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {posts.map((post) => (
                 <Link key={post.id} to={`/${post.slug}`} className="group">
-                  <Card className="overflow-hidden h-full hover:shadow-lg transition-shadow border-0 shadow-card">
+                  <div className="overflow-hidden h-full bg-card rounded-xl border border-border/50 shadow-sm hover:shadow-card-hover transition-shadow">
                     {post.imagem_destaque && (
-                      <div className="aspect-video overflow-hidden">
+                      <div className="aspect-video overflow-hidden rounded-t-xl">
                         <SafeImage
                           src={post.imagem_destaque}
                           alt={post.titulo}
@@ -204,60 +269,48 @@ const GuiaHome = () => {
                         />
                       </div>
                     )}
-                    <CardContent className="p-5">
+                    <div className="p-5">
                       {post.categoria_id && (
                         <Badge variant="secondary" className="mb-2 text-xs">
                           {getCategoriaName(post.categoria_id)}
                         </Badge>
                       )}
-                      <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2">
+                      <h3 className="text-base font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2">
                         {post.titulo}
                       </h3>
                       {post.resumo && (
-                        <p className="text-sm text-muted-foreground mt-2 line-clamp-3">
+                        <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
                           {post.resumo}
                         </p>
                       )}
                       <span className="inline-flex items-center gap-1 text-sm text-primary mt-3 font-medium">
                         Ler mais <ArrowRight className="h-3.5 w-3.5" />
                       </span>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
                 </Link>
               ))}
             </div>
-          )}
-        </div>
-      </section>
+          </div>
+        </section>
+      )}
 
-      {/* ════════════════ OPORTUNIDADES EM DESTAQUE — Carousel ════════════════ */}
+      {loading && (
+        <section className="py-16">
+          <div className="flex justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        </section>
+      )}
+
+      {/* ════════════════ IMÓVEIS EM DESTAQUE ════════════════ */}
       <section className="py-12 md:py-16">
         <div className="container">
-          <div className="flex items-end justify-between mb-8">
-            <div>
-              <h2 className="text-2xl md:text-3xl font-bold text-foreground">
-                Oportunidades em Destaque
-              </h2>
-              <p className="text-muted-foreground mt-1">
-                Imóveis selecionados na região de Barra do Jacuípe.
-              </p>
-            </div>
-            <div className="hidden md:flex gap-2">
-              <button
-                onClick={() => scrollCarousel("left")}
-                className="p-2 rounded-full border border-border hover:bg-muted transition-colors"
-                aria-label="Anterior"
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </button>
-              <button
-                onClick={() => scrollCarousel("right")}
-                className="p-2 rounded-full border border-border hover:bg-muted transition-colors"
-                aria-label="Próximo"
-              >
-                <ChevronRight className="h-5 w-5" />
-              </button>
-            </div>
+          <div className="text-center mb-10">
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground">
+              Imóveis a venda
+            </h2>
+            <p className="text-muted-foreground mt-2">Procurando imóveis comprar?</p>
           </div>
 
           {propsLoading ? (
@@ -271,32 +324,52 @@ const GuiaHome = () => {
               <p className="text-muted-foreground">Nenhum imóvel em destaque no momento.</p>
             </div>
           ) : (
-            <div
-              ref={carouselRef}
-              className="flex gap-6 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide"
-              style={{ scrollbarWidth: "none" }}
-            >
-              {properties.map((property) => (
-                <div key={property.id} className="min-w-[300px] sm:min-w-[340px] snap-start flex-shrink-0">
-                  <PropertyCard property={property} />
-                </div>
-              ))}
-            </div>
-          )}
+            <>
+              <div className="relative">
+                {/* Nav buttons */}
+                <button
+                  onClick={() => scrollCarousel("left")}
+                  className="absolute -left-4 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-card border border-border shadow-md hover:bg-muted transition-colors hidden md:flex"
+                  aria-label="Anterior"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+                <button
+                  onClick={() => scrollCarousel("right")}
+                  className="absolute -right-4 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-card border border-border shadow-md hover:bg-muted transition-colors hidden md:flex"
+                  aria-label="Próximo"
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </button>
 
-          <div className="text-center mt-8">
-            <Link
-              to="/imoveis"
-              className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors"
-            >
-              Ver Todos os Imóveis <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
+                <div
+                  ref={carouselRef}
+                  className="flex gap-6 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide"
+                  style={{ scrollbarWidth: "none" }}
+                >
+                  {properties.map((property) => (
+                    <div key={property.id} className="min-w-[300px] sm:min-w-[340px] snap-start flex-shrink-0">
+                      <PropertyCard property={property} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="text-center mt-8">
+                <Link
+                  to="/imoveis"
+                  className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors"
+                >
+                  Ver Todos os Imóveis <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+            </>
+          )}
         </div>
       </section>
 
       {/* ════════════════ SEO AUTHORITY BLOCK ════════════════ */}
-      <section className="py-16 md:py-20 bg-muted/20">
+      <section className="py-16 md:py-20 bg-muted/20 border-t border-border/50">
         <div className="container">
           <h2 className="text-2xl md:text-3xl font-bold text-foreground text-center mb-10">
             Por que Barra do Jacuípe?
@@ -311,42 +384,20 @@ const GuiaHome = () => {
               </p>
               <p>
                 A região é conhecida pelo clima acolhedor, pela gastronomia baiana autêntica e por uma
-                infraestrutura que combina tranquilidade com conveniência. Condomínios de alto padrão
-                convivem harmoniosamente com a natureza exuberante, tornando o local ideal tanto para
-                moradia permanente quanto para temporada.
+                infraestrutura que combina tranquilidade com conveniência.
               </p>
             </div>
             <div>
               <p>
                 Com uma comunidade acolhedora e serviços em constante expansão, Barra do Jacuípe
                 oferece <strong>qualidade de vida incomparável</strong>. Caminhadas na praia ao amanhecer,
-                passeios de stand-up paddle no rio e jantares à beira-mar fazem parte do cotidiano
-                de quem vive ou visita a região.
+                passeios de stand-up paddle no rio e jantares à beira-mar fazem parte do cotidiano.
               </p>
               <p>
-                Seja você um investidor em busca de valorização imobiliária, uma família procurando
-                o refúgio perfeito ou um visitante querendo conhecer o melhor do litoral baiano,
-                Barra do Jacuípe é o destino certo. Explore nosso guia completo e descubra tudo
-                o que essa joia do litoral norte tem a oferecer.
+                Explore nosso guia completo e descubra tudo o que essa joia do litoral norte tem a oferecer.
               </p>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* ════════════════ CTA FINAL ════════════════ */}
-      <section className="py-12 bg-primary/5">
-        <div className="container text-center">
-          <h2 className="text-2xl font-bold mb-3">Procurando imóveis na região?</h2>
-          <p className="text-muted-foreground mb-6">
-            Confira nosso portfólio de casas, apartamentos e terrenos à venda e para temporada.
-          </p>
-          <Link
-            to="/imoveis"
-            className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors"
-          >
-            Ver Imóveis <ArrowRight className="h-4 w-4" />
-          </Link>
         </div>
       </section>
     </>
