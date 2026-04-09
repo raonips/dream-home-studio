@@ -10,31 +10,31 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.1"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
       condominio_tags: {
         Row: {
           created_at: string
-          descricao_seo: string
-          icone: string
+          descricao_seo: string | null
+          icone: string | null
           id: string
           nome: string
           slug: string
         }
         Insert: {
           created_at?: string
-          descricao_seo?: string
-          icone?: string
+          descricao_seo?: string | null
+          icone?: string | null
           id?: string
           nome: string
           slug: string
         }
         Update: {
           created_at?: string
-          descricao_seo?: string
-          icone?: string
+          descricao_seo?: string | null
+          icone?: string | null
           id?: string
           nome?: string
           slug?: string
@@ -43,151 +43,144 @@ export type Database = {
       }
       condominios: {
         Row: {
-          condominio_tags: string[]
-          created_at: string
-          description: string
-          featured_image: string
-          hero_image: string
+          condominio_tags: string[] | null
+          created_at: string | null
+          description: string | null
+          featured_image: string | null
+          hero_image: string | null
           id: string
-          images: string[]
+          images: string[] | null
           infrastructure: string[] | null
           latitude: number | null
-          location_filter: string
+          location_filter: string | null
           longitude: number | null
-          name: string
+          name: string | null
           seo_description: string | null
           seo_title: string | null
-          slug: string
-          thumbnail_url: string
-          updated_at: string
+          slug: string | null
+          thumbnail_url: string | null
+          updated_at: string | null
         }
         Insert: {
-          condominio_tags?: string[]
-          created_at?: string
-          description?: string
-          featured_image?: string
-          hero_image?: string
+          condominio_tags?: string[] | null
+          created_at?: string | null
+          description?: string | null
+          featured_image?: string | null
+          hero_image?: string | null
           id?: string
-          images?: string[]
+          images?: string[] | null
           infrastructure?: string[] | null
           latitude?: number | null
-          location_filter?: string
+          location_filter?: string | null
           longitude?: number | null
-          name: string
+          name?: string | null
           seo_description?: string | null
           seo_title?: string | null
-          slug: string
-          thumbnail_url?: string
-          updated_at?: string
+          slug?: string | null
+          thumbnail_url?: string | null
+          updated_at?: string | null
         }
         Update: {
-          condominio_tags?: string[]
-          created_at?: string
-          description?: string
-          featured_image?: string
-          hero_image?: string
+          condominio_tags?: string[] | null
+          created_at?: string | null
+          description?: string | null
+          featured_image?: string | null
+          hero_image?: string | null
           id?: string
-          images?: string[]
+          images?: string[] | null
           infrastructure?: string[] | null
           latitude?: number | null
-          location_filter?: string
+          location_filter?: string | null
           longitude?: number | null
-          name?: string
+          name?: string | null
           seo_description?: string | null
           seo_title?: string | null
-          slug?: string
-          thumbnail_url?: string
-          updated_at?: string
+          slug?: string | null
+          thumbnail_url?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }
       global_blocks: {
         Row: {
-          created_at: string
-          html_content: string
+          created_at: string | null
+          html_content: string | null
           id: string
-          is_active: boolean
-          target_pages: string[]
-          title: string
-          updated_at: string
+          is_active: boolean | null
+          target_p: string[] | null
+          target_pages: Json | null
+          title: string | null
+          updated_at: string | null
         }
         Insert: {
-          created_at?: string
-          html_content?: string
+          created_at?: string | null
+          html_content?: string | null
           id?: string
-          is_active?: boolean
-          target_pages?: string[]
-          title: string
-          updated_at?: string
+          is_active?: boolean | null
+          target_p?: string[] | null
+          target_pages?: Json | null
+          title?: string | null
+          updated_at?: string | null
         }
         Update: {
-          created_at?: string
-          html_content?: string
+          created_at?: string | null
+          html_content?: string | null
           id?: string
-          is_active?: boolean
-          target_pages?: string[]
-          title?: string
-          updated_at?: string
+          is_active?: boolean | null
+          target_p?: string[] | null
+          target_pages?: Json | null
+          title?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }
       leads: {
         Row: {
-          arquivado: boolean
-          condominio_id: string | null
-          created_at: string
+          arquivado: boolean | null
+          created_at: string | null
           email: string | null
-          geladeira: boolean
+          geladeira: boolean | null
           id: string
           intention: string | null
           is_read: boolean
           message: string | null
-          name: string
+          name: string | null
           phone: string | null
           property_id: string | null
           source: string | null
-          status: string
+          status: string | null
         }
         Insert: {
-          arquivado?: boolean
-          condominio_id?: string | null
-          created_at?: string
+          arquivado?: boolean | null
+          created_at?: string | null
           email?: string | null
-          geladeira?: boolean
+          geladeira?: boolean | null
           id?: string
           intention?: string | null
           is_read?: boolean
           message?: string | null
-          name: string
+          name?: string | null
           phone?: string | null
           property_id?: string | null
           source?: string | null
-          status?: string
+          status?: string | null
         }
         Update: {
-          arquivado?: boolean
-          condominio_id?: string | null
-          created_at?: string
+          arquivado?: boolean | null
+          created_at?: string | null
           email?: string | null
-          geladeira?: boolean
+          geladeira?: boolean | null
           id?: string
           intention?: string | null
           is_read?: boolean
           message?: string | null
-          name?: string
+          name?: string | null
           phone?: string | null
           property_id?: string | null
           source?: string | null
-          status?: string
+          status?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "leads_condominio_id_fkey"
-            columns: ["condominio_id"]
-            isOneToOne: false
-            referencedRelation: "condominios"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "leads_property_id_fkey"
             columns: ["property_id"]
@@ -199,220 +192,261 @@ export type Database = {
       }
       properties: {
         Row: {
-          area: number
-          bathrooms: number
-          bedrooms: number
-          cleaning_fee: number
+          area: number | null
+          bathrooms: number | null
+          bedrooms: number | null
+          cleaning_fee: number | null
           condominio_slug: string | null
-          created_at: string
-          daily_rate: number
-          description: string
-          featured_image: string
-          highlight_tag: string
-          ical_url: string
+          created_at: string | null
+          daily_rate: number | null
+          description: string | null
+          destaque: boolean | null
+          featured_image: string | null
+          highlight_tag: string | null
+          ical_url: string | null
           id: string
-          image_url: string
+          image_url: string | null
           images: string[] | null
-          is_featured: boolean
+          is_featured: boolean | null
           latitude: number | null
-          location: string
+          location: string | null
           longitude: number | null
-          map_privacy: string
-          max_guests: number
-          parking: number
-          partnership: string
-          price: number
-          price_formatted: string
-          property_type: string
+          map_privacy: string | null
+          max_guests: number | null
+          parking: number | null
+          partnership: string | null
+          price: number | null
+          price_formatted: string | null
+          property_type: string | null
           seo_description: string | null
           seo_title: string | null
-          slug: string
-          status: string
+          slug: string | null
+          status: string | null
           tags: string[] | null
-          thumbnail_url: string
-          title: string
-          transaction_type: string
-          updated_at: string
-          video_url: string
+          thumbnail_url: string | null
+          title: string | null
+          transaction_type: string | null
+          updated_at: string | null
+          video_url: string | null
         }
         Insert: {
-          area?: number
-          bathrooms?: number
-          bedrooms?: number
-          cleaning_fee?: number
+          area?: number | null
+          bathrooms?: number | null
+          bedrooms?: number | null
+          cleaning_fee?: number | null
           condominio_slug?: string | null
-          created_at?: string
-          daily_rate?: number
-          description?: string
-          featured_image?: string
-          highlight_tag?: string
-          ical_url?: string
+          created_at?: string | null
+          daily_rate?: number | null
+          description?: string | null
+          destaque?: boolean | null
+          featured_image?: string | null
+          highlight_tag?: string | null
+          ical_url?: string | null
           id?: string
-          image_url?: string
+          image_url?: string | null
           images?: string[] | null
-          is_featured?: boolean
+          is_featured?: boolean | null
           latitude?: number | null
-          location?: string
+          location?: string | null
           longitude?: number | null
-          map_privacy?: string
-          max_guests?: number
-          parking?: number
-          partnership?: string
-          price?: number
-          price_formatted?: string
-          property_type?: string
+          map_privacy?: string | null
+          max_guests?: number | null
+          parking?: number | null
+          partnership?: string | null
+          price?: number | null
+          price_formatted?: string | null
+          property_type?: string | null
           seo_description?: string | null
           seo_title?: string | null
-          slug: string
-          status?: string
+          slug?: string | null
+          status?: string | null
           tags?: string[] | null
-          thumbnail_url?: string
-          title: string
-          transaction_type?: string
-          updated_at?: string
-          video_url?: string
+          thumbnail_url?: string | null
+          title?: string | null
+          transaction_type?: string | null
+          updated_at?: string | null
+          video_url?: string | null
         }
         Update: {
-          area?: number
-          bathrooms?: number
-          bedrooms?: number
-          cleaning_fee?: number
+          area?: number | null
+          bathrooms?: number | null
+          bedrooms?: number | null
+          cleaning_fee?: number | null
           condominio_slug?: string | null
-          created_at?: string
-          daily_rate?: number
-          description?: string
-          featured_image?: string
-          highlight_tag?: string
-          ical_url?: string
+          created_at?: string | null
+          daily_rate?: number | null
+          description?: string | null
+          destaque?: boolean | null
+          featured_image?: string | null
+          highlight_tag?: string | null
+          ical_url?: string | null
           id?: string
-          image_url?: string
+          image_url?: string | null
           images?: string[] | null
-          is_featured?: boolean
+          is_featured?: boolean | null
           latitude?: number | null
-          location?: string
+          location?: string | null
           longitude?: number | null
-          map_privacy?: string
-          max_guests?: number
-          parking?: number
-          partnership?: string
-          price?: number
-          price_formatted?: string
-          property_type?: string
+          map_privacy?: string | null
+          max_guests?: number | null
+          parking?: number | null
+          partnership?: string | null
+          price?: number | null
+          price_formatted?: string | null
+          property_type?: string | null
           seo_description?: string | null
           seo_title?: string | null
-          slug?: string
-          status?: string
+          slug?: string | null
+          status?: string | null
           tags?: string[] | null
-          thumbnail_url?: string
-          title?: string
-          transaction_type?: string
-          updated_at?: string
-          video_url?: string
+          thumbnail_url?: string | null
+          title?: string | null
+          transaction_type?: string | null
+          updated_at?: string | null
+          video_url?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "properties_condominio_slug_fkey"
+            columns: ["condominio_slug"]
+            isOneToOne: false
+            referencedRelation: "condominios"
+            referencedColumns: ["slug"]
+          },
+        ]
       }
       site_settings: {
         Row: {
-          body_scripts: string
-          created_at: string
-          favicon_url: string
-          google_maps_api_key: string
-          head_scripts: string
-          hero_bg_desktop: string
-          hero_bg_mobile: string
-          hero_image_url: string
-          hero_subtitle: string
-          hero_title: string
+          address: string | null
+          body_scripts: string | null
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string | null
+          facebook_url: string | null
+          favicon_url: string | null
+          google_maps_api_key: string | null
+          head_scripts: string | null
+          header_logo_url: string | null
+          hero_bg_desktop: string | null
+          hero_bg_mobile: string | null
+          hero_desktop_low: string
+          hero_image_url: string | null
+          hero_mobile_low: string
+          hero_subtitle: string | null
+          hero_title: string | null
           id: string
-          instagram_url: string
-          logo_url: string
-          map_provider: string
-          og_image_url: string
-          site_description: string
-          site_keywords: string
-          site_title: string
-          updated_at: string
-          watermark_opacity: number
-          watermark_position: string
-          watermark_scale: number
-          watermark_url: string
+          instagram_url: string | null
+          logo_url: string | null
+          map_provider: string | null
+          og_image_url: string | null
+          primary_color: string | null
+          site_description: string | null
+          site_keywords: string | null
+          site_name: string | null
+          site_title: string | null
+          updated_at: string | null
+          watermark_opacity: number | null
+          watermark_position: string | null
+          watermark_scale: number | null
+          watermark_url: string | null
           whatsapp_number: string
+          youtube_url: string | null
         }
         Insert: {
-          body_scripts?: string
-          created_at?: string
-          favicon_url?: string
-          google_maps_api_key?: string
-          head_scripts?: string
-          hero_bg_desktop?: string
-          hero_bg_mobile?: string
-          hero_image_url?: string
-          hero_subtitle?: string
-          hero_title?: string
+          address?: string | null
+          body_scripts?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string | null
+          facebook_url?: string | null
+          favicon_url?: string | null
+          google_maps_api_key?: string | null
+          head_scripts?: string | null
+          header_logo_url?: string | null
+          hero_bg_desktop?: string | null
+          hero_bg_mobile?: string | null
+          hero_desktop_low?: string
+          hero_image_url?: string | null
+          hero_mobile_low?: string
+          hero_subtitle?: string | null
+          hero_title?: string | null
           id?: string
-          instagram_url?: string
-          logo_url?: string
-          map_provider?: string
-          og_image_url?: string
-          site_description?: string
-          site_keywords?: string
-          site_title?: string
-          updated_at?: string
-          watermark_opacity?: number
-          watermark_position?: string
-          watermark_scale?: number
-          watermark_url?: string
+          instagram_url?: string | null
+          logo_url?: string | null
+          map_provider?: string | null
+          og_image_url?: string | null
+          primary_color?: string | null
+          site_description?: string | null
+          site_keywords?: string | null
+          site_name?: string | null
+          site_title?: string | null
+          updated_at?: string | null
+          watermark_opacity?: number | null
+          watermark_position?: string | null
+          watermark_scale?: number | null
+          watermark_url?: string | null
           whatsapp_number?: string
+          youtube_url?: string | null
         }
         Update: {
-          body_scripts?: string
-          created_at?: string
-          favicon_url?: string
-          google_maps_api_key?: string
-          head_scripts?: string
-          hero_bg_desktop?: string
-          hero_bg_mobile?: string
-          hero_image_url?: string
-          hero_subtitle?: string
-          hero_title?: string
+          address?: string | null
+          body_scripts?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string | null
+          facebook_url?: string | null
+          favicon_url?: string | null
+          google_maps_api_key?: string | null
+          head_scripts?: string | null
+          header_logo_url?: string | null
+          hero_bg_desktop?: string | null
+          hero_bg_mobile?: string | null
+          hero_desktop_low?: string
+          hero_image_url?: string | null
+          hero_mobile_low?: string
+          hero_subtitle?: string | null
+          hero_title?: string | null
           id?: string
-          instagram_url?: string
-          logo_url?: string
-          map_provider?: string
-          og_image_url?: string
-          site_description?: string
-          site_keywords?: string
-          site_title?: string
-          updated_at?: string
-          watermark_opacity?: number
-          watermark_position?: string
-          watermark_scale?: number
-          watermark_url?: string
+          instagram_url?: string | null
+          logo_url?: string | null
+          map_provider?: string | null
+          og_image_url?: string | null
+          primary_color?: string | null
+          site_description?: string | null
+          site_keywords?: string | null
+          site_name?: string | null
+          site_title?: string | null
+          updated_at?: string | null
+          watermark_opacity?: number | null
+          watermark_position?: string | null
+          watermark_scale?: number | null
+          watermark_url?: string | null
           whatsapp_number?: string
+          youtube_url?: string | null
         }
         Relationships: []
       }
       tags: {
         Row: {
           created_at: string
-          descricao_seo: string
-          icone: string
+          descricao_seo: string | null
+          icone: string | null
           id: string
           nome: string
           slug: string
         }
         Insert: {
           created_at?: string
-          descricao_seo?: string
-          icone?: string
+          descricao_seo?: string | null
+          icone?: string | null
           id?: string
           nome: string
           slug: string
         }
         Update: {
           created_at?: string
-          descricao_seo?: string
-          icone?: string
+          descricao_seo?: string | null
+          icone?: string | null
           id?: string
           nome?: string
           slug?: string
@@ -421,16 +455,19 @@ export type Database = {
       }
       user_roles: {
         Row: {
+          created_at: string | null
           id: string
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Insert: {
+          created_at?: string | null
           id?: string
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Update: {
+          created_at?: string | null
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
@@ -442,13 +479,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
+      has_role:
+        | {
+            Args: {
+              _role: Database["public"]["Enums"]["app_role"]
+              _user_id: string
+            }
+            Returns: boolean
+          }
+        | { Args: { target_role: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "user"
