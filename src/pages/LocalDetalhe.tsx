@@ -116,6 +116,9 @@ const LocalDetalhe = () => {
   const GRID_MAX = 6;
   const gridPhotos = galleryImages.slice(0, GRID_MAX);
   const extraPhotos = galleryImages.length - GRID_MAX;
+  const normalizedDescriptionHtml = local.descricao
+    ?.replace(/&nbsp;/gi, " ")
+    .replace(/\u00A0/g, " ");
 
   const openLightbox = (index: number) => {
     setLightboxIndex(index);
@@ -175,7 +178,7 @@ const LocalDetalhe = () => {
           <div className="grid md:grid-cols-[1fr_320px] gap-8 overflow-hidden">
             {/* ── Main Content ── */}
             <div className="min-w-0 space-y-8">
-              {local.descricao && (
+              {normalizedDescriptionHtml && (
                 <div
                   className="
                     prose prose-lg max-w-[75ch] text-left
@@ -188,8 +191,8 @@ const LocalDetalhe = () => {
                     prose-li:text-muted-foreground prose-li:leading-[1.7]
                     prose-ul:my-4 prose-ol:my-4
                   "
-                  style={{ overflowWrap: 'break-word', wordBreak: 'normal', hyphens: 'none' }}
-                  dangerouslySetInnerHTML={{ __html: local.descricao }}
+                  style={{ overflowWrap: 'normal', wordBreak: 'normal', hyphens: 'none', whiteSpace: 'normal' }}
+                  dangerouslySetInnerHTML={{ __html: normalizedDescriptionHtml }}
                 />
               )}
 
