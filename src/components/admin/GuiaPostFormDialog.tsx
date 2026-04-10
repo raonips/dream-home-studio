@@ -50,6 +50,7 @@ const GuiaPostFormDialog = ({ open, onOpenChange, post, categorias, onSaved }: P
   });
   const [saving, setSaving] = useState(false);
   const [localSelectorOpen, setLocalSelectorOpen] = useState(false);
+  const quillRef = useRef<any>(null);
   const { toast } = useToast();
 
   useEffect(() => {
