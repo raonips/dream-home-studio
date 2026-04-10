@@ -461,6 +461,7 @@ export type Database = {
           imagem_destaque: string | null
           imagens: string[] | null
           latitude: number | null
+          logo_url: string | null
           longitude: number | null
           nome: string
           ordem: number | null
@@ -486,6 +487,7 @@ export type Database = {
           imagem_destaque?: string | null
           imagens?: string[] | null
           latitude?: number | null
+          logo_url?: string | null
           longitude?: number | null
           nome: string
           ordem?: number | null
@@ -511,6 +513,7 @@ export type Database = {
           imagem_destaque?: string | null
           imagens?: string[] | null
           latitude?: number | null
+          logo_url?: string | null
           longitude?: number | null
           nome?: string
           ordem?: number | null
