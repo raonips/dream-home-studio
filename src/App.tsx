@@ -52,6 +52,7 @@ const AdminGuiaSiteConfig = lazy(() => import("./pages/admin/AdminGuiaSiteConfig
 const AdminGuiaSeoSettings = lazy(() => import("./pages/admin/AdminGuiaSeoSettings"));
 const AdminLocais = lazy(() => import("./pages/admin/AdminLocais"));
 const AdminAdTemplates = lazy(() => import("./pages/admin/AdminAdTemplates"));
+const MapaGeral = lazy(() => import("./pages/MapaGeral"));
 
 // Lazy-loaded layout pieces below the fold
 const SiteFooter = lazy(() => import("@/components/SiteFooter"));
@@ -133,6 +134,7 @@ const App = () => (
                         <Route path="/" element={<GuiaHome />} />
                         <Route path="/guia/categoria/:slug" element={<GuiaCategoriaPage />} />
                         <Route path="/busca" element={<BuscaPage />} />
+                        <Route path="/mapa" element={<MapaGeral />} />
 
                         {/* Imóveis — moved under /imoveis */}
                         <Route path="/imoveis" element={<Index />} />
