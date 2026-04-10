@@ -37,6 +37,7 @@ export interface LocalRow {
   banner_publicidade?: string | null;
   seo_title?: string | null;
   seo_description?: string | null;
+  logo_url?: string | null;
 }
 
 const CATEGORIAS = [
