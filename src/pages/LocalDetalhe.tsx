@@ -178,10 +178,11 @@ const LocalDetalhe = () => {
           <div className="grid md:grid-cols-[1fr_320px] gap-8 overflow-hidden">
             {/* ── Main Content ── */}
             <div className="min-w-0 space-y-8">
-              {normalizedDescriptionHtml && (
-                <div
+              {local.descricao && (
+                <SafeHtmlContent
+                  html={local.descricao}
                   className="
-                    prose prose-lg max-w-[75ch] text-left
+                    text-left
                     prose-headings:font-display prose-headings:text-foreground prose-headings:tracking-tight
                     prose-h2:text-2xl prose-h2:font-bold prose-h2:mt-10 prose-h2:mb-4
                     prose-h3:text-xl prose-h3:font-semibold prose-h3:mt-8 prose-h3:mb-3
@@ -191,8 +192,6 @@ const LocalDetalhe = () => {
                     prose-li:text-muted-foreground prose-li:leading-[1.7]
                     prose-ul:my-4 prose-ol:my-4
                   "
-                  style={{ overflowWrap: 'normal', wordBreak: 'normal', hyphens: 'none', whiteSpace: 'normal' }}
-                  dangerouslySetInnerHTML={{ __html: normalizedDescriptionHtml }}
                 />
               )}
 

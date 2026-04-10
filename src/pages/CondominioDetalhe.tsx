@@ -298,10 +298,9 @@ const CondominioDetalhe = () => {
               ))}
             </div>
           )}
-          <div
-className="prose prose-description max-w-[85ch] mx-auto text-center break-words whitespace-normal overflow-hidden"
-            style={{ wordBreak: 'normal', overflowWrap: 'break-word' }}
-            dangerouslySetInnerHTML={{ __html: condo.description || "<p>Condomínio fechado com infraestrutura completa, segurança 24h e localização privilegiada.</p>" }}
+          <SafeHtmlContent
+            html={condo.description || "<p>Condomínio fechado com infraestrutura completa, segurança 24h e localização privilegiada.</p>"}
+            className="prose-description max-w-[85ch] mx-auto text-center"
           />
         </div>
       </section>

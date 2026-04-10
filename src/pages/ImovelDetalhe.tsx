@@ -667,10 +667,9 @@ const ImovelDetalhe = () => {
               {/* Description */}
               <div>
                 <h2 className="font-display text-2xl font-bold text-foreground mb-4">Sobre o Imóvel</h2>
-                <div
-className="prose prose-description max-w-[85ch] mx-auto whitespace-normal overflow-hidden break-words"
-                  style={{ wordBreak: 'normal', overflowWrap: 'break-word' }}
-                  dangerouslySetInnerHTML={{ __html: property.description }}
+                <SafeHtmlContent
+                  html={property.description}
+                  className="prose-description max-w-[85ch] mx-auto"
                 />
               </div>
 
@@ -691,10 +690,9 @@ className="prose prose-description max-w-[85ch] mx-auto whitespace-normal overfl
                     </div>
                   </div>
 
-                  <div
-className="prose prose-description max-w-[85ch] mx-auto whitespace-normal overflow-hidden break-words"
-                    style={{ wordBreak: 'normal', overflowWrap: 'break-word' }}
-                    dangerouslySetInnerHTML={{ __html: condo.description }}
+                  <SafeHtmlContent
+                    html={condo.description}
+                    className="prose-description max-w-[85ch] mx-auto"
                   />
 
                   {infra.length > 0 && (

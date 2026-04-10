@@ -158,9 +158,9 @@ const GuiaPostDetalhe = () => {
 
           {/* Content */}
           {post.conteudo && (
-            <div
-              className="prose prose-lg max-w-none dark:prose-invert"
-              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.conteudo) }}
+            <SafeHtmlContent
+              html={post.conteudo}
+              className="max-w-none dark:prose-invert"
             />
           )}
 
