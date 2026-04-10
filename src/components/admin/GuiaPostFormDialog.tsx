@@ -143,7 +143,7 @@ const GuiaPostFormDialog = ({ open, onOpenChange, post, categorias, onSaved }: P
             }}
           />
 
-
+          <GuiaImageUploadField
             label="Imagem Destaque"
             value={form.imagem_destaque}
             onChange={(url) => setForm({ ...form, imagem_destaque: url })}
