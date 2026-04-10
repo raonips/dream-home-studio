@@ -1,12 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Pencil, Trash2, Loader2, Save, X } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, Save, Upload, Link2, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Progress } from "@/components/ui/progress";
 
 interface GuiaCategoria {
   id: string;
@@ -20,6 +21,134 @@ interface GuiaCategoria {
 
 const slugify = (text: string) =>
   text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+
+const BUCKET = "categorias";
+
+/* ── Image Upload Field ── */
+function ImageUploadField({ value, onChange }: { value: string; onChange: (url: string) => void }) {
+  const [mode, setMode] = useState<"upload" | "link">("upload");
+  const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
+
+  const handleFile = useCallback(async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast({ variant: "destructive", title: "Selecione uma imagem válida" });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ variant: "destructive", title: "Imagem muito grande (máx 5MB)" });
+      return;
+    }
+
+    setUploading(true);
+    setProgress(10);
+
+    const ext = file.name.split(".").pop() || "jpg";
+    const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+
+    setProgress(30);
+    const { error } = await supabase.storage.from(BUCKET).upload(path, file, { upsert: false });
+    setProgress(80);
+
+    if (error) {
+      toast({ variant: "destructive", title: "Erro no upload", description: error.message });
+      setUploading(false);
+      setProgress(0);
+      return;
+    }
+
+    const { data: { publicUrl } } = supabase.storage.from(BUCKET).getPublicUrl(path);
+    setProgress(100);
+    onChange(publicUrl);
+    setTimeout(() => { setUploading(false); setProgress(0); }, 400);
+  }, [onChange, toast]);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file) handleFile(file);
+  }, [handleFile]);
+
+  const removeImage = useCallback(() => {
+    onChange("");
+    if (inputRef.current) inputRef.current.value = "";
+  }, [onChange]);
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <Label>Imagem da Categoria</Label>
+        <div className="flex gap-1">
+          <button
+            type="button"
+            onClick={() => setMode("upload")}
+            className={`text-xs px-2 py-1 rounded ${mode === "upload" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
+          >
+            <Upload className="h-3 w-3 inline mr-1" />Upload
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode("link")}
+            className={`text-xs px-2 py-1 rounded ${mode === "link" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
+          >
+            <Link2 className="h-3 w-3 inline mr-1" />Link
+          </button>
+        </div>
+      </div>
+
+      {/* Preview */}
+      {value && (
+        <div className="relative rounded-lg overflow-hidden border border-border aspect-video max-w-[220px]">
+          <img src={value} alt="Preview" className="w-full h-full object-cover" />
+          <button
+            type="button"
+            onClick={removeImage}
+            className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1 hover:bg-destructive/90"
+          >
+            <X className="h-3 w-3" />
+          </button>
+        </div>
+      )}
+
+      {mode === "link" ? (
+        <Input
+          placeholder="https://exemplo.com/imagem.jpg"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+        />
+      ) : (
+        <>
+          <div
+            className="border-2 border-dashed border-input rounded-lg p-4 text-center cursor-pointer hover:border-primary transition-colors"
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={handleDrop}
+            onClick={() => !uploading && inputRef.current?.click()}
+          >
+            {uploading ? (
+              <Loader2 className="h-5 w-5 mx-auto text-primary animate-spin mb-1" />
+            ) : (
+              <Upload className="h-5 w-5 mx-auto text-muted-foreground mb-1" />
+            )}
+            <p className="text-xs text-muted-foreground">
+              {uploading ? "Enviando..." : "Clique ou arraste uma imagem"}
+            </p>
+            <input
+              ref={inputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              disabled={uploading}
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
+            />
+          </div>
+          {uploading && <Progress value={progress} className="h-1.5" />}
+        </>
+      )}
+    </div>
+  );
+}
 
 const AdminGuiaCategorias = () => {
   const [categorias, setCategorias] = useState<GuiaCategoria[]>([]);
@@ -104,9 +233,14 @@ const AdminGuiaCategorias = () => {
           {categorias.map((cat) => (
             <Card key={cat.id}>
               <CardContent className="flex items-center justify-between p-4">
-                <div>
-                  <span className="font-semibold">{cat.icone && `${cat.icone} `}{cat.nome}</span>
-                  <span className="text-xs text-muted-foreground ml-2">/{cat.slug}</span>
+                <div className="flex items-center gap-3">
+                  {cat.imagem && (
+                    <img src={cat.imagem} alt="" className="h-10 w-10 rounded-md object-cover" />
+                  )}
+                  <div>
+                    <span className="font-semibold">{cat.icone && `${cat.icone} `}{cat.nome}</span>
+                    <span className="text-xs text-muted-foreground ml-2">/{cat.slug}</span>
+                  </div>
                 </div>
                 <div className="flex gap-2">
                   <Button size="icon" variant="outline" onClick={() => openEdit(cat)}><Pencil className="h-4 w-4" /></Button>
@@ -127,12 +261,7 @@ const AdminGuiaCategorias = () => {
             <div><Label>Nome</Label><Input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value, slug: slugify(e.target.value) })} /></div>
             <div><Label>Slug</Label><Input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} /></div>
             <div><Label>Descrição</Label><Input value={form.descricao} onChange={(e) => setForm({ ...form, descricao: e.target.value })} /></div>
-            <div><Label>Imagem da Categoria (URL)</Label><Input placeholder="https://exemplo.com/imagem.jpg" value={form.imagem} onChange={(e) => setForm({ ...form, imagem: e.target.value })} /></div>
-            {form.imagem && (
-              <div className="rounded-lg overflow-hidden border border-border aspect-video max-w-[200px]">
-                <img src={form.imagem} alt="Preview" className="w-full h-full object-cover" />
-              </div>
-            )}
+            <ImageUploadField value={form.imagem} onChange={(url) => setForm({ ...form, imagem: url })} />
             <div className="flex gap-4">
               <div className="flex-1"><Label>Ícone (emoji)</Label><Input value={form.icone} onChange={(e) => setForm({ ...form, icone: e.target.value })} /></div>
               <div className="w-24"><Label>Ordem</Label><Input type="number" value={form.ordem} onChange={(e) => setForm({ ...form, ordem: parseInt(e.target.value) || 0 })} /></div>
