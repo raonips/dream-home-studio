@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { Helmet } from "react-helmet-async";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Search, MapPin, Loader2, X, Filter,
@@ -90,11 +90,23 @@ const CATEGORIA_COLORS: Record<string, string> = {
 const DEFAULT_CENTER: [number, number] = [-12.695, -38.14];
 const DEFAULT_ZOOM = 13;
 
+// Maps URL category groups to individual DB categories
+const CATEGORIA_GROUP_MAP: Record<string, string[]> = {
+  gastronomia: ["restaurante", "padaria", "gastronomia"],
+  hospedagem: ["hospedagem"],
+  utilidade: ["utilidade", "gas", "limpeza", "farmacia", "saude", "mercado"],
+  condominio: ["condominio"],
+};
+
 const MapaGeral = () => {
+  const [searchParams] = useSearchParams();
+  const initialCategoria = searchParams.get("categoria");
+  const condominioFilter = searchParams.get("condominio");
+
   const [allLocais, setAllLocais] = useState<MapLocal[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [selectedCategoria, setSelectedCategoria] = useState<string | null>(null);
+  const [selectedCategoria, setSelectedCategoria] = useState<string | null>(initialCategoria);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const mapRef = useRef<HTMLDivElement>(null);
@@ -135,7 +147,20 @@ const MapaGeral = () => {
 
   const filtered = useMemo(() => {
     let items = allLocais;
-    if (selectedCategoria) items = items.filter(l => l.categoria === selectedCategoria);
+
+    // Condomínio filter from URL takes priority
+    if (condominioFilter) {
+      items = items.filter(l => l.slug === condominioFilter);
+    } else if (selectedCategoria) {
+      // Check if this is a category group (e.g. "gastronomia" → ["restaurante","padaria","gastronomia"])
+      const groupCats = CATEGORIA_GROUP_MAP[selectedCategoria];
+      if (groupCats) {
+        items = items.filter(l => groupCats.includes(l.categoria));
+      } else {
+        items = items.filter(l => l.categoria === selectedCategoria);
+      }
+    }
+
     if (search.trim()) {
       const s = search.toLowerCase();
       items = items.filter(l => l.nome.toLowerCase().includes(s) || l.endereco?.toLowerCase().includes(s));
@@ -172,7 +197,7 @@ const MapaGeral = () => {
     if (!markersRef.current || !mapInstanceRef.current) return;
     markersRef.current.clearLayers();
 
-    const isFiltered = !!selectedCategoria;
+    const isFiltered = !!selectedCategoria || !!condominioFilter;
 
     withCoords.forEach((local) => {
       const color = CATEGORIA_COLORS[local.categoria] || "#6b7280";
@@ -241,7 +266,7 @@ const MapaGeral = () => {
       const bounds = L.latLngBounds(withCoords.map(l => [l.latitude!, l.longitude!] as [number, number]));
       mapInstanceRef.current.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
     }
-  }, [withCoords, selectedCategoria]);
+  }, [withCoords, selectedCategoria, condominioFilter]);
 
   return (
     <>
