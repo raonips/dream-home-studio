@@ -204,7 +204,7 @@ const LocalDetalhe = () => {
 
             {/* ── Sidebar ── */}
             <div className="flex flex-col gap-6">
-              {((local.endereco || local.telefone || local.horario_funcionamento || local.website || local.whatsapp || local.google_maps_link) || galleryImages.length >= 3) && (
+              {((local.endereco || local.telefone || local.horario_funcionamento || local.website || local.whatsapp || local.google_maps_link || local.logo_url) || galleryImages.length >= 3) && (
                 <div className="flex flex-col gap-6 md:sticky md:top-24 md:self-start">
 {(local.endereco || local.telefone || local.horario_funcionamento || local.website || local.whatsapp || local.google_maps_link || local.logo_url) && (
                     <div className="bg-card rounded-xl border border-border p-6 space-y-4">
