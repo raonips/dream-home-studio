@@ -464,6 +464,8 @@ export type Database = {
           longitude: number | null
           nome: string
           ordem: number | null
+          seo_description: string | null
+          seo_title: string | null
           slug: string
           telefone: string | null
           updated_at: string
@@ -487,6 +489,8 @@ export type Database = {
           longitude?: number | null
           nome: string
           ordem?: number | null
+          seo_description?: string | null
+          seo_title?: string | null
           slug: string
           telefone?: string | null
           updated_at?: string
@@ -510,6 +514,8 @@ export type Database = {
           longitude?: number | null
           nome?: string
           ordem?: number | null
+          seo_description?: string | null
+          seo_title?: string | null
           slug?: string
           telefone?: string | null
           updated_at?: string
