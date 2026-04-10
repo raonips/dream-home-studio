@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
-import { MapPin, Phone, Clock, Globe, ExternalLink, ArrowLeft } from "lucide-react";
+import { MapPin, Phone, Clock, Globe, ExternalLink, ArrowLeft, Camera } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
