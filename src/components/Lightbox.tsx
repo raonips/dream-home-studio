@@ -33,7 +33,7 @@ const Lightbox = ({ images, initialIndex = 0, open, onClose }: LightboxProps) =>
   if (!open || images.length === 0) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center" onClick={onClose}>
+    <div className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center" onClick={onClose}>
       {/* Close */}
       <button
         onClick={onClose}
