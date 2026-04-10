@@ -9,7 +9,7 @@ import {
   BreadcrumbPage, BreadcrumbSeparator
 } from "@/components/ui/breadcrumb";
 import SafeImage from "@/components/SafeImage";
-import SafeHtmlContent from "@/components/SafeHtmlContent";
+import PostContentRenderer from "@/components/PostContentRenderer";
 
 interface GuiaPost {
   id: string;
