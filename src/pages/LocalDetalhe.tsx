@@ -192,6 +192,38 @@ const LocalDetalhe = () => {
                 </div>
               )}
             </div>
+          </div>
+
+          {/* ── Photo Gallery (same style as Condomínios) ── */}
+          {galleryImages.length > 0 && (
+            <div className="mt-12">
+              <h2 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-8 text-center">
+                Fotos de {local.nome}
+              </h2>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {gridPhotos.map((img, i) => (
+                  <div
+                    key={i}
+                    className="relative aspect-[4/3] rounded-xl overflow-hidden cursor-pointer group"
+                    onClick={() => openLightbox(i)}
+                  >
+                    <img
+                      src={img}
+                      alt={`${local.nome} - foto ${i + 1}`}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      loading="lazy"
+                    />
+                    {i === gridPhotos.length - 1 && extraPhotos > 0 && (
+                      <div className="absolute inset-0 bg-foreground/40 flex items-center justify-center gap-2 text-primary-foreground font-semibold text-sm group-hover:bg-foreground/50 transition-colors">
+                        <Camera className="h-5 w-5" />
+                        +{extraPhotos} fotos
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )
 
             {/* ── Sidebar ── */}
             <div className="space-y-4">
