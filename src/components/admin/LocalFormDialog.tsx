@@ -78,6 +78,7 @@ const LocalFormDialog = ({ open, onOpenChange, editing, onSuccess }: Props) => {
     seo_title: '', seo_description: '',
     latitude: DEFAULT_LAT, longitude: DEFAULT_LNG,
     url_vendas: '', banner_publicidade: '',
+    logo_url: '',
   });
 
   useEffect(() => {
