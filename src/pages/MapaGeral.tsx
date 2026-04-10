@@ -147,7 +147,20 @@ const MapaGeral = () => {
 
   const filtered = useMemo(() => {
     let items = allLocais;
-    if (selectedCategoria) items = items.filter(l => l.categoria === selectedCategoria);
+
+    // Condomínio filter from URL takes priority
+    if (condominioFilter) {
+      items = items.filter(l => l.slug === condominioFilter);
+    } else if (selectedCategoria) {
+      // Check if this is a category group (e.g. "gastronomia" → ["restaurante","padaria","gastronomia"])
+      const groupCats = CATEGORIA_GROUP_MAP[selectedCategoria];
+      if (groupCats) {
+        items = items.filter(l => groupCats.includes(l.categoria));
+      } else {
+        items = items.filter(l => l.categoria === selectedCategoria);
+      }
+    }
+
     if (search.trim()) {
       const s = search.toLowerCase();
       items = items.filter(l => l.nome.toLowerCase().includes(s) || l.endereco?.toLowerCase().includes(s));
