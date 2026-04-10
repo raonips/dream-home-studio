@@ -10,9 +10,10 @@ import RichTextEditor from '@/components/admin/RichTextEditor';
 import ImageGalleryUpload from '@/components/admin/ImageGalleryUpload';
 import GuiaImageUploadField from '@/components/admin/GuiaImageUploadField';
 import SmartMap from '@/components/SmartMap';
-import { Loader2, FileText, Settings, MapPin, Phone } from 'lucide-react';
+import { Loader2, FileText, Settings, MapPin, Phone, Image, Download, Link } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { toast as sonnerToast } from 'sonner';
 
 export interface LocalRow {
   id: string;
