@@ -2,8 +2,9 @@ import { useState, useEffect } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, ArrowRight, Search, MapPin } from "lucide-react";
+import { Loader2, ArrowRight, MapPin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import SmartSearch from "@/components/SmartSearch";
 import SafeImage from "@/components/SafeImage";
 import { type PropertyData } from "@/components/PropertyCard";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
@@ -61,7 +62,7 @@ const GuiaHome = () => {
   const [loading, setLoading] = useState(true);
   const [properties, setProperties] = useState<PropertyData[]>([]);
   const [propsLoading, setPropsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
+  // searchQuery state removed — SmartSearch handles it internally
   const settings = useSiteSettings();
   const navigate = useNavigate();
 

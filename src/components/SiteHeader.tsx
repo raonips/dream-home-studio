@@ -4,6 +4,7 @@ import { Menu, X, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import logoDefault from "@/assets/site-logo-imoveis-barra-do-jacuipe.webp";
+import SmartSearch from "@/components/SmartSearch";
 
 interface NavItem {
   label: string;
@@ -144,16 +145,21 @@ const SiteHeader = () => {
               </Link>
             )
           )}
+          {/* Search icon in header */}
+          <SmartSearch variant="header" />
         </nav>
 
-        {/* Mobile toggle */}
-        <button
-          onClick={() => setMobileOpen(!mobileOpen)}
-          className="md:hidden p-2 text-foreground"
-          aria-label="Menu"
-        >
-          {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-        </button>
+        {/* Mobile: search + menu toggle */}
+        <div className="flex items-center gap-1 md:hidden">
+          <SmartSearch variant="header" />
+          <button
+            onClick={() => setMobileOpen(!mobileOpen)}
+            className="p-2 text-foreground"
+            aria-label="Menu"
+          >
+            {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile nav */}
