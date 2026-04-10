@@ -29,6 +29,7 @@ interface Local {
   longitude: number | null;
   url_vendas: string | null;
   banner_publicidade: string | null;
+  logo_url: string | null;
 }
 
 interface AdTemplate {
