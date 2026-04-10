@@ -1,19 +1,20 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Search, MapPin, Loader2, X, Filter,
   Store, UtensilsCrossed, Hotel, Home, Pill,
-  Flame, SprayCan, Heart, Building2, ChevronLeft, ChevronRight
+  Flame, SprayCan, Heart, Building2, KeyRound, DollarSign
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import SafeImage from "@/components/SafeImage";
-import SmartMap from "@/components/SmartMap";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+
+/* ────────── Types ────────── */
 
 interface MapLocal {
   id: string;
@@ -28,6 +29,25 @@ interface MapLocal {
   longitude: number | null;
   tipo: "local" | "condominio";
 }
+
+interface MapProperty {
+  id: string;
+  title: string | null;
+  slug: string | null;
+  transaction_type: string | null;
+  featured_image: string | null;
+  thumbnail_url: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  bedrooms: number | null;
+  bathrooms: number | null;
+  price: number | null;
+  price_formatted: string | null;
+  condominio_slug: string | null;
+  location: string | null;
+}
+
+/* ────────── Constants ────────── */
 
 const CATEGORIA_LABELS: Record<string, string> = {
   condominio: "Condomínio",
@@ -57,7 +77,6 @@ const CATEGORIA_ICONS: Record<string, React.ElementType> = {
   gastronomia: UtensilsCrossed,
 };
 
-// SVG paths for map markers (Lucide-style, 24x24 viewBox)
 const CATEGORIA_SVG_PATHS: Record<string, string> = {
   condominio: '<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
   mercado: '<path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/><path d="M22 7v3a2 2 0 0 1-2 2a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12a2 2 0 0 1-2-2V7"/>',
@@ -86,17 +105,17 @@ const CATEGORIA_COLORS: Record<string, string> = {
   gastronomia: "#f97316",
 };
 
-// Center of Barra do Jacuípe
 const DEFAULT_CENTER: [number, number] = [-12.695, -38.14];
 const DEFAULT_ZOOM = 13;
 
-// Maps URL category groups to individual DB categories
 const CATEGORIA_GROUP_MAP: Record<string, string[]> = {
   gastronomia: ["restaurante", "padaria", "gastronomia"],
   hospedagem: ["hospedagem"],
   utilidade: ["utilidade", "gas", "limpeza", "farmacia", "saude", "mercado"],
   condominio: ["condominio"],
 };
+
+/* ────────── Component ────────── */
 
 const MapaGeral = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -106,24 +125,30 @@ const MapaGeral = () => {
   const localFilter = searchParams.get("local");
 
   const [allLocais, setAllLocais] = useState<MapLocal[]>([]);
+  const [allProperties, setAllProperties] = useState<MapProperty[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [selectedCategoria, setSelectedCategoria] = useState<string | null>(initialCategoria);
+  const [showVenda, setShowVenda] = useState(false);
+  const [showTemporada, setShowTemporada] = useState(false);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  // When user clicks a condo popup button → show its properties on map
+  const [condoPropertyFilter, setCondoPropertyFilter] = useState<{ slug: string; type: "venda" | "temporada" } | null>(null);
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.LayerGroup | null>(null);
 
-  // Determine if we have a single-item focus (condominio or local slug)
   const singleSlugFilter = condominioFilter || localFilter;
   const hasUrlFilter = !!singleSlugFilter || !!initialCategoria;
 
+  /* ── Fetch data ── */
   useEffect(() => {
     const fetchAll = async () => {
-      const [locaisRes, condominiosRes] = await Promise.all([
+      const [locaisRes, condominiosRes, propertiesRes] = await Promise.all([
         supabase.from("locais").select("id,nome,slug,descricao,categoria,imagem_destaque,logo_url,endereco,latitude,longitude").eq("ativo", true),
         supabase.from("condominios").select("id,name,slug,description,featured_image,thumbnail_url,latitude,longitude"),
+        supabase.from("properties").select("id,title,slug,transaction_type,featured_image,thumbnail_url,latitude,longitude,bedrooms,bathrooms,price,price_formatted,condominio_slug,location").eq("status", "active"),
       ]);
 
       const locais: MapLocal[] = (locaisRes.data || []).map((l: any) => ({
@@ -141,20 +166,36 @@ const MapaGeral = () => {
       }));
 
       setAllLocais([...locais, ...condominios]);
+      setAllProperties(propertiesRes.data || []);
       setLoading(false);
     };
     fetchAll();
   }, []);
 
+  /* ── Smart search: auto-enable property filters when searching property-like terms ── */
+  const isPropertySearch = useMemo(() => {
+    if (!search.trim()) return false;
+    const s = search.toLowerCase();
+    const propertyTerms = ["casa", "terreno", "apartamento", "apto", "quarto", "quartos", "suite", "suíte", "venda", "temporada", "aluguel", "imóvel", "imovel"];
+    return propertyTerms.some(t => s.includes(t));
+  }, [search]);
+
+  /* ── Guia categories (excluding property types) ── */
   const categorias = useMemo(() => {
     const cats = new Set(allLocais.map(l => l.categoria));
     return Array.from(cats).sort();
   }, [allLocais]);
 
-  const filtered = useMemo(() => {
+  /* ── Filtered Guia items ── */
+  const filteredLocais = useMemo(() => {
     let items = allLocais;
 
-    // Single-item filters: condominio or local slug → show ONLY that item
+    // If condoPropertyFilter is active, hide guia items
+    if (condoPropertyFilter) return [];
+
+    // If smart search activated properties, hide guia
+    if (isPropertySearch) return [];
+
     if (localFilter) {
       items = items.filter(l => l.slug === localFilter);
     } else if (condominioFilter) {
@@ -168,16 +209,92 @@ const MapaGeral = () => {
       }
     }
 
-    if (search.trim()) {
+    if (search.trim() && !isPropertySearch) {
       const s = search.toLowerCase();
       items = items.filter(l => l.nome.toLowerCase().includes(s) || l.endereco?.toLowerCase().includes(s));
     }
     return items;
-  }, [allLocais, selectedCategoria, search, condominioFilter, localFilter]);
+  }, [allLocais, selectedCategoria, search, condominioFilter, localFilter, isPropertySearch, condoPropertyFilter]);
 
-  const withCoords = useMemo(() => filtered.filter(l => l.latitude && l.longitude), [filtered]);
+  /* ── Filtered Properties ── */
+  const filteredProperties = useMemo(() => {
+    // Condo popup → show properties of that condo with matching type
+    if (condoPropertyFilter) {
+      const txType = condoPropertyFilter.type === "venda" ? "venda" : "temporada";
+      return allProperties.filter(p =>
+        p.condominio_slug === condoPropertyFilter.slug &&
+        p.transaction_type === txType &&
+        p.latitude && p.longitude
+      );
+    }
 
-  // Initialize map
+    // Smart search → show matching properties
+    if (isPropertySearch) {
+      const s = search.toLowerCase();
+      return allProperties.filter(p =>
+        p.latitude && p.longitude &&
+        (p.title?.toLowerCase().includes(s) || p.location?.toLowerCase().includes(s))
+      );
+    }
+
+    // Manual toggles
+    let props: MapProperty[] = [];
+    if (showVenda) {
+      props = [...props, ...allProperties.filter(p => p.transaction_type === "venda" && p.latitude && p.longitude)];
+    }
+    if (showTemporada) {
+      props = [...props, ...allProperties.filter(p => p.transaction_type === "temporada" && p.latitude && p.longitude)];
+    }
+
+    // Text filter on properties
+    if (search.trim() && props.length > 0) {
+      const s = search.toLowerCase();
+      props = props.filter(p => p.title?.toLowerCase().includes(s) || p.location?.toLowerCase().includes(s));
+    }
+
+    return props;
+  }, [allProperties, showVenda, showTemporada, search, isPropertySearch, condoPropertyFilter]);
+
+  /* ── Combined items for sidebar list ── */
+  const allFiltered = useMemo(() => {
+    const locaisItems = filteredLocais.map(l => ({ ...l, itemType: "local" as const }));
+    const propItems = filteredProperties.map(p => ({
+      id: p.id,
+      nome: p.title || "Imóvel",
+      slug: p.slug || "",
+      descricao: p.location,
+      categoria: p.transaction_type === "venda" ? "__venda" : "__temporada",
+      imagem_destaque: p.featured_image || p.thumbnail_url,
+      logo_url: null,
+      endereco: p.location,
+      latitude: p.latitude,
+      longitude: p.longitude,
+      tipo: "local" as const,
+      itemType: "property" as const,
+    }));
+    return [...locaisItems, ...propItems];
+  }, [filteredLocais, filteredProperties]);
+
+  /* ── Coords for bounds ── */
+  const withCoords = useMemo(() => allFiltered.filter(l => l.latitude && l.longitude), [allFiltered]);
+
+  /* ── Count properties by type for badges ── */
+  const vendaCount = useMemo(() => allProperties.filter(p => p.transaction_type === "venda").length, [allProperties]);
+  const temporadaCount = useMemo(() => allProperties.filter(p => p.transaction_type === "temporada").length, [allProperties]);
+
+  /* ── Count properties per condo for popups ── */
+  const condoPropertyCounts = useMemo(() => {
+    const counts: Record<string, { venda: number; temporada: number }> = {};
+    allProperties.forEach(p => {
+      if (!p.condominio_slug) return;
+      if (!counts[p.condominio_slug]) counts[p.condominio_slug] = { venda: 0, temporada: 0 };
+      if (p.transaction_type === "venda") counts[p.condominio_slug].venda++;
+      else if (p.transaction_type === "temporada") counts[p.condominio_slug].temporada++;
+    });
+    return counts;
+  }, [allProperties]);
+
+  /* ── Init map ── */
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
 
@@ -199,33 +316,57 @@ const MapaGeral = () => {
     };
   }, []);
 
-  // Compute active filter label for the banner
+  /* ── Handle condo popup button clicks via event delegation ── */
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      const btn = (e.target as HTMLElement).closest("[data-condo-filter]") as HTMLElement | null;
+      if (!btn) return;
+      const slug = btn.dataset.condoFilter!;
+      const type = btn.dataset.condoType as "venda" | "temporada";
+      setCondoPropertyFilter({ slug, type });
+      setShowVenda(false);
+      setShowTemporada(false);
+      setSelectedCategoria(null);
+      // Close popup
+      mapInstanceRef.current?.closePopup();
+    };
+    document.addEventListener("click", handler);
+    return () => document.removeEventListener("click", handler);
+  }, []);
+
+  /* ── Active filter label ── */
   const activeFilterLabel = useMemo(() => {
+    if (condoPropertyFilter) {
+      const condo = allLocais.find(l => l.slug === condoPropertyFilter.slug);
+      const typeLabel = condoPropertyFilter.type === "venda" ? "À Venda" : "Temporada";
+      return `Imóveis ${typeLabel} em ${condo?.nome || condoPropertyFilter.slug}`;
+    }
     if (singleSlugFilter) {
-      const match = filtered.find(l => l.slug === singleSlugFilter);
+      const match = allFiltered.find(l => l.slug === singleSlugFilter);
       return match?.nome || singleSlugFilter;
     }
     if (initialCategoria) {
       return CATEGORIA_LABELS[initialCategoria] || initialCategoria;
     }
     return null;
-  }, [singleSlugFilter, initialCategoria, filtered]);
+  }, [singleSlugFilter, initialCategoria, allFiltered, condoPropertyFilter, allLocais]);
 
   const clearUrlFilters = () => {
     setSearchParams({});
     setSelectedCategoria(null);
+    setCondoPropertyFilter(null);
   };
 
-  // Update markers when filtered changes
+  /* ── Update markers ── */
   useEffect(() => {
     if (!markersRef.current || !mapInstanceRef.current) return;
     markersRef.current.clearLayers();
 
-    const isFiltered = !!selectedCategoria || !!singleSlugFilter;
-    // For single-item view, always show logo+name prominently
+    const isFiltered = !!selectedCategoria || !!singleSlugFilter || !!condoPropertyFilter;
     const isSingleFocus = !!singleSlugFilter;
 
-    withCoords.forEach((local) => {
+    // Add Guia markers
+    filteredLocais.filter(l => l.latitude && l.longitude).forEach((local) => {
       const color = CATEGORIA_COLORS[local.categoria] || "#6b7280";
       const svgPaths = CATEGORIA_SVG_PATHS[local.categoria] || '<circle cx="12" cy="12" r="3"/>';
 
@@ -274,6 +415,18 @@ const MapaGeral = () => {
         ? `/imoveis/condominio/${local.slug}`
         : `/locais/${local.slug}`;
 
+      // Condo popup with property buttons
+      const counts = local.tipo === "condominio" && local.slug ? condoPropertyCounts[local.slug] : null;
+      const condoButtons = counts && (counts.venda > 0 || counts.temporada > 0) ? `
+        <div style="margin-top:8px;padding-top:8px;border-top:1px solid #e5e7eb;">
+          <p style="font-size:11px;color:#666;margin-bottom:6px;font-weight:600;">Imóveis disponíveis neste condomínio:</p>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            ${counts.venda > 0 ? `<button data-condo-filter="${local.slug}" data-condo-type="venda" style="background:#2563eb;color:white;border:none;padding:4px 10px;border-radius:6px;font-size:11px;cursor:pointer;font-weight:500;">🏠 Ver ${counts.venda} à Venda</button>` : ""}
+            ${counts.temporada > 0 ? `<button data-condo-filter="${local.slug}" data-condo-type="temporada" style="background:#7c3aed;color:white;border:none;padding:4px 10px;border-radius:6px;font-size:11px;cursor:pointer;font-weight:500;">🔑 Ver ${counts.temporada} Temporada</button>` : ""}
+          </div>
+        </div>
+      ` : "";
+
       marker.bindPopup(`
         <div style="min-width:180px;font-family:'Inter',sans-serif;">
           ${local.imagem_destaque ? `<img src="${local.imagem_destaque}" style="width:100%;height:100px;object-fit:cover;border-radius:8px 8px 0 0;margin-bottom:8px;" />` : ""}
@@ -281,23 +434,70 @@ const MapaGeral = () => {
             <strong style="font-size:14px;font-family:'Montserrat',sans-serif;">${local.nome}</strong>
             <p style="font-size:12px;color:#666;margin:4px 0;">${CATEGORIA_LABELS[local.categoria] || local.categoria}</p>
             <a href="${linkPath}" style="color:#2563eb;font-size:12px;text-decoration:none;">Ver detalhes →</a>
+            ${condoButtons}
           </div>
         </div>
       `);
     });
 
-    // Fit bounds / zoom
-    if (withCoords.length === 1 && singleSlugFilter) {
-      // Single focused item: zoom close to see streets
-      mapInstanceRef.current.setView(
-        [withCoords[0].latitude!, withCoords[0].longitude!],
-        17
-      );
-    } else if (withCoords.length > 0) {
-      const bounds = L.latLngBounds(withCoords.map(l => [l.latitude!, l.longitude!] as [number, number]));
+    // Add Property markers
+    filteredProperties.forEach((prop) => {
+      if (!prop.latitude || !prop.longitude) return;
+      const isVenda = prop.transaction_type === "venda";
+      const color = isVenda ? "#2563eb" : "#7c3aed";
+      const emoji = isVenda ? "🏠" : "🔑";
+      const shortTitle = (prop.title || "Imóvel").length > 16
+        ? (prop.title || "Imóvel").substring(0, 14) + "…"
+        : (prop.title || "Imóvel");
+
+      const markerHtml = `
+        <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+          <div style="width:36px;height:36px;border-radius:50%;background:${color};border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;font-size:16px;">
+            ${emoji}
+          </div>
+          <span style="font-family:'Inter',sans-serif;font-size:10px;font-weight:600;color:#1a1a1a;background:rgba(255,255,255,.92);padding:1px 6px;border-radius:4px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.12);max-width:140px;text-overflow:ellipsis;overflow:hidden;">${shortTitle}</span>
+        </div>`;
+
+      const icon = L.divIcon({
+        html: markerHtml,
+        className: "custom-map-marker",
+        iconSize: [36, 48],
+        iconAnchor: [18, 24],
+      });
+
+      const marker = L.marker([prop.latitude, prop.longitude], { icon }).addTo(markersRef.current!);
+
+      const priceText = prop.price_formatted || (prop.price ? `R$ ${prop.price.toLocaleString("pt-BR")}` : "");
+
+      marker.bindPopup(`
+        <div style="min-width:180px;font-family:'Inter',sans-serif;">
+          ${prop.featured_image || prop.thumbnail_url ? `<img src="${prop.featured_image || prop.thumbnail_url}" style="width:100%;height:100px;object-fit:cover;border-radius:8px 8px 0 0;margin-bottom:8px;" />` : ""}
+          <div style="padding:0 4px 4px;">
+            <strong style="font-size:14px;font-family:'Montserrat',sans-serif;">${prop.title || "Imóvel"}</strong>
+            ${priceText ? `<p style="font-size:13px;color:${color};font-weight:600;margin:4px 0;">${priceText}</p>` : ""}
+            ${prop.location ? `<p style="font-size:12px;color:#666;margin:2px 0;">${prop.location}</p>` : ""}
+            <a href="/imoveis/${prop.slug}" style="color:#2563eb;font-size:12px;text-decoration:none;">Ver detalhes →</a>
+          </div>
+        </div>
+      `);
+    });
+
+    // Fit bounds
+    const allCoordsItems = [
+      ...filteredLocais.filter(l => l.latitude && l.longitude).map(l => [l.latitude!, l.longitude!] as [number, number]),
+      ...filteredProperties.filter(p => p.latitude && p.longitude).map(p => [p.latitude!, p.longitude!] as [number, number]),
+    ];
+
+    if (allCoordsItems.length === 1 && (singleSlugFilter || condoPropertyFilter)) {
+      mapInstanceRef.current.setView(allCoordsItems[0], 17);
+    } else if (allCoordsItems.length > 0) {
+      const bounds = L.latLngBounds(allCoordsItems);
       mapInstanceRef.current.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
     }
-  }, [withCoords, selectedCategoria, condominioFilter, localFilter, singleSlugFilter]);
+  }, [filteredLocais, filteredProperties, selectedCategoria, condominioFilter, localFilter, singleSlugFilter, condoPropertyFilter, condoPropertyCounts]);
+
+  /* ── Sidebar item count ── */
+  const totalCount = allFiltered.length;
 
   return (
     <>
@@ -312,7 +512,7 @@ const MapaGeral = () => {
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Buscar local..."
+              placeholder="Buscar local ou imóvel..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9 h-9"
@@ -335,12 +535,14 @@ const MapaGeral = () => {
 
           <div className="hidden md:flex items-center gap-2 flex-wrap">
             <Badge
-              variant={!selectedCategoria ? "default" : "outline"}
+              variant={!selectedCategoria && !showVenda && !showTemporada ? "default" : "outline"}
               className="cursor-pointer hover:bg-primary/10 transition-colors"
-              onClick={() => setSelectedCategoria(null)}
+              onClick={() => { setSelectedCategoria(null); setShowVenda(false); setShowTemporada(false); setCondoPropertyFilter(null); }}
             >
-              Todos ({allLocais.length})
+              Guia ({allLocais.length})
             </Badge>
+
+            {/* Category filters */}
             {categorias.map((cat) => {
               const Icon = CATEGORIA_ICONS[cat] || MapPin;
               const count = allLocais.filter(l => l.categoria === cat).length;
@@ -349,18 +551,39 @@ const MapaGeral = () => {
                   key={cat}
                   variant={selectedCategoria === cat ? "default" : "outline"}
                   className="cursor-pointer hover:bg-primary/10 transition-colors gap-1"
-                  onClick={() => setSelectedCategoria(selectedCategoria === cat ? null : cat)}
+                  onClick={() => { setSelectedCategoria(selectedCategoria === cat ? null : cat); setCondoPropertyFilter(null); }}
                 >
                   <Icon className="h-3 w-3" />
                   {CATEGORIA_LABELS[cat] || cat} ({count})
                 </Badge>
               );
             })}
+
+            {/* Separator */}
+            <div className="w-px h-5 bg-border mx-1" />
+
+            {/* Property toggles */}
+            <Badge
+              variant={showVenda ? "default" : "outline"}
+              className={`cursor-pointer gap-1 transition-colors ${showVenda ? "bg-blue-600 hover:bg-blue-700" : "hover:bg-blue-50 border-blue-300 text-blue-700"}`}
+              onClick={() => { setShowVenda(!showVenda); setCondoPropertyFilter(null); }}
+            >
+              <DollarSign className="h-3 w-3" />
+              🏠 À Venda ({vendaCount})
+            </Badge>
+            <Badge
+              variant={showTemporada ? "default" : "outline"}
+              className={`cursor-pointer gap-1 transition-colors ${showTemporada ? "bg-purple-600 hover:bg-purple-700" : "hover:bg-purple-50 border-purple-300 text-purple-700"}`}
+              onClick={() => { setShowTemporada(!showTemporada); setCondoPropertyFilter(null); }}
+            >
+              <KeyRound className="h-3 w-3" />
+              🔑 Temporada ({temporadaCount})
+            </Badge>
           </div>
         </div>
 
-        {/* Active URL filter banner */}
-        {hasUrlFilter && activeFilterLabel && (
+        {/* Active URL filter / condo property filter banner */}
+        {(hasUrlFilter || condoPropertyFilter || isPropertySearch) && activeFilterLabel && (
           <div className="border-b border-border bg-primary/5 px-4 py-2 flex items-center justify-between shrink-0">
             <p className="text-sm text-foreground flex items-center gap-1.5">
               <MapPin className="h-4 w-4 text-primary" />
@@ -375,14 +598,28 @@ const MapaGeral = () => {
           </div>
         )}
 
+        {isPropertySearch && !condoPropertyFilter && !hasUrlFilter && (
+          <div className="border-b border-border bg-blue-50 dark:bg-blue-950/30 px-4 py-2 flex items-center justify-between shrink-0">
+            <p className="text-sm text-foreground flex items-center gap-1.5">
+              <Search className="h-4 w-4 text-blue-600" />
+              <span>Buscando imóveis: <strong>{search}</strong> ({filteredProperties.length} resultados)</span>
+            </p>
+            <Button variant="ghost" size="sm" onClick={() => setSearch("")} className="text-xs gap-1">
+              <X className="h-3.5 w-3.5" />
+              Limpar busca
+            </Button>
+          </div>
+        )}
+
+        {/* Mobile filters */}
         {showFilters && (
           <div className="md:hidden border-b border-border bg-card px-4 py-3 flex flex-wrap gap-2">
             <Badge
-              variant={!selectedCategoria ? "default" : "outline"}
+              variant={!selectedCategoria && !showVenda && !showTemporada ? "default" : "outline"}
               className="cursor-pointer"
-              onClick={() => { setSelectedCategoria(null); setShowFilters(false); }}
+              onClick={() => { setSelectedCategoria(null); setShowVenda(false); setShowTemporada(false); setCondoPropertyFilter(null); setShowFilters(false); }}
             >
-              Todos
+              Guia
             </Badge>
             {categorias.map((cat) => {
               const Icon = CATEGORIA_ICONS[cat] || MapPin;
@@ -391,13 +628,28 @@ const MapaGeral = () => {
                   key={cat}
                   variant={selectedCategoria === cat ? "default" : "outline"}
                   className="cursor-pointer gap-1"
-                  onClick={() => { setSelectedCategoria(selectedCategoria === cat ? null : cat); setShowFilters(false); }}
+                  onClick={() => { setSelectedCategoria(selectedCategoria === cat ? null : cat); setCondoPropertyFilter(null); setShowFilters(false); }}
                 >
                   <Icon className="h-3 w-3" />
                   {CATEGORIA_LABELS[cat] || cat}
                 </Badge>
               );
             })}
+            <div className="w-full border-t border-border my-1" />
+            <Badge
+              variant={showVenda ? "default" : "outline"}
+              className={`cursor-pointer gap-1 ${showVenda ? "bg-blue-600" : "border-blue-300 text-blue-700"}`}
+              onClick={() => { setShowVenda(!showVenda); setCondoPropertyFilter(null); setShowFilters(false); }}
+            >
+              🏠 À Venda ({vendaCount})
+            </Badge>
+            <Badge
+              variant={showTemporada ? "default" : "outline"}
+              className={`cursor-pointer gap-1 ${showTemporada ? "bg-purple-600" : "border-purple-300 text-purple-700"}`}
+              onClick={() => { setShowTemporada(!showTemporada); setCondoPropertyFilter(null); setShowFilters(false); }}
+            >
+              🔑 Temporada ({temporadaCount})
+            </Badge>
           </div>
         )}
 
@@ -407,7 +659,7 @@ const MapaGeral = () => {
           <div className="w-full md:w-[380px] lg:w-[420px] overflow-y-auto border-r border-border bg-background shrink-0">
             <div className="p-4 border-b border-border">
               <p className="text-sm text-muted-foreground font-medium">
-                {filtered.length} {filtered.length === 1 ? "local encontrado" : "locais encontrados"}
+                {totalCount} {totalCount === 1 ? "local encontrado" : "locais encontrados"}
               </p>
             </div>
 
@@ -415,49 +667,57 @@ const MapaGeral = () => {
               <div className="flex justify-center py-16">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
-            ) : filtered.length === 0 ? (
+            ) : totalCount === 0 ? (
               <div className="text-center py-16 px-4">
                 <MapPin className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
                 <p className="text-muted-foreground">Nenhum local encontrado.</p>
               </div>
             ) : (
               <div className="divide-y divide-border">
-                {filtered.map((local) => {
-                  const linkPath = local.tipo === "condominio"
-                    ? `/imoveis/condominio/${local.slug}`
-                    : `/locais/${local.slug}`;
-                  const Icon = CATEGORIA_ICONS[local.categoria] || MapPin;
-                  const color = CATEGORIA_COLORS[local.categoria] || "#6b7280";
+                {allFiltered.map((item) => {
+                  const isProperty = item.categoria === "__venda" || item.categoria === "__temporada";
+                  const linkPath = isProperty
+                    ? `/imoveis/${item.slug}`
+                    : item.tipo === "condominio"
+                      ? `/imoveis/condominio/${item.slug}`
+                      : `/locais/${item.slug}`;
+                  const Icon = isProperty
+                    ? (item.categoria === "__venda" ? DollarSign : KeyRound)
+                    : (CATEGORIA_ICONS[item.categoria] || MapPin);
+                  const color = isProperty
+                    ? (item.categoria === "__venda" ? "#2563eb" : "#7c3aed")
+                    : (CATEGORIA_COLORS[item.categoria] || "#6b7280");
+                  const catLabel = isProperty
+                    ? (item.categoria === "__venda" ? "À Venda" : "Temporada")
+                    : (CATEGORIA_LABELS[item.categoria] || item.categoria);
 
                   return (
                     <Link
-                      key={local.id}
+                      key={item.id}
                       to={linkPath}
-                      className={`flex gap-3 p-4 hover:bg-muted/50 transition-colors ${hoveredId === local.id ? "bg-muted/50" : ""}`}
-                      onMouseEnter={() => setHoveredId(local.id)}
+                      className={`flex gap-3 p-4 hover:bg-muted/50 transition-colors ${hoveredId === item.id ? "bg-muted/50" : ""}`}
+                      onMouseEnter={() => setHoveredId(item.id)}
                       onMouseLeave={() => setHoveredId(null)}
                     >
-                      {/* Image */}
                       <div className="w-20 h-20 rounded-lg overflow-hidden shrink-0 relative">
                         <SafeImage
-                          src={local.imagem_destaque || "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=200&q=60"}
-                          alt={local.nome}
+                          src={item.imagem_destaque || "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=200&q=60"}
+                          alt={item.nome}
                           className="w-full h-full object-cover"
                         />
-                        {local.logo_url && (
+                        {item.logo_url && (
                           <div className="absolute -bottom-1 -left-1 w-8 h-8 rounded-full overflow-hidden shadow-sm">
-                            <img src={local.logo_url} alt="" className="w-full h-full object-cover" />
+                            <img src={item.logo_url} alt="" className="w-full h-full object-cover" />
                           </div>
                         )}
                       </div>
 
-                      {/* Info */}
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-sm text-foreground line-clamp-1 font-display">{local.nome}</h3>
-                        {local.endereco && (
+                        <h3 className="font-semibold text-sm text-foreground line-clamp-1 font-display">{item.nome}</h3>
+                        {item.endereco && (
                           <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1 flex items-center gap-1">
                             <MapPin className="h-3 w-3 shrink-0" />
-                            {local.endereco}
+                            {item.endereco}
                           </p>
                         )}
                         <div className="flex items-center gap-1.5 mt-2">
@@ -466,7 +726,7 @@ const MapaGeral = () => {
                             style={{ backgroundColor: color }}
                           >
                             <Icon className="h-3 w-3" />
-                            {CATEGORIA_LABELS[local.categoria] || local.categoria}
+                            {catLabel}
                           </span>
                         </div>
                       </div>
