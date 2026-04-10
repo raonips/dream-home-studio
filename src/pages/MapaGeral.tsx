@@ -359,7 +359,22 @@ const MapaGeral = () => {
           </div>
         </div>
 
-        {/* Mobile filters */}
+        {/* Active URL filter banner */}
+        {hasUrlFilter && activeFilterLabel && (
+          <div className="border-b border-border bg-primary/5 px-4 py-2 flex items-center justify-between shrink-0">
+            <p className="text-sm text-foreground flex items-center gap-1.5">
+              <MapPin className="h-4 w-4 text-primary" />
+              <span>
+                Exibindo apenas <strong>{activeFilterLabel}</strong>
+              </span>
+            </p>
+            <Button variant="ghost" size="sm" onClick={clearUrlFilters} className="text-xs gap-1">
+              <X className="h-3.5 w-3.5" />
+              Ver todos os locais
+            </Button>
+          </div>
+        )}
+
         {showFilters && (
           <div className="md:hidden border-b border-border bg-card px-4 py-3 flex flex-wrap gap-2">
             <Badge
