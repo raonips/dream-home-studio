@@ -381,7 +381,7 @@ const LocalDetalhe = () => {
                     {/* Logo */}
                     {local.logo_url && (
                       <div className="flex justify-center pb-2">
-                        <div className="w-20 h-20 md:w-24 md:h-24 rounded-full overflow-hidden transition-transform duration-300 hover:scale-105 shadow-md bg-white">
+                        <div className="w-32 h-32 rounded-2xl overflow-hidden transition-transform duration-300 hover:scale-105 shadow-md">
                           <img
                             src={local.logo_url}
                             alt={`Logo ${local.nome}`}
