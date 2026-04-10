@@ -534,6 +534,38 @@ export type Database = {
         }
         Relationships: []
       }
+      placas_qr: {
+        Row: {
+          created_at: string
+          id: string
+          id_placa: string
+          imovel_vinculado_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          id_placa: string
+          imovel_vinculado_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          id_placa?: string
+          imovel_vinculado_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "placas_qr_imovel_vinculado_id_fkey"
+            columns: ["imovel_vinculado_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       properties: {
         Row: {
           area: number | null
