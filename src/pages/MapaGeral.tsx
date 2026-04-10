@@ -133,11 +133,13 @@ const MapaGeral = () => {
   const [showTemporada, setShowTemporada] = useState(false);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
-  // When user clicks a condo popup button → show its properties on map
   const [condoPropertyFilter, setCondoPropertyFilter] = useState<{ slug: string; type: "venda" | "temporada" } | null>(null);
+  const [mapBounds, setMapBounds] = useState<L.LatLngBounds | null>(null);
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.LayerGroup | null>(null);
+  // Track whether we should skip auto-zoom (user toggled property filter, not search)
+  const skipNextFitRef = useRef(false);
 
   const singleSlugFilter = condominioFilter || localFilter;
   const hasUrlFilter = !!singleSlugFilter || !!initialCategoria;
@@ -216,9 +218,36 @@ const MapaGeral = () => {
     return items;
   }, [allLocais, selectedCategoria, search, condominioFilter, localFilter, isPropertySearch, condoPropertyFilter]);
 
-  /* ── Filtered Properties ── */
+  /* ── Collect condominio slugs from Guia to eliminate duplicates ── */
+  const guiaCondoSlugs = useMemo(() => {
+    const slugs = new Set<string>();
+    allLocais.forEach(l => {
+      if (l.tipo === "condominio" && l.slug) slugs.add(l.slug);
+    });
+    // Also add locais with categoria "condominio"
+    allLocais.forEach(l => {
+      if (l.categoria === "condominio" && l.slug) slugs.add(l.slug);
+    });
+    return slugs;
+  }, [allLocais]);
+
+  /* ── Filtered Properties (with bounds filtering & no condo duplicates) ── */
   const filteredProperties = useMemo(() => {
-    // Condo popup → show properties of that condo with matching type
+    // Helper: filter out properties whose condominio_slug matches a Guia condomínio
+    // This prevents duplicate condo markers from the properties table
+    const removeDuplicateCondos = (props: MapProperty[]) =>
+      props.filter(p => !p.condominio_slug || !guiaCondoSlugs.has(p.condominio_slug) || p.transaction_type);
+
+    // Helper: filter by visible map bounds
+    const filterByBounds = (props: MapProperty[]) => {
+      if (!mapBounds) return props;
+      return props.filter(p =>
+        p.latitude && p.longitude &&
+        mapBounds.contains([p.latitude, p.longitude])
+      );
+    };
+
+    // Condo popup → show properties of that condo with matching type (no bounds filter here)
     if (condoPropertyFilter) {
       const txType = condoPropertyFilter.type === "venda" ? "venda" : "temporada";
       return allProperties.filter(p =>
@@ -228,7 +257,7 @@ const MapaGeral = () => {
       );
     }
 
-    // Smart search → show matching properties
+    // Smart search → show matching properties (zoom will adjust for search results)
     if (isPropertySearch) {
       const s = search.toLowerCase();
       return allProperties.filter(p =>
@@ -237,7 +266,7 @@ const MapaGeral = () => {
       );
     }
 
-    // Manual toggles
+    // Manual toggles — filter by current visible bounds
     let props: MapProperty[] = [];
     if (showVenda) {
       props = [...props, ...allProperties.filter(p => p.transaction_type === "venda" && p.latitude && p.longitude)];
@@ -246,6 +275,9 @@ const MapaGeral = () => {
       props = [...props, ...allProperties.filter(p => p.transaction_type === "temporada" && p.latitude && p.longitude)];
     }
 
+    // Apply bounds filter for manual toggles
+    props = filterByBounds(props);
+
     // Text filter on properties
     if (search.trim() && props.length > 0) {
       const s = search.toLowerCase();
@@ -253,7 +285,7 @@ const MapaGeral = () => {
     }
 
     return props;
-  }, [allProperties, showVenda, showTemporada, search, isPropertySearch, condoPropertyFilter]);
+  }, [allProperties, showVenda, showTemporada, search, isPropertySearch, condoPropertyFilter, mapBounds, guiaCondoSlugs]);
 
   /* ── Combined items for sidebar list ── */
   const allFiltered = useMemo(() => {
@@ -310,6 +342,13 @@ const MapaGeral = () => {
     markersRef.current = L.layerGroup().addTo(map);
     mapInstanceRef.current = map;
 
+    // Track map bounds for property visibility filtering
+    const updateBounds = () => setMapBounds(map.getBounds());
+    map.on("moveend", updateBounds);
+    map.on("zoomend", updateBounds);
+    // Set initial bounds
+    updateBounds();
+
     return () => {
       map.remove();
       mapInstanceRef.current = null;
@@ -327,7 +366,6 @@ const MapaGeral = () => {
       setShowVenda(false);
       setShowTemporada(false);
       setSelectedCategoria(null);
-      // Close popup
       mapInstanceRef.current?.closePopup();
     };
     document.addEventListener("click", handler);
@@ -440,7 +478,7 @@ const MapaGeral = () => {
       `);
     });
 
-    // Add Property markers
+    // Add Property markers (secondary, smaller z-index via pane order)
     filteredProperties.forEach((prop) => {
       if (!prop.latitude || !prop.longitude) return;
       const isVenda = prop.transaction_type === "venda";
@@ -452,20 +490,20 @@ const MapaGeral = () => {
 
       const markerHtml = `
         <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
-          <div style="width:36px;height:36px;border-radius:50%;background:${color};border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;font-size:16px;">
+          <div style="width:32px;height:32px;border-radius:50%;background:${color};border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;font-size:14px;opacity:0.85;">
             ${emoji}
           </div>
-          <span style="font-family:'Inter',sans-serif;font-size:10px;font-weight:600;color:#1a1a1a;background:rgba(255,255,255,.92);padding:1px 6px;border-radius:4px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.12);max-width:140px;text-overflow:ellipsis;overflow:hidden;">${shortTitle}</span>
+          <span style="font-family:'Inter',sans-serif;font-size:9px;font-weight:600;color:#1a1a1a;background:rgba(255,255,255,.85);padding:1px 5px;border-radius:4px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.12);max-width:130px;text-overflow:ellipsis;overflow:hidden;">${shortTitle}</span>
         </div>`;
 
       const icon = L.divIcon({
         html: markerHtml,
         className: "custom-map-marker",
-        iconSize: [36, 48],
-        iconAnchor: [18, 24],
+        iconSize: [32, 44],
+        iconAnchor: [16, 22],
       });
 
-      const marker = L.marker([prop.latitude, prop.longitude], { icon }).addTo(markersRef.current!);
+      const marker = L.marker([prop.latitude, prop.longitude], { icon, zIndexOffset: -100 }).addTo(markersRef.current!);
 
       const priceText = prop.price_formatted || (prop.price ? `R$ ${prop.price.toLocaleString("pt-BR")}` : "");
 
@@ -482,19 +520,31 @@ const MapaGeral = () => {
       `);
     });
 
-    // Fit bounds
+    // Fit bounds logic:
+    // - Skip zoom when toggling property filters (showVenda/showTemporada) to respect user's current view
+    // - Only auto-zoom for: single slug focus, condo property filter, category filter, or text search
+    if (skipNextFitRef.current) {
+      skipNextFitRef.current = false;
+      return;
+    }
+
     const allCoordsItems = [
       ...filteredLocais.filter(l => l.latitude && l.longitude).map(l => [l.latitude!, l.longitude!] as [number, number]),
       ...filteredProperties.filter(p => p.latitude && p.longitude).map(p => [p.latitude!, p.longitude!] as [number, number]),
     ];
 
-    if (allCoordsItems.length === 1 && (singleSlugFilter || condoPropertyFilter)) {
-      mapInstanceRef.current.setView(allCoordsItems[0], 17);
-    } else if (allCoordsItems.length > 0) {
-      const bounds = L.latLngBounds(allCoordsItems);
-      mapInstanceRef.current.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
+    // Only fit bounds for specific contexts, NOT for manual property toggles
+    const shouldFitBounds = !!singleSlugFilter || !!condoPropertyFilter || !!selectedCategoria || isPropertySearch;
+
+    if (shouldFitBounds) {
+      if (allCoordsItems.length === 1 && (singleSlugFilter || condoPropertyFilter)) {
+        mapInstanceRef.current.setView(allCoordsItems[0], 17);
+      } else if (allCoordsItems.length > 0) {
+        const bounds = L.latLngBounds(allCoordsItems);
+        mapInstanceRef.current.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
+      }
     }
-  }, [filteredLocais, filteredProperties, selectedCategoria, condominioFilter, localFilter, singleSlugFilter, condoPropertyFilter, condoPropertyCounts]);
+  }, [filteredLocais, filteredProperties, selectedCategoria, condominioFilter, localFilter, singleSlugFilter, condoPropertyFilter, condoPropertyCounts, isPropertySearch]);
 
   /* ── Sidebar item count ── */
   const totalCount = allFiltered.length;
