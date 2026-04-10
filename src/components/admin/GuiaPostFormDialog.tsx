@@ -120,7 +120,30 @@ const GuiaPostFormDialog = ({ open, onOpenChange, post, categorias, onSaved }: P
             <RichTextEditor value={form.conteudo} onChange={(v) => setForm({ ...form, conteudo: v })} />
           </div>
 
-          <GuiaImageUploadField
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setLocalSelectorOpen(true)}
+          >
+            <MapPin className="h-4 w-4 mr-2" />
+            Inserir Card de Local
+          </Button>
+
+          <LocalSelectorDialog
+            open={localSelectorOpen}
+            onOpenChange={setLocalSelectorOpen}
+            onSelect={(id, nome) => {
+              const marker = `[LOCAL_CARD: ${id}]`;
+              setForm((prev) => ({
+                ...prev,
+                conteudo: (prev.conteudo || "") + `<p>${marker}</p>`,
+              }));
+              toast({ title: `Card de "${nome}" inserido` });
+            }}
+          />
+
+
             label="Imagem Destaque"
             value={form.imagem_destaque}
             onChange={(url) => setForm({ ...form, imagem_destaque: url })}
