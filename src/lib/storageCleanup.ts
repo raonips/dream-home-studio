@@ -1,47 +1,58 @@
 import { supabase } from '@/integrations/supabase/client';
 
-const BUCKET = 'property-images';
-
 /**
- * Extracts the storage path from a full Supabase public URL.
- * Returns null if the URL doesn't belong to our bucket.
+ * Extracts the bucket name and storage path from a full Supabase public URL.
  */
-export function extractStoragePath(publicUrl: string): string | null {
+export function extractStorageInfo(publicUrl: string): { bucket: string; path: string } | null {
   if (!publicUrl) return null;
   try {
-    const marker = `/object/public/${BUCKET}/`;
+    const marker = '/object/public/';
     const idx = publicUrl.indexOf(marker);
     if (idx === -1) return null;
-    return decodeURIComponent(publicUrl.substring(idx + marker.length));
+    const rest = decodeURIComponent(publicUrl.substring(idx + marker.length));
+    const slashIdx = rest.indexOf('/');
+    if (slashIdx === -1) return null;
+    return { bucket: rest.substring(0, slashIdx), path: rest.substring(slashIdx + 1) };
   } catch {
     return null;
   }
 }
 
 /**
+ * Legacy helper — extracts path assuming default bucket.
+ */
+export function extractStoragePath(publicUrl: string): string | null {
+  const info = extractStorageInfo(publicUrl);
+  return info?.path ?? null;
+}
+
+/**
  * Removes one or more files from Storage given their public URLs.
- * Silently ignores invalid URLs or already-deleted files.
+ * Automatically detects the correct bucket from each URL.
  */
 export async function removeStorageFiles(publicUrls: string[]): Promise<void> {
-  const paths = publicUrls
-    .map(extractStoragePath)
-    .filter((p): p is string => p !== null);
-
-  if (paths.length === 0) return;
-
-  // Storage remove accepts max 100 paths at a time
-  const chunks: string[][] = [];
-  for (let i = 0; i < paths.length; i += 100) {
-    chunks.push(paths.slice(i, i + 100));
+  const byBucket = new Map<string, string[]>();
+  for (const url of publicUrls) {
+    const info = extractStorageInfo(url);
+    if (!info) continue;
+    const list = byBucket.get(info.bucket) || [];
+    list.push(info.path);
+    byBucket.set(info.bucket, list);
   }
 
-  await Promise.all(
-    chunks.map((chunk) =>
-      supabase.storage.from(BUCKET).remove(chunk).then(({ error }) => {
-        if (error) console.warn('[StorageCleanup] remove error:', error.message);
-      })
-    )
-  );
+  const tasks: Promise<void>[] = [];
+  for (const [bucket, paths] of byBucket) {
+    for (let i = 0; i < paths.length; i += 100) {
+      const chunk = paths.slice(i, i + 100);
+      tasks.push(
+        supabase.storage.from(bucket).remove(chunk).then(({ error }) => {
+          if (error) console.warn('[StorageCleanup] remove error:', bucket, error.message);
+        })
+      );
+    }
+  }
+
+  await Promise.all(tasks);
 }
 
 /**
