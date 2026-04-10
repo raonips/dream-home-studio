@@ -433,11 +433,20 @@ const LocalDetalhe = () => {
                       )}
                     </div>
 
+                    {/* Coupon Badge */}
+                    {local.cupom_desconto && (
+                      <CouponBadge code={local.cupom_desconto} value={local.valor_desconto} />
+                    )}
+
                     {/* Action buttons */}
                     <div className="space-y-3 pt-2">
                       {local.whatsapp && (
                         <a
-                          href={`https://wa.me/${local.whatsapp}?text=${encodeURIComponent(`Olá! Vi seu anúncio no Guia Barra do Jacuípe e gostaria de mais informações: ${local.nome}`)}`}
+                          href={`https://wa.me/${local.whatsapp}?text=${encodeURIComponent(
+                            local.cupom_desconto
+                              ? `Olá! Vi seu anúncio no Guia Barra do Jacuípe e gostaria de mais informações sobre ${local.nome}. Tenho o cupom: ${local.cupom_desconto}.`
+                              : `Olá! Vi seu anúncio no Guia Barra do Jacuípe e gostaria de mais informações: ${local.nome}`
+                          )}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="flex items-center justify-center gap-2 w-full py-3 bg-[#25D366] text-white rounded-xl font-semibold hover:bg-[#1da851] transition-colors text-sm shadow-sm"
