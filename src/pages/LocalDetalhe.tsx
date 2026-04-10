@@ -247,12 +247,12 @@ const LocalDetalhe = () => {
       </section>
 
       {/* ══════════════════ MAIN CONTENT ══════════════════ */}
-      <section className="py-8 md:py-10">
+      <section className="py-4 md:py-5">
         <div className="container">
           <div className="grid lg:grid-cols-[1fr_360px] gap-10 lg:gap-14">
 
             {/* ── Left Column ── */}
-            <div className="min-w-0 space-y-14 lg:pt-2">
+            <div className="min-w-0 space-y-14">
 
               {/* Description */}
               {local.descricao && (
