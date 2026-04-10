@@ -6,6 +6,7 @@ import PropertyCardSkeleton from "@/components/PropertyCardSkeleton";
 import PropertyCard, { type PropertyData } from "@/components/PropertyCard";
 import { supabase } from "@/integrations/supabase/client";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
+import SafeHtmlContent from "@/components/SafeHtmlContent";
 import {
   Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList,
   BreadcrumbPage, BreadcrumbSeparator
@@ -150,10 +151,9 @@ const TagPage = () => {
           {/* SEO Description - Bottom of sandwich */}
           {tag?.descricao_seo && (
             <div className="mt-12 md:mt-16">
-              <div
-className="prose prose-description max-w-[85ch] mx-auto whitespace-normal break-words"
-                style={{ wordBreak: 'normal', overflowWrap: 'break-word' }}
-                dangerouslySetInnerHTML={{ __html: tag.descricao_seo }}
+              <SafeHtmlContent
+                html={tag.descricao_seo}
+                className="prose-description max-w-[85ch] mx-auto"
               />
             </div>
           )}

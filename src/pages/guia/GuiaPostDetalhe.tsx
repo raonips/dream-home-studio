@@ -8,8 +8,8 @@ import {
   Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList,
   BreadcrumbPage, BreadcrumbSeparator
 } from "@/components/ui/breadcrumb";
-import DOMPurify from "dompurify";
 import SafeImage from "@/components/SafeImage";
+import SafeHtmlContent from "@/components/SafeHtmlContent";
 
 interface GuiaPost {
   id: string;
@@ -158,9 +158,9 @@ const GuiaPostDetalhe = () => {
 
           {/* Content */}
           {post.conteudo && (
-            <div
-              className="prose prose-lg max-w-none dark:prose-invert"
-              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.conteudo) }}
+            <SafeHtmlContent
+              html={post.conteudo}
+              className="max-w-none dark:prose-invert"
             />
           )}
 

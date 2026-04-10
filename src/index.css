@@ -122,6 +122,14 @@
   }
 }
 
+/* Global safe HTML content typography */
+.safe-html-content {
+  overflow-wrap: anywhere;
+  word-break: normal;
+  hyphens: none;
+  white-space: normal;
+}
+
 /* Rich Text Description - prose typography */
 .prose-description {
   color: hsl(var(--muted-foreground));
