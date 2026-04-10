@@ -52,6 +52,7 @@ const AdminGuiaSiteConfig = lazy(() => import("./pages/admin/AdminGuiaSiteConfig
 const AdminGuiaSeoSettings = lazy(() => import("./pages/admin/AdminGuiaSeoSettings"));
 const AdminLocais = lazy(() => import("./pages/admin/AdminLocais"));
 const AdminAdTemplates = lazy(() => import("./pages/admin/AdminAdTemplates"));
+const MapaGeral = lazy(() => import("./pages/MapaGeral"));
 
 // Lazy-loaded layout pieces below the fold
 const SiteFooter = lazy(() => import("@/components/SiteFooter"));
