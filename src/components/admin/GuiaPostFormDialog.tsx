@@ -11,6 +11,8 @@ import { useToast } from "@/hooks/use-toast";
 import RichTextEditor from "./RichTextEditor";
 import GuiaImageUploadField from "./GuiaImageUploadField";
 import { removeStorageFiles } from "@/lib/storageCleanup";
+import LocalSelectorDialog from "./LocalSelectorDialog";
+import { MapPin } from "lucide-react";
 
 interface GuiaPost {
   id: string;
