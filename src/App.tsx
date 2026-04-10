@@ -110,6 +110,7 @@ const App = () => (
                 <Route path="leads" element={<Suspense fallback={<RouteLoading />}><AdminLeads /></Suspense>} />
                 <Route path="blocos" element={<Suspense fallback={<RouteLoading />}><AdminBlocks /></Suspense>} />
                 <Route path="ad-templates" element={<Suspense fallback={<RouteLoading />}><AdminAdTemplates /></Suspense>} />
+                <Route path="placas" element={<Suspense fallback={<RouteLoading />}><AdminPlacas /></Suspense>} />
                 <Route path="site-config" element={<Suspense fallback={<RouteLoading />}><AdminSiteConfig /></Suspense>} />
                 <Route path="seo" element={<Suspense fallback={<RouteLoading />}><AdminSeoSettings /></Suspense>} />
                 <Route path="tags" element={<Suspense fallback={<RouteLoading />}><AdminTags /></Suspense>} />
@@ -140,6 +141,7 @@ const App = () => (
 
                         {/* Imóveis — moved under /imoveis */}
                         <Route path="/imoveis" element={<Index />} />
+                        <Route path="/qr/:idPlaca" element={<QrRedirect />} />
                         <Route path="/imoveis/listagem" element={<Imoveis />} />
                         <Route path="/imoveis/tags/:tagSlug" element={<TagPage />} />
                         <Route path="/imoveis/vendas" element={<Vendas />} />
