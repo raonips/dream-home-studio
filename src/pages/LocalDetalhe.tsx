@@ -117,9 +117,6 @@ const LocalDetalhe = () => {
   const GRID_MAX = 6;
   const gridPhotos = galleryImages.slice(0, GRID_MAX);
   const extraPhotos = galleryImages.length - GRID_MAX;
-  const normalizedDescriptionHtml = local.descricao
-    ?.replace(/&nbsp;/gi, " ")
-    .replace(/\u00A0/g, " ");
 
   const openLightbox = (index: number) => {
     setLightboxIndex(index);
