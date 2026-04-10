@@ -113,6 +113,9 @@ const SiteHeader = () => {
   const { logo_url, header_logo_url } = useSiteSettings();
   const displayLogo = header_logo_url || logo_url || logoDefault;
 
+  const isImoveisSection = location.pathname.startsWith("/imoveis");
+  const navItems = isImoveisSection ? imoveisNavItems : guiaNavItems;
+
   const toggleMobileDropdown = (label: string) => {
     setMobileDropdowns((prev) => ({ ...prev, [label]: !prev[label] }));
   };
