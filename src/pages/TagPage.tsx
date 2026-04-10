@@ -6,6 +6,7 @@ import PropertyCardSkeleton from "@/components/PropertyCardSkeleton";
 import PropertyCard, { type PropertyData } from "@/components/PropertyCard";
 import { supabase } from "@/integrations/supabase/client";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
+import SafeHtmlContent from "@/components/SafeHtmlContent";
 import {
   Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList,
   BreadcrumbPage, BreadcrumbSeparator

@@ -31,6 +31,7 @@ import Lightbox from "@/components/Lightbox";
 import BookingCalculator from "@/components/BookingCalculator";
 import SmartMap from "@/components/SmartMap";
 import { detailImage, cardImage } from "@/lib/imageTransform";
+import SafeHtmlContent from "@/components/SafeHtmlContent";
 
 interface CondominioData {
   id: string;

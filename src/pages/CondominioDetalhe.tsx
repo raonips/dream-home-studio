@@ -10,6 +10,7 @@ import Lightbox from "@/components/Lightbox";
 import SmartMap from "@/components/SmartMap";
 import { heroImage as optimizeHero, cardImage } from "@/lib/imageTransform";
 import { RenderIcon } from "@/components/admin/IconPicker";
+import SafeHtmlContent from "@/components/SafeHtmlContent";
 import {
   Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList,
   BreadcrumbPage, BreadcrumbSeparator

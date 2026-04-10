@@ -8,8 +8,8 @@ import {
   Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList,
   BreadcrumbPage, BreadcrumbSeparator
 } from "@/components/ui/breadcrumb";
-import DOMPurify from "dompurify";
 import SafeImage from "@/components/SafeImage";
+import SafeHtmlContent from "@/components/SafeHtmlContent";
 
 interface GuiaPost {
   id: string;
