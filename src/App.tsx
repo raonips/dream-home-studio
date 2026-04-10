@@ -52,7 +52,9 @@ const AdminGuiaSiteConfig = lazy(() => import("./pages/admin/AdminGuiaSiteConfig
 const AdminGuiaSeoSettings = lazy(() => import("./pages/admin/AdminGuiaSeoSettings"));
 const AdminLocais = lazy(() => import("./pages/admin/AdminLocais"));
 const AdminAdTemplates = lazy(() => import("./pages/admin/AdminAdTemplates"));
+const AdminPlacas = lazy(() => import("./pages/admin/AdminPlacas"));
 const MapaGeral = lazy(() => import("./pages/MapaGeral"));
+const QrRedirect = lazy(() => import("./pages/QrRedirect"));
 
 // Lazy-loaded layout pieces below the fold
 const SiteFooter = lazy(() => import("@/components/SiteFooter"));
