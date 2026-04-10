@@ -162,6 +162,7 @@ const LocalFormDialog = ({ open, onOpenChange, editing, onSuccess }: Props) => {
       banner_publicidade: form.banner_publicidade?.trim() || null,
       seo_title: form.seo_title.trim() || null,
       seo_description: form.seo_description.trim() || null,
+      logo_url: form.logo_url?.trim() || null,
     } as any;
 
     let error;
