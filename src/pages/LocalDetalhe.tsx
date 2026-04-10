@@ -113,7 +113,14 @@ const LocalDetalhe = () => {
   }
 
   const galleryImages = local.imagens?.filter(Boolean) || [];
-  const extraImages = galleryImages.filter(img => img !== local.imagem_destaque);
+  const GRID_MAX = 6;
+  const gridPhotos = galleryImages.slice(0, GRID_MAX);
+  const extraPhotos = galleryImages.length - GRID_MAX;
+
+  const openLightbox = (index: number) => {
+    setLightboxIndex(index);
+    setLightboxOpen(true);
+  };
 
   // Build banner heading with {nome} interpolation
   const bannerHeading = adTemplate
