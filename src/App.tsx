@@ -29,6 +29,7 @@ const Login = lazy(() => import("./pages/Login"));
 const GuiaHome = lazy(() => import("./pages/guia/GuiaHome"));
 const GuiaPostDetalhe = lazy(() => import("./pages/guia/GuiaPostDetalhe"));
 const GuiaCategoriaPage = lazy(() => import("./pages/guia/GuiaCategoria"));
+const BuscaPage = lazy(() => import("./pages/BuscaPage"));
 
 // Admin chunk
 const AdminLayout = lazy(() => import("./components/admin/AdminLayout"));
@@ -131,6 +132,7 @@ const App = () => (
                         {/* Guia Local — root */}
                         <Route path="/" element={<GuiaHome />} />
                         <Route path="/guia/categoria/:slug" element={<GuiaCategoriaPage />} />
+                        <Route path="/busca" element={<BuscaPage />} />
 
                         {/* Imóveis — moved under /imoveis */}
                         <Route path="/imoveis" element={<Index />} />
