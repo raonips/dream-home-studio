@@ -197,7 +197,7 @@ const MapaGeral = () => {
     if (!markersRef.current || !mapInstanceRef.current) return;
     markersRef.current.clearLayers();
 
-    const isFiltered = !!selectedCategoria;
+    const isFiltered = !!selectedCategoria || !!condominioFilter;
 
     withCoords.forEach((local) => {
       const color = CATEGORIA_COLORS[local.categoria] || "#6b7280";
