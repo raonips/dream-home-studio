@@ -49,6 +49,7 @@ const GuiaPostFormDialog = ({ open, onOpenChange, post, categorias, onSaved }: P
     seo_title: "", seo_description: "", seo_keywords: "",
   });
   const [saving, setSaving] = useState(false);
+  const [localSelectorOpen, setLocalSelectorOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
