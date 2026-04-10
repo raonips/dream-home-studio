@@ -181,7 +181,7 @@ const LogoUploadWithCropper = ({ value, onChange, slug }: { value: string; onCha
   );
 };
 
-
+const LocalFormDialog = ({ open, onOpenChange, editing, onSuccess }: Props) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [images, setImages] = useState<string[]>([]);
