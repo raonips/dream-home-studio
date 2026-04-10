@@ -49,11 +49,13 @@ const PropertyCardInPost = ({ propertyId }: { propertyId: string }) => {
 
   const image = property.featured_image || property.image_url;
   const transactionLabel = property.transaction_type === "venda" ? "Venda" : property.transaction_type === "temporada" ? "Temporada" : property.transaction_type;
+  
+  const transactionPath = property.transaction_type === "venda" ? "venda" : property.transaction_type === "temporada" ? "temporada" : "venda";
 
   return (
     <div className="my-6 mx-2 rounded-xl border bg-card shadow-sm hover:shadow-md transition-shadow overflow-hidden not-prose">
       <Link
-        to={`/imoveis/${property.slug}`}
+        to={`/imoveis/${transactionPath}/${property.slug}`}
         className="flex flex-col sm:flex-row gap-0 no-underline text-foreground"
       >
         {image && (
