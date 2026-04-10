@@ -6,7 +6,7 @@ import { Map } from "lucide-react";
  * Maps the current route context to a query param for /mapa pre-filtering.
  */
 const getMapQuery = (pathname: string): string => {
-  // Category listing pages → filter by mapped categories
+  // Category listing pages
   if (pathname === "/locais/gastronomia") return "?categoria=gastronomia";
   if (pathname === "/locais/hospedagem") return "?categoria=hospedagem";
   if (pathname === "/locais/utilidades") return "?categoria=utilidade";
@@ -16,9 +16,15 @@ const getMapQuery = (pathname: string): string => {
   const guiaMatch = pathname.match(/^\/guia\/categoria\/(.+)/);
   if (guiaMatch) return `?categoria=${guiaMatch[1]}`;
 
-  // Condomínio detail page → filter by that condomínio
+  // Condomínio detail page
   const condoMatch = pathname.match(/^\/imoveis\/condominio\/(.+)/);
   if (condoMatch) return `?condominio=${condoMatch[1]}`;
+
+  // Local detail page → single-focus on that local
+  const localMatch = pathname.match(/^\/locais\/([^/]+)$/);
+  if (localMatch && !["gastronomia", "hospedagem", "utilidades", "condominios"].includes(localMatch[1])) {
+    return `?local=${localMatch[1]}`;
+  }
 
   return "";
 };

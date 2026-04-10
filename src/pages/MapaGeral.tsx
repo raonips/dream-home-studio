@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { Helmet } from "react-helmet-async";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Search, MapPin, Loader2, X, Filter,
@@ -99,9 +99,11 @@ const CATEGORIA_GROUP_MAP: Record<string, string[]> = {
 };
 
 const MapaGeral = () => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const initialCategoria = searchParams.get("categoria");
   const condominioFilter = searchParams.get("condominio");
+  const localFilter = searchParams.get("local");
 
   const [allLocais, setAllLocais] = useState<MapLocal[]>([]);
   const [loading, setLoading] = useState(true);
@@ -112,6 +114,10 @@ const MapaGeral = () => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.LayerGroup | null>(null);
+
+  // Determine if we have a single-item focus (condominio or local slug)
+  const singleSlugFilter = condominioFilter || localFilter;
+  const hasUrlFilter = !!singleSlugFilter || !!initialCategoria;
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -148,11 +154,12 @@ const MapaGeral = () => {
   const filtered = useMemo(() => {
     let items = allLocais;
 
-    // Condomínio filter from URL takes priority
-    if (condominioFilter) {
+    // Single-item filters: condominio or local slug → show ONLY that item
+    if (localFilter) {
+      items = items.filter(l => l.slug === localFilter);
+    } else if (condominioFilter) {
       items = items.filter(l => l.slug === condominioFilter);
     } else if (selectedCategoria) {
-      // Check if this is a category group (e.g. "gastronomia" → ["restaurante","padaria","gastronomia"])
       const groupCats = CATEGORIA_GROUP_MAP[selectedCategoria];
       if (groupCats) {
         items = items.filter(l => groupCats.includes(l.categoria));
@@ -166,7 +173,7 @@ const MapaGeral = () => {
       items = items.filter(l => l.nome.toLowerCase().includes(s) || l.endereco?.toLowerCase().includes(s));
     }
     return items;
-  }, [allLocais, selectedCategoria, search]);
+  }, [allLocais, selectedCategoria, search, condominioFilter, localFilter]);
 
   const withCoords = useMemo(() => filtered.filter(l => l.latitude && l.longitude), [filtered]);
 
@@ -192,12 +199,31 @@ const MapaGeral = () => {
     };
   }, []);
 
+  // Compute active filter label for the banner
+  const activeFilterLabel = useMemo(() => {
+    if (singleSlugFilter) {
+      const match = filtered.find(l => l.slug === singleSlugFilter);
+      return match?.nome || singleSlugFilter;
+    }
+    if (initialCategoria) {
+      return CATEGORIA_LABELS[initialCategoria] || initialCategoria;
+    }
+    return null;
+  }, [singleSlugFilter, initialCategoria, filtered]);
+
+  const clearUrlFilters = () => {
+    setSearchParams({});
+    setSelectedCategoria(null);
+  };
+
   // Update markers when filtered changes
   useEffect(() => {
     if (!markersRef.current || !mapInstanceRef.current) return;
     markersRef.current.clearLayers();
 
-    const isFiltered = !!selectedCategoria || !!condominioFilter;
+    const isFiltered = !!selectedCategoria || !!singleSlugFilter;
+    // For single-item view, always show logo+name prominently
+    const isSingleFocus = !!singleSlugFilter;
 
     withCoords.forEach((local) => {
       const color = CATEGORIA_COLORS[local.categoria] || "#6b7280";
@@ -205,28 +231,27 @@ const MapaGeral = () => {
 
       let markerHtml: string;
 
-      if (isFiltered && local.logo_url) {
-        // Filtered mode with logo: show logo + name label
+      if ((isFiltered || isSingleFocus) && local.logo_url) {
         const shortName = local.nome.length > 18 ? local.nome.substring(0, 16) + "…" : local.nome;
+        const size = isSingleFocus ? 56 : 44;
         markerHtml = `
           <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
-            <div style="width:44px;height:44px;border-radius:50%;background:white;box-shadow:0 2px 8px rgba(0,0,0,.18);display:flex;align-items:center;justify-content:center;overflow:hidden;">
-              <img src="${local.logo_url}" style="width:44px;height:44px;object-fit:cover;" />
+            <div style="width:${size}px;height:${size}px;border-radius:50%;background:white;box-shadow:0 2px 8px rgba(0,0,0,.18);display:flex;align-items:center;justify-content:center;overflow:hidden;">
+              <img src="${local.logo_url}" style="width:${size}px;height:${size}px;object-fit:cover;" />
             </div>
-            <span style="font-family:'Inter',sans-serif;font-size:10px;font-weight:600;color:#1a1a1a;background:rgba(255,255,255,.92);padding:1px 6px;border-radius:4px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.12);max-width:120px;text-overflow:ellipsis;overflow:hidden;">${shortName}</span>
+            <span style="font-family:'Inter',sans-serif;font-size:${isSingleFocus ? '12' : '10'}px;font-weight:600;color:#1a1a1a;background:rgba(255,255,255,.92);padding:1px 6px;border-radius:4px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.12);max-width:150px;text-overflow:ellipsis;overflow:hidden;">${shortName}</span>
           </div>`;
-      } else if (isFiltered && !local.logo_url) {
-        // Filtered mode without logo: colored icon + name label
+      } else if ((isFiltered || isSingleFocus) && !local.logo_url) {
         const shortName = local.nome.length > 18 ? local.nome.substring(0, 16) + "…" : local.nome;
+        const size = isSingleFocus ? 48 : 40;
         markerHtml = `
           <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
-            <div style="width:40px;height:40px;border-radius:50%;background:${color};border:2.5px solid white;box-shadow:0 2px 8px rgba(0,0,0,.18);display:flex;align-items:center;justify-content:center;">
+            <div style="width:${size}px;height:${size}px;border-radius:50%;background:${color};border:2.5px solid white;box-shadow:0 2px 8px rgba(0,0,0,.18);display:flex;align-items:center;justify-content:center;">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${svgPaths}</svg>
             </div>
-            <span style="font-family:'Inter',sans-serif;font-size:10px;font-weight:600;color:#1a1a1a;background:rgba(255,255,255,.92);padding:1px 6px;border-radius:4px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.12);max-width:120px;text-overflow:ellipsis;overflow:hidden;">${shortName}</span>
+            <span style="font-family:'Inter',sans-serif;font-size:${isSingleFocus ? '12' : '10'}px;font-weight:600;color:#1a1a1a;background:rgba(255,255,255,.92);padding:1px 6px;border-radius:4px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.12);max-width:150px;text-overflow:ellipsis;overflow:hidden;">${shortName}</span>
           </div>`;
       } else {
-        // "Todos" mode: generic category icon, no label
         markerHtml = `
           <div style="width:36px;height:36px;border-radius:50%;background:${color};border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${svgPaths}</svg>
@@ -261,12 +286,18 @@ const MapaGeral = () => {
       `);
     });
 
-    // Fit bounds if we have markers
-    if (withCoords.length > 0) {
+    // Fit bounds / zoom
+    if (withCoords.length === 1 && singleSlugFilter) {
+      // Single focused item: zoom close to see streets
+      mapInstanceRef.current.setView(
+        [withCoords[0].latitude!, withCoords[0].longitude!],
+        17
+      );
+    } else if (withCoords.length > 0) {
       const bounds = L.latLngBounds(withCoords.map(l => [l.latitude!, l.longitude!] as [number, number]));
       mapInstanceRef.current.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
     }
-  }, [withCoords, selectedCategoria, condominioFilter]);
+  }, [withCoords, selectedCategoria, condominioFilter, localFilter, singleSlugFilter]);
 
   return (
     <>
@@ -328,7 +359,22 @@ const MapaGeral = () => {
           </div>
         </div>
 
-        {/* Mobile filters */}
+        {/* Active URL filter banner */}
+        {hasUrlFilter && activeFilterLabel && (
+          <div className="border-b border-border bg-primary/5 px-4 py-2 flex items-center justify-between shrink-0">
+            <p className="text-sm text-foreground flex items-center gap-1.5">
+              <MapPin className="h-4 w-4 text-primary" />
+              <span>
+                Exibindo apenas <strong>{activeFilterLabel}</strong>
+              </span>
+            </p>
+            <Button variant="ghost" size="sm" onClick={clearUrlFilters} className="text-xs gap-1">
+              <X className="h-3.5 w-3.5" />
+              Ver todos os locais
+            </Button>
+          </div>
+        )}
+
         {showFilters && (
           <div className="md:hidden border-b border-border bg-card px-4 py-3 flex flex-wrap gap-2">
             <Badge
