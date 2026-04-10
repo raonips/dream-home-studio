@@ -102,6 +102,7 @@ const LocalFormDialog = ({ open, onOpenChange, editing, onSuccess }: Props) => {
         longitude: editing.longitude ?? DEFAULT_LNG,
         url_vendas: editing.url_vendas || '',
         banner_publicidade: editing.banner_publicidade || '',
+        logo_url: editing.logo_url || '',
       });
       const editImages: string[] = [];
       if (editing.imagem_destaque) editImages.push(editing.imagem_destaque);
@@ -118,7 +119,7 @@ const LocalFormDialog = ({ open, onOpenChange, editing, onSuccess }: Props) => {
         endereco: '', horario_funcionamento: '', website: '',
         ativo: true, ordem: 0, seo_title: '', seo_description: '',
         latitude: DEFAULT_LAT, longitude: DEFAULT_LNG,
-        url_vendas: '', banner_publicidade: '',
+        url_vendas: '', banner_publicidade: '', logo_url: '',
       });
       setImages([]);
     }
