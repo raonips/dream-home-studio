@@ -134,6 +134,7 @@ const App = () => (
                         <Route path="/" element={<GuiaHome />} />
                         <Route path="/guia/categoria/:slug" element={<GuiaCategoriaPage />} />
                         <Route path="/busca" element={<BuscaPage />} />
+                        <Route path="/mapa" element={<MapaGeral />} />
 
                         {/* Imóveis — moved under /imoveis */}
                         <Route path="/imoveis" element={<Index />} />
