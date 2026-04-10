@@ -191,9 +191,12 @@ const LocalFormDialog = ({ open, onOpenChange, editing, onSuccess }: Props) => {
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <Tabs defaultValue="main" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="main" className="flex items-center gap-1.5 text-xs">
                 <FileText className="h-3.5 w-3.5" /> Dados
+              </TabsTrigger>
+              <TabsTrigger value="files" className="flex items-center gap-1.5 text-xs">
+                <Image className="h-3.5 w-3.5" /> Arquivos
               </TabsTrigger>
               <TabsTrigger value="contact" className="flex items-center gap-1.5 text-xs">
                 <Phone className="h-3.5 w-3.5" /> Contato
