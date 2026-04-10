@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
-import { MapPin, Phone, Clock, Globe, ExternalLink, ArrowLeft } from "lucide-react";
+import { MapPin, Phone, Clock, Globe, ExternalLink, ArrowLeft, Camera } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
@@ -113,7 +113,14 @@ const LocalDetalhe = () => {
   }
 
   const galleryImages = local.imagens?.filter(Boolean) || [];
-  const extraImages = galleryImages.filter(img => img !== local.imagem_destaque);
+  const GRID_MAX = 6;
+  const gridPhotos = galleryImages.slice(0, GRID_MAX);
+  const extraPhotos = galleryImages.length - GRID_MAX;
+
+  const openLightbox = (index: number) => {
+    setLightboxIndex(index);
+    setLightboxOpen(true);
+  };
 
   // Build banner heading with {nome} interpolation
   const bannerHeading = adTemplate
@@ -168,23 +175,6 @@ const LocalDetalhe = () => {
           <div className="grid md:grid-cols-[1fr_320px] gap-8 overflow-hidden">
             {/* ── Main Content ── */}
             <div className="min-w-0 space-y-8">
-              {extraImages.length > 0 && (
-                <div>
-                  <h2 className="text-lg font-semibold text-foreground mb-3">Fotos</h2>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {extraImages.map((img, i) => (
-                      <button
-                        key={i}
-                        onClick={() => { setLightboxIndex(i); setLightboxOpen(true); }}
-                        className="aspect-[4/3] rounded-lg overflow-hidden border border-border hover:opacity-90 transition-opacity"
-                      >
-                        <img src={img} alt={`${local.nome} foto ${i + 1}`} className="w-full h-full object-cover" loading="lazy" />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
               {local.descricao && (
                 <div>
                   <div
@@ -229,6 +219,37 @@ const LocalDetalhe = () => {
               <Link to="/" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"><ArrowLeft className="h-4 w-4" /> Voltar ao Guia</Link>
             </div>
           </div>
+
+          {/* ── Photo Gallery (same style as Condomínios) ── */}
+          {galleryImages.length > 0 && (
+            <div className="mt-12">
+              <h2 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-8 text-center">
+                Fotos de {local.nome}
+              </h2>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {gridPhotos.map((img, i) => (
+                  <div
+                    key={i}
+                    className="relative aspect-[4/3] rounded-xl overflow-hidden cursor-pointer group"
+                    onClick={() => openLightbox(i)}
+                  >
+                    <img
+                      src={img}
+                      alt={`${local.nome} - foto ${i + 1}`}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      loading="lazy"
+                    />
+                    {i === gridPhotos.length - 1 && extraPhotos > 0 && (
+                      <div className="absolute inset-0 bg-foreground/40 flex items-center justify-center gap-2 text-primary-foreground font-semibold text-sm group-hover:bg-foreground/50 transition-colors">
+                        <Camera className="h-5 w-5" />
+                        +{extraPhotos} fotos
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* ── CTA Banner — shows when there's an active template for this category ── */}
@@ -331,7 +352,7 @@ const LocalDetalhe = () => {
         )}
       </div>
 
-      <Lightbox images={extraImages} initialIndex={lightboxIndex} open={lightboxOpen} onClose={() => setLightboxOpen(false)} />
+      <Lightbox images={galleryImages} initialIndex={lightboxIndex} open={lightboxOpen} onClose={() => setLightboxOpen(false)} />
     </>
   );
 };
