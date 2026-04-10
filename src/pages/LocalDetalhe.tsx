@@ -6,7 +6,7 @@ import {
   MapPin, Phone, Clock, Globe, ExternalLink, ArrowLeft, Camera,
   ShieldCheck, Anchor, Trees, Waves, Dumbbell, UtensilsCrossed,
   Baby, Wifi, Car, Fence, Building2, Droplets, Zap, Heart,
-  Store, Pill, Flame, Sparkles, CircleDot
+  Store, Pill, Flame, Sparkles, CircleDot, Ticket, Copy, Check
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
@@ -38,6 +38,8 @@ interface Local {
   url_vendas: string | null;
   banner_publicidade: string | null;
   logo_url: string | null;
+  cupom_desconto: string | null;
+  valor_desconto: string | null;
 }
 
 interface AdTemplate {
