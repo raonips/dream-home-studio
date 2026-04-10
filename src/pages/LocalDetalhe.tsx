@@ -1,15 +1,23 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
-import { MapPin, Phone, Clock, Globe, ExternalLink, ArrowLeft, Camera } from "lucide-react";
-import { Link } from "react-router-dom";
+import {
+  MapPin, Phone, Clock, Globe, ExternalLink, ArrowLeft, Camera,
+  ShieldCheck, Anchor, Trees, Waves, Dumbbell, UtensilsCrossed,
+  Baby, Wifi, Car, Fence, Building2, Droplets, Zap, Heart,
+  Store, Pill, Flame, Sparkles, CircleDot
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
 import SmartMap from "@/components/SmartMap";
 import Lightbox from "@/components/Lightbox";
 import ctaBgImage from "@/assets/cta-condominio-bg.jpg";
 import SafeHtmlContent from "@/components/SafeHtmlContent";
+import {
+  Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList,
+  BreadcrumbPage, BreadcrumbSeparator
+} from "@/components/ui/breadcrumb";
 
 interface Local {
   id: string;
@@ -54,11 +62,54 @@ const CATEGORIA_LABELS: Record<string, string> = {
   utilidade: "Utilidade",
 };
 
+const CATEGORIA_ICONS: Record<string, React.ElementType> = {
+  condominio: Building2,
+  mercado: Store,
+  padaria: UtensilsCrossed,
+  restaurante: UtensilsCrossed,
+  hospedagem: Building2,
+  saude: Heart,
+  gas: Flame,
+  limpeza: Sparkles,
+  farmacia: Pill,
+  utilidade: Zap,
+};
+
 const OVERLAY_STYLES: Record<string, string> = {
   oceanic: "from-[hsl(200,60%,12%)]/90 via-[hsl(200,50%,18%)]/80 to-[hsl(200,40%,25%)]/70",
   dark: "from-black/90 via-black/75 to-black/60",
   warm: "from-[hsl(30,40%,15%)]/90 via-[hsl(30,30%,20%)]/80 to-[hsl(30,25%,25%)]/70",
 };
+
+/* ── Infrastructure icon resolver ── */
+const INFRA_ICONS: Record<string, React.ElementType> = {
+  piscina: Waves,
+  academia: Dumbbell,
+  segurança: ShieldCheck,
+  "seguranca": ShieldCheck,
+  portaria: ShieldCheck,
+  playground: Baby,
+  churrasqueira: UtensilsCrossed,
+  "área verde": Trees,
+  "area verde": Trees,
+  wifi: Wifi,
+  estacionamento: Car,
+  quadra: Fence,
+  pier: Anchor,
+  píer: Anchor,
+  marina: Anchor,
+  praia: Waves,
+  água: Droplets,
+  gas: Flame,
+};
+
+function getInfraIcon(label: string) {
+  const key = label.toLowerCase().trim();
+  for (const [k, Icon] of Object.entries(INFRA_ICONS)) {
+    if (key.includes(k)) return Icon;
+  }
+  return CircleDot;
+}
 
 const LocalDetalhe = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -81,7 +132,6 @@ const LocalDetalhe = () => {
         setLocal(localData);
         setLoading(false);
 
-        // Fetch matching ad template for this category
         if (localData) {
           supabase
             .from("ad_templates")
@@ -99,7 +149,7 @@ const LocalDetalhe = () => {
 
   if (loading) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center pt-20">
+      <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -107,17 +157,15 @@ const LocalDetalhe = () => {
 
   if (!local) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center pt-20 gap-4">
-        <h1 className="text-2xl font-bold text-foreground">Local não encontrado</h1>
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+        <h1 className="font-display text-3xl font-bold text-foreground">Local não encontrado</h1>
         <Link to="/" className="text-primary hover:underline">Voltar ao início</Link>
       </div>
     );
   }
 
   const galleryImages = local.imagens?.filter(Boolean) || [];
-  const GRID_MAX = 6;
-  const gridPhotos = galleryImages.slice(0, GRID_MAX);
-  const extraPhotos = galleryImages.length - GRID_MAX;
+  const CatIcon = CATEGORIA_ICONS[local.categoria] || Building2;
 
   const openLightbox = (index: number) => {
     setLightboxIndex(index);
@@ -132,6 +180,11 @@ const LocalDetalhe = () => {
   const bannerButtonText = adTemplate?.button_text || 'VER IMÓVEIS DISPONÍVEIS';
   const overlayClass = OVERLAY_STYLES[adTemplate?.overlay_style || 'oceanic'] || OVERLAY_STYLES.oceanic;
 
+  /* ── Mosaic gallery logic ── */
+  const MOSAIC_MAX = 5;
+  const mosaicImages = galleryImages.slice(0, MOSAIC_MAX);
+  const extraPhotos = galleryImages.length - MOSAIC_MAX;
+
   return (
     <>
       <Helmet>
@@ -139,245 +192,325 @@ const LocalDetalhe = () => {
         <meta name="description" content={local.descricao?.replace(/<[^>]+>/g, '').slice(0, 160) || `${local.nome} em Barra do Jacuípe`} />
       </Helmet>
 
-      <div className="pt-20 pb-16">
-        {/* ── Hero / Capa ── */}
-        {local.imagem_destaque && (
-          <div className="relative h-[300px] md:h-[420px] overflow-hidden">
-            <img src={local.imagem_destaque} alt={local.nome} className="w-full h-full object-cover" loading="eager" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-            <div className="absolute bottom-6 left-0 right-0 container">
-              <Badge className="bg-primary/80 text-primary-foreground backdrop-blur-sm mb-2 border-0">
-                {CATEGORIA_LABELS[local.categoria] || local.categoria}
-              </Badge>
-              <h1 className="text-3xl md:text-4xl font-bold text-white drop-shadow-lg">{local.nome}</h1>
-              {local.endereco && (
-                <p className="text-white/80 text-sm mt-1 flex items-center gap-1.5">
-                  <MapPin className="h-3.5 w-3.5" /> {local.endereco}
-                </p>
-              )}
-            </div>
-          </div>
+      {/* ══════════════════ HERO ══════════════════ */}
+      <section className="relative h-[340px] md:h-[460px] flex items-end overflow-hidden">
+        {local.imagem_destaque ? (
+          <img
+            src={local.imagem_destaque}
+            alt={local.nome}
+            className="absolute inset-0 w-full h-full object-cover"
+            loading="eager"
+            fetchPriority="high"
+          />
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-secondary" />
         )}
+        <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/30 to-transparent" />
 
-        <div className="container mt-8">
-          {!local.imagem_destaque && (
-            <div className="mb-6">
-              <Badge className="bg-primary/10 text-primary border-primary/20 mb-3">
-                {CATEGORIA_LABELS[local.categoria] || local.categoria}
-              </Badge>
-              <h1 className="text-3xl font-bold text-foreground">{local.nome}</h1>
-              {local.endereco && (
-                <p className="text-muted-foreground text-sm mt-1 flex items-center gap-1.5">
-                  <MapPin className="h-3.5 w-3.5" /> {local.endereco}
-                </p>
-              )}
-            </div>
-          )}
+        <div className="relative container pb-10 md:pb-14 z-10">
+          <Breadcrumb>
+            <BreadcrumbList className="text-primary-foreground/70">
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild className="text-primary-foreground/70 hover:text-primary-foreground">
+                  <Link to="/">Início</Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator className="text-primary-foreground/50" />
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild className="text-primary-foreground/70 hover:text-primary-foreground">
+                  <Link to="/locais">Guia Local</Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator className="text-primary-foreground/50" />
+              <BreadcrumbItem>
+                <BreadcrumbPage className="text-primary-foreground">{local.nome}</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
 
-          <div className="grid md:grid-cols-[1fr_320px] gap-8 overflow-hidden">
-            {/* ── Main Content ── */}
-            <div className="min-w-0 space-y-8">
-              {local.descricao && (
-                <SafeHtmlContent
-                  html={local.descricao}
-                  className="
-                    text-left
-                    prose-headings:font-display prose-headings:text-foreground prose-headings:tracking-tight
-                    prose-h2:text-2xl prose-h2:font-bold prose-h2:mt-10 prose-h2:mb-4
-                    prose-h3:text-xl prose-h3:font-semibold prose-h3:mt-8 prose-h3:mb-3
-                    prose-p:text-muted-foreground prose-p:leading-[1.8] prose-p:mb-5
-                    prose-strong:text-foreground
-                    prose-a:text-primary prose-a:no-underline hover:prose-a:underline
-                    prose-li:text-muted-foreground prose-li:leading-[1.7]
-                    prose-ul:my-4 prose-ol:my-4
-                  "
-                />
-              )}
-
-              {local.latitude && local.longitude && (
-                <div>
-                  <h2 className="text-lg font-semibold text-foreground mb-3">Localização</h2>
-                  <SmartMap latitude={local.latitude} longitude={local.longitude} title={local.nome} zoom={15} interactive={false} className="w-full h-[300px] rounded-xl border border-border" />
-                </div>
-              )}
-            </div>
-
-            {/* ── Sidebar ── */}
-            <div className="flex flex-col gap-6">
-              {((local.endereco || local.telefone || local.horario_funcionamento || local.website || local.whatsapp || local.google_maps_link || local.logo_url) || galleryImages.length >= 3) && (
-                <div className="flex flex-col gap-6 md:sticky md:top-24 md:self-start">
-{(local.endereco || local.telefone || local.horario_funcionamento || local.website || local.whatsapp || local.google_maps_link || local.logo_url) && (
-                    <div className="bg-card rounded-xl border border-border p-6 space-y-4">
-                      {/* Logo do Local */}
-                      {local.logo_url && (
-                        <div className="flex justify-center">
-                          <div className="w-20 h-20 md:w-24 md:h-24 rounded-lg bg-white border border-border p-2 flex items-center justify-center overflow-hidden transition-transform duration-300 hover:scale-105">
-                            <img
-                              src={local.logo_url}
-                              alt={`Logo ${local.nome}`}
-                              className="w-full h-full object-contain"
-                              loading="lazy"
-                            />
-                          </div>
-                        </div>
-                      )}
-                      <h3 className="font-semibold text-foreground">Informações</h3>
-                      {local.endereco && (
-                        <div className="flex items-start gap-3 text-sm"><MapPin className="h-4 w-4 text-primary mt-0.5 shrink-0" /><span className="text-muted-foreground">{local.endereco}</span></div>
-                      )}
-                      {local.telefone && (
-                        <div className="flex items-center gap-3 text-sm"><Phone className="h-4 w-4 text-primary shrink-0" /><a href={`tel:${local.telefone}`} className="text-muted-foreground hover:text-primary transition-colors">{local.telefone}</a></div>
-                      )}
-                      {local.horario_funcionamento && (
-                        <div className="flex items-start gap-3 text-sm"><Clock className="h-4 w-4 text-primary mt-0.5 shrink-0" /><span className="text-muted-foreground">{local.horario_funcionamento}</span></div>
-                      )}
-                      {local.website && (
-                        <div className="flex items-center gap-3 text-sm"><Globe className="h-4 w-4 text-primary shrink-0" /><a href={local.website} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate">{local.website.replace(/^https?:\/\//, "")}</a></div>
-                      )}
-                      {local.whatsapp && (
-                        <a href={`https://wa.me/${local.whatsapp}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full py-2.5 bg-[#25D366] text-white rounded-lg font-medium hover:bg-[#1da851] transition-colors text-sm">WhatsApp</a>
-                      )}
-                      {local.google_maps_link && (
-                        <a href={local.google_maps_link} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full py-2.5 bg-muted text-foreground rounded-lg font-medium hover:bg-muted/80 transition-colors text-sm"><ExternalLink className="h-4 w-4" /> Ver no Google Maps</a>
-                      )}
-                    </div>
-                  )}
-
-                  {/* ── Mini Galeria (sidebar, desktop only, min 3 fotos) ── */}
-                  {galleryImages.length >= 3 && (
-                    <div className="hidden md:block bg-card rounded-xl border border-border p-6 shadow-sm">
-                      <h4 className="font-display font-semibold text-foreground mb-4 pt-1 text-sm">Fotos de {local.nome}</h4>
-                      <div className="grid grid-cols-2 gap-2.5">
-                        {galleryImages.slice(0, 6).map((img, i) => (
-                          <button
-                            key={i}
-                            onClick={() => openLightbox(i)}
-                            className="aspect-square rounded-lg overflow-hidden border border-border hover:shadow-md transition-all group"
-                          >
-                            <img
-                              src={img}
-                              alt={`${local.nome} - foto ${i + 1}`}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                              loading="lazy"
-                            />
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              <Link to="/" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"><ArrowLeft className="h-4 w-4" /> Voltar ao Guia</Link>
-            </div>
+          <div className="flex items-center gap-3 mt-4 mb-2">
+            <span className="inline-flex items-center gap-1.5 bg-primary/80 text-primary-foreground backdrop-blur-sm text-xs font-semibold px-3 py-1.5 rounded-full border border-primary-foreground/10">
+              <CatIcon className="h-3.5 w-3.5" />
+              {CATEGORIA_LABELS[local.categoria] || local.categoria}
+            </span>
           </div>
 
-          {/* ── Photo Gallery (same style as Condomínios) ── */}
-          {galleryImages.length > 0 && (
-            <div className="mt-12">
-              <h2 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-8 text-center">
-                Fotos de {local.nome}
-              </h2>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {gridPhotos.map((img, i) => (
-                  <div
-                    key={i}
-                    className="relative aspect-[4/3] rounded-xl overflow-hidden cursor-pointer group"
-                    onClick={() => openLightbox(i)}
-                  >
-                    <img
-                      src={img}
-                      alt={`${local.nome} - foto ${i + 1}`}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      loading="lazy"
-                    />
-                    {i === gridPhotos.length - 1 && extraPhotos > 0 && (
-                      <div className="absolute inset-0 bg-foreground/40 flex items-center justify-center gap-2 text-primary-foreground font-semibold text-sm group-hover:bg-foreground/50 transition-colors">
-                        <Camera className="h-5 w-5" />
-                        +{extraPhotos} fotos
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
+          <h1 className="font-display text-3xl md:text-4xl lg:text-5xl font-bold text-primary-foreground drop-shadow-lg leading-tight">
+            {local.nome}
+          </h1>
+          {local.endereco && (
+            <p className="text-primary-foreground/80 text-sm md:text-base mt-2 flex items-center gap-1.5">
+              <MapPin className="h-4 w-4 shrink-0" /> {local.endereco}
+            </p>
           )}
         </div>
+      </section>
 
-        {/* ── CTA Banner — shows when there's an active template for this category ── */}
-        {adTemplate && adTemplate.layout_model === 'html_custom' && (
-          <div className="mt-16">
-            <div
-              dangerouslySetInnerHTML={{
-                __html: (adTemplate.custom_html || '').replace(/\{nome\}/gi, local.nome),
-              }}
-            />
-          </div>
-        )}
+      {/* ══════════════════ MAIN CONTENT ══════════════════ */}
+      <section className="py-14 md:py-20">
+        <div className="container">
+          <div className="grid lg:grid-cols-[1fr_360px] gap-10 lg:gap-14">
 
-        {adTemplate && adTemplate.layout_model === 'split' && (
-          <div className="relative mt-16 overflow-hidden group">
-            <div className="grid md:grid-cols-2 min-h-[360px]">
-              {/* Text side */}
-              <div className={`flex flex-col justify-center px-8 py-12 md:px-16 bg-gradient-to-br ${overlayClass.replace('/90', '/95').replace('/80', '/90').replace('/70', '/85')} bg-[hsl(200,60%,12%)]`}>
-                <p className="text-white/60 text-xs font-semibold tracking-[0.3em] uppercase mb-4">
-                  Oportunidade exclusiva
-                </p>
-                <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white leading-tight tracking-tight mb-4">
-                  {bannerHeading.includes(local.nome) ? (
-                    <>
-                      {bannerHeading.split(local.nome)[0]}
-                      <span className="text-[hsl(39,80%,65%)]">{local.nome}</span>
-                      {bannerHeading.split(local.nome).slice(1).join(local.nome)}
-                    </>
-                  ) : bannerHeading}
-                </h2>
-                {bannerSubtitle && (
-                  <p className="text-white/70 text-sm md:text-base mb-6">{bannerSubtitle}</p>
+            {/* ── Left Column ── */}
+            <div className="min-w-0 space-y-14">
+
+              {/* Description */}
+              {local.descricao && (
+                <div>
+                  <SafeHtmlContent
+                    html={local.descricao}
+                    className="
+                      prose-description
+                      text-left
+                      prose-headings:font-display prose-headings:text-foreground prose-headings:tracking-tight
+                      prose-h2:text-2xl prose-h2:font-bold prose-h2:mt-10 prose-h2:mb-4
+                      prose-h3:text-xl prose-h3:font-semibold prose-h3:mt-8 prose-h3:mb-3
+                      prose-p:text-muted-foreground prose-p:leading-[1.8] prose-p:mb-5
+                      prose-strong:text-foreground
+                      prose-a:text-primary prose-a:no-underline hover:prose-a:underline
+                      prose-li:text-muted-foreground prose-li:leading-[1.7]
+                      prose-ul:my-4 prose-ol:my-4
+                    "
+                  />
+                </div>
+              )}
+
+              {/* ── Mosaic Photo Gallery ── */}
+              {galleryImages.length > 0 && (
+                <div>
+                  <h2 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-6">
+                    Fotos de {local.nome}
+                  </h2>
+
+                  {/* Desktop mosaic */}
+                  <div className="hidden md:grid grid-cols-4 grid-rows-2 gap-3 h-[420px]">
+                    {/* Main large image */}
+                    <div
+                      className="col-span-2 row-span-2 rounded-xl overflow-hidden cursor-pointer group"
+                      onClick={() => openLightbox(0)}
+                    >
+                      <img
+                        src={galleryImages[0]}
+                        alt={`${local.nome} - foto 1`}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        loading="lazy"
+                      />
+                    </div>
+
+                    {mosaicImages.slice(1, 5).map((img, i) => (
+                      <div
+                        key={i}
+                        className="relative rounded-xl overflow-hidden cursor-pointer group"
+                        onClick={() => openLightbox(i + 1)}
+                      >
+                        <img
+                          src={img}
+                          alt={`${local.nome} - foto ${i + 2}`}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          loading="lazy"
+                        />
+                        {i === mosaicImages.length - 2 && extraPhotos > 0 && (
+                          <div className="absolute inset-0 bg-foreground/50 flex items-center justify-center gap-2 text-primary-foreground font-semibold text-sm backdrop-blur-[2px]">
+                            <Camera className="h-5 w-5" />
+                            +{extraPhotos} fotos
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Mobile gallery grid */}
+                  <div className="grid grid-cols-2 gap-2.5 md:hidden">
+                    {galleryImages.slice(0, 4).map((img, i) => (
+                      <div
+                        key={i}
+                        className="relative aspect-square rounded-xl overflow-hidden cursor-pointer group"
+                        onClick={() => openLightbox(i)}
+                      >
+                        <img
+                          src={img}
+                          alt={`${local.nome} - foto ${i + 1}`}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          loading="lazy"
+                        />
+                        {i === 3 && galleryImages.length > 4 && (
+                          <div className="absolute inset-0 bg-foreground/50 flex items-center justify-center gap-2 text-primary-foreground font-semibold text-sm">
+                            <Camera className="h-4 w-4" />
+                            +{galleryImages.length - 4} fotos
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ── Map (full width in content area) ── */}
+              {local.latitude && local.longitude && (
+                <div>
+                  <h2 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-6">
+                    Localização
+                  </h2>
+                  <div className="rounded-xl overflow-hidden border border-border shadow-card">
+                    <SmartMap
+                      latitude={local.latitude}
+                      longitude={local.longitude}
+                      title={local.nome}
+                      zoom={15}
+                      interactive={false}
+                      className="w-full h-[360px] md:h-[420px]"
+                    />
+                  </div>
+                  {local.endereco && (
+                    <p className="text-sm text-muted-foreground mt-3 flex items-center gap-1.5">
+                      <MapPin className="h-3.5 w-3.5 text-primary shrink-0" />
+                      {local.endereco}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* ── Right Sidebar ── */}
+            <div className="flex flex-col gap-8">
+              <div className="flex flex-col gap-6 lg:sticky lg:top-24 lg:self-start">
+
+                {/* Info Card */}
+                {(local.logo_url || local.endereco || local.telefone || local.horario_funcionamento || local.website || local.whatsapp || local.google_maps_link) && (
+                  <div className="bg-card rounded-2xl border border-border p-6 md:p-8 space-y-5 shadow-card">
+                    {/* Logo */}
+                    {local.logo_url && (
+                      <div className="flex justify-center pb-2">
+                        <div className="w-20 h-20 md:w-24 md:h-24 rounded-xl bg-white border border-border p-2.5 flex items-center justify-center overflow-hidden transition-transform duration-300 hover:scale-105 shadow-sm">
+                          <img
+                            src={local.logo_url}
+                            alt={`Logo ${local.nome}`}
+                            className="w-full h-full object-contain"
+                            loading="lazy"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    <h3 className="font-display font-semibold text-foreground text-lg">Informações</h3>
+
+                    <div className="space-y-4">
+                      {local.endereco && (
+                        <div className="flex items-start gap-3 text-sm">
+                          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                            <MapPin className="h-4 w-4 text-primary" />
+                          </div>
+                          <span className="text-muted-foreground pt-1">{local.endereco}</span>
+                        </div>
+                      )}
+                      {local.telefone && (
+                        <div className="flex items-center gap-3 text-sm">
+                          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                            <Phone className="h-4 w-4 text-primary" />
+                          </div>
+                          <a href={`tel:${local.telefone}`} className="text-muted-foreground hover:text-primary transition-colors">{local.telefone}</a>
+                        </div>
+                      )}
+                      {local.horario_funcionamento && (
+                        <div className="flex items-start gap-3 text-sm">
+                          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                            <Clock className="h-4 w-4 text-primary" />
+                          </div>
+                          <span className="text-muted-foreground pt-1">{local.horario_funcionamento}</span>
+                        </div>
+                      )}
+                      {local.website && (
+                        <div className="flex items-center gap-3 text-sm">
+                          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                            <Globe className="h-4 w-4 text-primary" />
+                          </div>
+                          <a href={local.website} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate">
+                            {local.website.replace(/^https?:\/\//, "")}
+                          </a>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Action buttons */}
+                    <div className="space-y-3 pt-2">
+                      {local.whatsapp && (
+                        <a
+                          href={`https://wa.me/${local.whatsapp}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-center gap-2 w-full py-3 bg-[#25D366] text-white rounded-xl font-semibold hover:bg-[#1da851] transition-colors text-sm shadow-sm"
+                        >
+                          WhatsApp
+                        </a>
+                      )}
+                      {local.google_maps_link && (
+                        <a
+                          href={local.google_maps_link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-center gap-2 w-full py-3 bg-secondary text-foreground rounded-xl font-semibold hover:bg-secondary/80 transition-colors text-sm"
+                        >
+                          <ExternalLink className="h-4 w-4" /> Ver no Google Maps
+                        </a>
+                      )}
+                    </div>
+                  </div>
                 )}
+
+                {/* ── Sidebar mini gallery (desktop, 3+ photos) ── */}
+                {galleryImages.length >= 3 && (
+                  <div className="hidden lg:block bg-card rounded-2xl border border-border p-6 shadow-card">
+                    <h4 className="font-display font-semibold text-foreground mb-4 text-sm">Galeria Rápida</h4>
+                    <div className="grid grid-cols-3 gap-2">
+                      {galleryImages.slice(0, 6).map((img, i) => (
+                        <button
+                          key={i}
+                          onClick={() => openLightbox(i)}
+                          className="aspect-square rounded-lg overflow-hidden border border-border hover:shadow-md transition-all group"
+                        >
+                          <img
+                            src={img}
+                            alt={`${local.nome} - foto ${i + 1}`}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            loading="lazy"
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <Link
-                  to={local.url_vendas || `/imoveis?condominio=${local.slug}`}
-                  className="inline-flex items-center gap-2 px-8 py-4 font-bold text-sm tracking-widest uppercase self-start
-                    bg-gradient-to-r from-[hsl(39,70%,55%)] to-[hsl(39,80%,65%)] text-[hsl(200,60%,10%)]
-                    shadow-[0_0_20px_hsl(39,70%,55%,0.3)] hover:shadow-[0_0_35px_hsl(39,70%,55%,0.5)]
-                    transition-all duration-300 hover:scale-105"
+                  to="/"
+                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors font-medium"
                 >
-                  {bannerButtonText}
-                  <ExternalLink className="h-4 w-4" />
+                  <ArrowLeft className="h-4 w-4" /> Voltar ao Guia Local
                 </Link>
               </div>
-              {/* Image side */}
-              <div className="relative min-h-[240px] md:min-h-0">
-                <img
-                  src={local.banner_publicidade || local.imagem_destaque || ctaBgImage}
-                  alt="Banner publicitário"
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                />
-              </div>
             </div>
           </div>
-        )}
+        </div>
+      </section>
 
-        {adTemplate && (!adTemplate.layout_model || adTemplate.layout_model === 'full_banner') && (
-          <div className="relative mt-16 overflow-hidden group">
-            <div className="absolute inset-0 overflow-hidden">
-              <img
-                src={local.banner_publicidade || ctaBgImage}
-                alt="Banner publicitário"
-                className="w-full h-full object-cover transition-transform duration-[3s] ease-out group-hover:scale-110"
-                loading="lazy"
-                width={1920}
-                height={640}
-              />
-              <div className={`absolute inset-0 bg-gradient-to-r ${overlayClass}`} />
-            </div>
+      {/* ══════════════════ CTA BANNERS ══════════════════ */}
+      {adTemplate && adTemplate.layout_model === 'html_custom' && (
+        <div className="mt-4">
+          <div
+            dangerouslySetInnerHTML={{
+              __html: (adTemplate.custom_html || '').replace(/\{nome\}/gi, local.nome),
+            }}
+          />
+        </div>
+      )}
 
-            <div className="relative z-10 px-8 py-16 md:py-20 md:px-16 flex flex-col items-center text-center gap-6">
-              <p className="text-white/60 text-xs md:text-sm font-semibold tracking-[0.3em] uppercase">
+      {adTemplate && adTemplate.layout_model === 'split' && (
+        <section className="relative overflow-hidden">
+          <div className="grid md:grid-cols-2 min-h-[360px]">
+            <div className={`flex flex-col justify-center px-8 py-14 md:px-16 bg-gradient-to-br ${overlayClass.replace('/90', '/95').replace('/80', '/90').replace('/70', '/85')} bg-[hsl(200,60%,12%)]`}>
+              <p className="text-white/60 text-xs font-semibold tracking-[0.3em] uppercase mb-4">
                 Oportunidade exclusiva
               </p>
-              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-tight tracking-tight max-w-3xl">
+              <h2 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold text-white leading-tight tracking-tight mb-4">
                 {bannerHeading.includes(local.nome) ? (
                   <>
                     {bannerHeading.split(local.nome)[0]}
@@ -387,11 +520,11 @@ const LocalDetalhe = () => {
                 ) : bannerHeading}
               </h2>
               {bannerSubtitle && (
-                <p className="text-white/70 text-sm md:text-base max-w-xl">{bannerSubtitle}</p>
+                <p className="text-white/70 text-sm md:text-base mb-6">{bannerSubtitle}</p>
               )}
               <Link
                 to={local.url_vendas || `/imoveis?condominio=${local.slug}`}
-                className="mt-2 inline-flex items-center gap-2 px-8 py-4 font-bold text-sm md:text-base tracking-widest uppercase
+                className="inline-flex items-center gap-2 px-8 py-4 font-bold text-sm tracking-widest uppercase self-start
                   bg-gradient-to-r from-[hsl(39,70%,55%)] to-[hsl(39,80%,65%)] text-[hsl(200,60%,10%)]
                   shadow-[0_0_20px_hsl(39,70%,55%,0.3)] hover:shadow-[0_0_35px_hsl(39,70%,55%,0.5)]
                   transition-all duration-300 hover:scale-105"
@@ -400,9 +533,61 @@ const LocalDetalhe = () => {
                 <ExternalLink className="h-4 w-4" />
               </Link>
             </div>
+            <div className="relative min-h-[240px] md:min-h-0">
+              <img
+                src={local.banner_publicidade || local.imagem_destaque || ctaBgImage}
+                alt="Banner publicitário"
+                className="w-full h-full object-cover"
+                loading="lazy"
+              />
+            </div>
           </div>
-        )}
-      </div>
+        </section>
+      )}
+
+      {adTemplate && (!adTemplate.layout_model || adTemplate.layout_model === 'full_banner') && (
+        <section className="relative overflow-hidden group">
+          <div className="absolute inset-0 overflow-hidden">
+            <img
+              src={local.banner_publicidade || ctaBgImage}
+              alt="Banner publicitário"
+              className="w-full h-full object-cover transition-transform duration-[3s] ease-out group-hover:scale-110"
+              loading="lazy"
+              width={1920}
+              height={640}
+            />
+            <div className={`absolute inset-0 bg-gradient-to-r ${overlayClass}`} />
+          </div>
+
+          <div className="relative z-10 px-8 py-20 md:py-24 md:px-16 flex flex-col items-center text-center gap-6">
+            <p className="text-white/60 text-xs md:text-sm font-semibold tracking-[0.3em] uppercase">
+              Oportunidade exclusiva
+            </p>
+            <h2 className="font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-tight tracking-tight max-w-3xl">
+              {bannerHeading.includes(local.nome) ? (
+                <>
+                  {bannerHeading.split(local.nome)[0]}
+                  <span className="text-[hsl(39,80%,65%)]">{local.nome}</span>
+                  {bannerHeading.split(local.nome).slice(1).join(local.nome)}
+                </>
+              ) : bannerHeading}
+            </h2>
+            {bannerSubtitle && (
+              <p className="text-white/70 text-sm md:text-base max-w-xl">{bannerSubtitle}</p>
+            )}
+            <Link
+              to={local.url_vendas || `/imoveis?condominio=${local.slug}`}
+              className="mt-2 inline-flex items-center gap-2 px-8 py-4 font-bold text-sm md:text-base tracking-widest uppercase
+                bg-gradient-to-r from-[hsl(39,70%,55%)] to-[hsl(39,80%,65%)] text-[hsl(200,60%,10%)]
+                shadow-[0_0_20px_hsl(39,70%,55%,0.3)] hover:shadow-[0_0_35px_hsl(39,70%,55%,0.5)]
+                transition-all duration-300 hover:scale-105"
+            >
+              {bannerButtonText}
+              <ExternalLink className="h-4 w-4" />
+            </Link>
+          </div>
+        </section>
+      )}
 
       <Lightbox images={galleryImages} initialIndex={lightboxIndex} open={lightboxOpen} onClose={() => setLightboxOpen(false)} />
     </>
