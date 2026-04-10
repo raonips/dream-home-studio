@@ -2,13 +2,14 @@ import { memo } from "react";
 import DOMPurify from "dompurify";
 import { cn } from "@/lib/utils";
 import LocalCardInPost from "@/components/LocalCardInPost";
+import PropertyCardInPost from "@/components/PropertyCardInPost";
 
 interface PostContentRendererProps {
   html: string | null | undefined;
   className?: string;
 }
 
-const LOCAL_CARD_REGEX = /\[LOCAL_CARD:\s*([a-f0-9-]{36})\]/gi;
+const CARD_REGEX = /\[(LOCAL_CARD|PROPERTY_CARD):\s*([a-f0-9-]{36})\]/gi;
 
 /**
  * Renders blog post HTML content, replacing [LOCAL_CARD: uuid] markers
