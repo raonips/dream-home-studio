@@ -58,7 +58,7 @@ const QrRedirect = lazy(() => import("./pages/QrRedirect"));
 
 // Lazy-loaded layout pieces below the fold
 const SiteFooter = lazy(() => import("@/components/SiteFooter"));
-const WhatsAppButton = lazy(() => import("@/components/WhatsAppButton"));
+const FloatingMapButton = lazy(() => import("@/components/FloatingMapButton"));
 
 const LegacyRedirect = ({ prefix }: { prefix: string }) => {
   const slug = window.location.pathname.split('/').pop() || '';
@@ -179,7 +179,7 @@ const App = () => (
                       <SiteFooter />
                     </Suspense>
                     <Suspense fallback={null}>
-                      <WhatsAppButton />
+                      <FloatingMapButton />
                     </Suspense>
                   </div>
                 }
