@@ -6,14 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Save } from "lucide-react";
+import { Loader2, Save, MapPin, Home } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import RichTextEditor from "./RichTextEditor";
 import GuiaImageUploadField from "./GuiaImageUploadField";
-import { removeStorageFiles } from "@/lib/storageCleanup";
 import LocalSelectorDialog from "./LocalSelectorDialog";
 import PropertySelectorDialog from "./PropertySelectorDialog";
-import { MapPin, Home } from "lucide-react";
 
 interface GuiaPost {
   id: string;
@@ -74,15 +72,45 @@ const GuiaPostFormDialog = ({ open, onOpenChange, post, categorias, onSaved }: P
     }
   }, [post, open]);
 
+  const getEditorContent = () => {
+    const editor = quillRef.current?.getEditor?.();
+    const html = editor?.root?.innerHTML ?? "";
+    return html === "<p><br></p>" ? "" : html;
+  };
+
+  const insertMarker = (marker: string) => {
+    const editor = quillRef.current?.getEditor?.();
+
+    if (editor) {
+      const range = editor.getSelection(true);
+      const insertIndex = range ? range.index : Math.max(editor.getLength() - 1, 0);
+      const blockHtml = `${insertIndex > 0 ? "<p><br></p>" : ""}<p>${marker}</p><p><br></p>`;
+
+      editor.clipboard.dangerouslyPasteHTML(insertIndex, blockHtml, "user");
+      editor.setSelection(Math.max(editor.getLength() - 1, 0), 0, "silent");
+
+      const currentContent = getEditorContent();
+      setForm((prev) => ({ ...prev, conteudo: currentContent }));
+      return;
+    }
+
+    setForm((prev) => ({
+      ...prev,
+      conteudo: `${prev.conteudo || ""}<p>${marker}</p>`,
+    }));
+  };
+
   const handleSave = async () => {
     if (!form.titulo.trim()) return;
     setSaving(true);
+
+    const currentContent = getEditorContent();
 
     const payload = {
       titulo: form.titulo.trim(),
       slug: form.slug.trim() || slugify(form.titulo),
       resumo: form.resumo.trim() || null,
-      conteudo: form.conteudo || null,
+      conteudo: currentContent || form.conteudo || null,
       imagem_destaque: form.imagem_destaque.trim() || null,
       categoria_id: form.categoria_id || null,
       tags: form.tags.split(",").map((t) => t.trim()).filter(Boolean),
@@ -120,7 +148,7 @@ const GuiaPostFormDialog = ({ open, onOpenChange, post, categorias, onSaved }: P
           <div><Label>Resumo</Label><Textarea value={form.resumo} onChange={(e) => setForm({ ...form, resumo: e.target.value })} rows={2} /></div>
           <div>
             <Label>Conteúdo</Label>
-            <RichTextEditor ref={quillRef} value={form.conteudo} onChange={(v) => setForm({ ...form, conteudo: v })} />
+            <RichTextEditor ref={quillRef} value={form.conteudo} onChange={(v) => setForm((prev) => ({ ...prev, conteudo: v }))} />
           </div>
 
           <div className="flex gap-2 flex-wrap">
@@ -138,15 +166,7 @@ const GuiaPostFormDialog = ({ open, onOpenChange, post, categorias, onSaved }: P
             open={localSelectorOpen}
             onOpenChange={setLocalSelectorOpen}
             onSelect={(id, nome) => {
-              const marker = `[LOCAL_CARD: ${id}]`;
-              const editor = quillRef.current?.getEditor?.();
-              if (editor) {
-                const length = editor.getLength();
-                editor.insertText(length - 1, "\n");
-                editor.clipboard.dangerouslyPasteHTML(length, `<p>${marker}</p>`);
-              } else {
-                setForm((prev) => ({ ...prev, conteudo: (prev.conteudo || "") + `<p>${marker}</p>` }));
-              }
+              insertMarker(`[LOCAL_CARD: ${id}]`);
               toast({ title: `Card de "${nome}" inserido` });
             }}
           />
@@ -155,15 +175,7 @@ const GuiaPostFormDialog = ({ open, onOpenChange, post, categorias, onSaved }: P
             open={propertySelectorOpen}
             onOpenChange={setPropertySelectorOpen}
             onSelect={(id, title) => {
-              const marker = `[PROPERTY_CARD: ${id}]`;
-              const editor = quillRef.current?.getEditor?.();
-              if (editor) {
-                const length = editor.getLength();
-                editor.insertText(length - 1, "\n");
-                editor.clipboard.dangerouslyPasteHTML(length, `<p>${marker}</p>`);
-              } else {
-                setForm((prev) => ({ ...prev, conteudo: (prev.conteudo || "") + `<p>${marker}</p>` }));
-              }
+              insertMarker(`[PROPERTY_CARD: ${id}]`);
               toast({ title: `Card de "${title}" inserido` });
             }}
           />
@@ -201,7 +213,6 @@ const GuiaPostFormDialog = ({ open, onOpenChange, post, categorias, onSaved }: P
           <div><Label>Tags (separadas por vírgula)</Label><Input value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} /></div>
           <div><Label>Autor</Label><Input value={form.autor} onChange={(e) => setForm({ ...form, autor: e.target.value })} /></div>
 
-          {/* SEO */}
           <div className="border-t pt-4">
             <h3 className="font-semibold mb-3">SEO</h3>
             <div className="space-y-3">
