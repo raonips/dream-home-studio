@@ -192,6 +192,32 @@ const LocalDetalhe = () => {
                 </div>
               )}
             </div>
+
+            {/* ── Sidebar ── */}
+            <div className="space-y-4">
+              <div className="bg-card rounded-xl border border-border p-6 space-y-4 sticky top-24">
+                <h3 className="font-semibold text-foreground">Informações</h3>
+                {local.endereco && (
+                  <div className="flex items-start gap-3 text-sm"><MapPin className="h-4 w-4 text-primary mt-0.5 shrink-0" /><span className="text-muted-foreground">{local.endereco}</span></div>
+                )}
+                {local.telefone && (
+                  <div className="flex items-center gap-3 text-sm"><Phone className="h-4 w-4 text-primary shrink-0" /><a href={`tel:${local.telefone}`} className="text-muted-foreground hover:text-primary transition-colors">{local.telefone}</a></div>
+                )}
+                {local.horario_funcionamento && (
+                  <div className="flex items-start gap-3 text-sm"><Clock className="h-4 w-4 text-primary mt-0.5 shrink-0" /><span className="text-muted-foreground">{local.horario_funcionamento}</span></div>
+                )}
+                {local.website && (
+                  <div className="flex items-center gap-3 text-sm"><Globe className="h-4 w-4 text-primary shrink-0" /><a href={local.website} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate">{local.website.replace(/^https?:\/\//, "")}</a></div>
+                )}
+                {local.whatsapp && (
+                  <a href={`https://wa.me/${local.whatsapp}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full py-2.5 bg-[#25D366] text-white rounded-lg font-medium hover:bg-[#1da851] transition-colors text-sm">WhatsApp</a>
+                )}
+                {local.google_maps_link && (
+                  <a href={local.google_maps_link} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full py-2.5 bg-muted text-foreground rounded-lg font-medium hover:bg-muted/80 transition-colors text-sm"><ExternalLink className="h-4 w-4" /> Ver no Google Maps</a>
+                )}
+              </div>
+              <Link to="/" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"><ArrowLeft className="h-4 w-4" /> Voltar ao Guia</Link>
+            </div>
           </div>
 
           {/* ── Photo Gallery (same style as Condomínios) ── */}
@@ -223,34 +249,7 @@ const LocalDetalhe = () => {
                 ))}
               </div>
             </div>
-          )
-
-            {/* ── Sidebar ── */}
-            <div className="space-y-4">
-              <div className="bg-card rounded-xl border border-border p-6 space-y-4 sticky top-24">
-                <h3 className="font-semibold text-foreground">Informações</h3>
-                {local.endereco && (
-                  <div className="flex items-start gap-3 text-sm"><MapPin className="h-4 w-4 text-primary mt-0.5 shrink-0" /><span className="text-muted-foreground">{local.endereco}</span></div>
-                )}
-                {local.telefone && (
-                  <div className="flex items-center gap-3 text-sm"><Phone className="h-4 w-4 text-primary shrink-0" /><a href={`tel:${local.telefone}`} className="text-muted-foreground hover:text-primary transition-colors">{local.telefone}</a></div>
-                )}
-                {local.horario_funcionamento && (
-                  <div className="flex items-start gap-3 text-sm"><Clock className="h-4 w-4 text-primary mt-0.5 shrink-0" /><span className="text-muted-foreground">{local.horario_funcionamento}</span></div>
-                )}
-                {local.website && (
-                  <div className="flex items-center gap-3 text-sm"><Globe className="h-4 w-4 text-primary shrink-0" /><a href={local.website} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate">{local.website.replace(/^https?:\/\//, "")}</a></div>
-                )}
-                {local.whatsapp && (
-                  <a href={`https://wa.me/${local.whatsapp}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full py-2.5 bg-[#25D366] text-white rounded-lg font-medium hover:bg-[#1da851] transition-colors text-sm">WhatsApp</a>
-                )}
-                {local.google_maps_link && (
-                  <a href={local.google_maps_link} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full py-2.5 bg-muted text-foreground rounded-lg font-medium hover:bg-muted/80 transition-colors text-sm"><ExternalLink className="h-4 w-4" /> Ver no Google Maps</a>
-                )}
-              </div>
-              <Link to="/" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"><ArrowLeft className="h-4 w-4" /> Voltar ao Guia</Link>
-            </div>
-          </div>
+          )}
         </div>
 
         {/* ── CTA Banner — shows when there's an active template for this category ── */}
