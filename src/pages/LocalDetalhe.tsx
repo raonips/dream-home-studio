@@ -205,8 +205,21 @@ const LocalDetalhe = () => {
             <div className="flex flex-col gap-6">
               {((local.endereco || local.telefone || local.horario_funcionamento || local.website || local.whatsapp || local.google_maps_link) || galleryImages.length >= 3) && (
                 <div className="flex flex-col gap-6 md:sticky md:top-24 md:self-start">
-                  {(local.endereco || local.telefone || local.horario_funcionamento || local.website || local.whatsapp || local.google_maps_link) && (
+{(local.endereco || local.telefone || local.horario_funcionamento || local.website || local.whatsapp || local.google_maps_link || local.logo_url) && (
                     <div className="bg-card rounded-xl border border-border p-6 space-y-4">
+                      {/* Logo do Local */}
+                      {local.logo_url && (
+                        <div className="flex justify-center">
+                          <div className="w-20 h-20 md:w-24 md:h-24 rounded-lg bg-white border border-gray-100 p-2 flex items-center justify-center overflow-hidden transition-transform duration-300 hover:scale-105">
+                            <img
+                              src={local.logo_url}
+                              alt={`Logo ${local.nome}`}
+                              className="w-full h-full object-contain"
+                              loading="lazy"
+                            />
+                          </div>
+                        </div>
+                      )}
                       <h3 className="font-semibold text-foreground">Informações</h3>
                       {local.endereco && (
                         <div className="flex items-start gap-3 text-sm"><MapPin className="h-4 w-4 text-primary mt-0.5 shrink-0" /><span className="text-muted-foreground">{local.endereco}</span></div>
