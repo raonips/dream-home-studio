@@ -118,7 +118,7 @@ const GuiaPostFormDialog = ({ open, onOpenChange, post, categorias, onSaved }: P
           <div><Label>Resumo</Label><Textarea value={form.resumo} onChange={(e) => setForm({ ...form, resumo: e.target.value })} rows={2} /></div>
           <div>
             <Label>Conteúdo</Label>
-            <RichTextEditor value={form.conteudo} onChange={(v) => setForm({ ...form, conteudo: v })} />
+            <RichTextEditor ref={quillRef} value={form.conteudo} onChange={(v) => setForm({ ...form, conteudo: v })} />
           </div>
 
           <Button
@@ -136,10 +136,17 @@ const GuiaPostFormDialog = ({ open, onOpenChange, post, categorias, onSaved }: P
             onOpenChange={setLocalSelectorOpen}
             onSelect={(id, nome) => {
               const marker = `[LOCAL_CARD: ${id}]`;
-              setForm((prev) => ({
-                ...prev,
-                conteudo: (prev.conteudo || "") + `<p>${marker}</p>`,
-              }));
+              const editor = quillRef.current?.getEditor?.();
+              if (editor) {
+                const length = editor.getLength();
+                editor.insertText(length - 1, "\n");
+                editor.clipboard.dangerouslyPasteHTML(length, `<p>${marker}</p>`);
+              } else {
+                setForm((prev) => ({
+                  ...prev,
+                  conteudo: (prev.conteudo || "") + `<p>${marker}</p>`,
+                }));
+              }
               toast({ title: `Card de "${nome}" inserido` });
             }}
           />
