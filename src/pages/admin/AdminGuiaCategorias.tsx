@@ -15,6 +15,7 @@ interface GuiaCategoria {
   descricao: string | null;
   icone: string | null;
   ordem: number;
+  imagem: string | null;
 }
 
 const slugify = (text: string) =>
@@ -25,7 +26,7 @@ const AdminGuiaCategorias = () => {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<GuiaCategoria | null>(null);
-  const [form, setForm] = useState({ nome: "", slug: "", descricao: "", icone: "", ordem: 0 });
+  const [form, setForm] = useState({ nome: "", slug: "", descricao: "", icone: "", ordem: 0, imagem: "" });
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
 
@@ -40,13 +41,13 @@ const AdminGuiaCategorias = () => {
 
   const openNew = () => {
     setEditing(null);
-    setForm({ nome: "", slug: "", descricao: "", icone: "", ordem: 0 });
+    setForm({ nome: "", slug: "", descricao: "", icone: "", ordem: 0, imagem: "" });
     setDialogOpen(true);
   };
 
   const openEdit = (cat: GuiaCategoria) => {
     setEditing(cat);
-    setForm({ nome: cat.nome, slug: cat.slug, descricao: cat.descricao ?? "", icone: cat.icone ?? "", ordem: cat.ordem });
+    setForm({ nome: cat.nome, slug: cat.slug, descricao: cat.descricao ?? "", icone: cat.icone ?? "", ordem: cat.ordem, imagem: cat.imagem ?? "" });
     setDialogOpen(true);
   };
 
@@ -59,6 +60,7 @@ const AdminGuiaCategorias = () => {
       descricao: form.descricao.trim() || null,
       icone: form.icone.trim() || null,
       ordem: form.ordem,
+      imagem: form.imagem.trim() || null,
     };
 
     const { error } = editing
@@ -125,6 +127,12 @@ const AdminGuiaCategorias = () => {
             <div><Label>Nome</Label><Input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value, slug: slugify(e.target.value) })} /></div>
             <div><Label>Slug</Label><Input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} /></div>
             <div><Label>Descrição</Label><Input value={form.descricao} onChange={(e) => setForm({ ...form, descricao: e.target.value })} /></div>
+            <div><Label>Imagem da Categoria (URL)</Label><Input placeholder="https://exemplo.com/imagem.jpg" value={form.imagem} onChange={(e) => setForm({ ...form, imagem: e.target.value })} /></div>
+            {form.imagem && (
+              <div className="rounded-lg overflow-hidden border border-border aspect-video max-w-[200px]">
+                <img src={form.imagem} alt="Preview" className="w-full h-full object-cover" />
+              </div>
+            )}
             <div className="flex gap-4">
               <div className="flex-1"><Label>Ícone (emoji)</Label><Input value={form.icone} onChange={(e) => setForm({ ...form, icone: e.target.value })} /></div>
               <div className="w-24"><Label>Ordem</Label><Input type="number" value={form.ordem} onChange={(e) => setForm({ ...form, ordem: parseInt(e.target.value) || 0 })} /></div>

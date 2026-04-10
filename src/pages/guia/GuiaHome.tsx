@@ -25,6 +25,7 @@ interface GuiaCategoria {
   slug: string;
   descricao: string | null;
   icone: string | null;
+  imagem: string | null;
 }
 
 /* ── Category style map: icon + gradient color ── */
@@ -188,19 +189,19 @@ const GuiaHome = () => {
                   className="group relative overflow-hidden rounded-2xl col-span-2 md:col-span-2 aspect-[16/7]"
                 >
                   <img
-                    src={getFallbackImage(cat.slug)}
+                    src={cat.imagem || getFallbackImage(cat.slug)}
                     alt={cat.nome}
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                     loading="lazy"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[hsl(var(--navy))]/75 via-black/30 to-black/10 group-hover:from-[hsl(var(--navy))]/85 transition-colors" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-black/10 group-hover:from-black/80 transition-colors duration-300" />
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-4">
                     {cat.icone ? (
-                      <span className="text-4xl">{cat.icone}</span>
+                      <span className="text-4xl drop-shadow-lg">{cat.icone}</span>
                     ) : (
-                      <MapPin className="h-12 w-12 text-white drop-shadow-md" />
+                      <MapPin className="h-12 w-12 text-white drop-shadow-lg" />
                     )}
-                    <span className="text-white font-bold text-lg md:text-xl drop-shadow-md">
+                    <span className="text-white font-bold text-lg md:text-xl drop-shadow-lg">
                       {cat.nome}
                     </span>
                   </div>
@@ -215,19 +216,19 @@ const GuiaHome = () => {
                   className="group relative overflow-hidden rounded-2xl aspect-[4/3]"
                 >
                   <img
-                    src={getFallbackImage(cat.slug)}
+                    src={cat.imagem || getFallbackImage(cat.slug)}
                     alt={cat.nome}
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                     loading="lazy"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[hsl(var(--navy))]/75 via-black/30 to-transparent group-hover:from-[hsl(var(--navy))]/85 transition-colors" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent group-hover:from-black/80 transition-colors duration-300" />
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-3">
                     {cat.icone ? (
-                      <span className="text-3xl">{cat.icone}</span>
+                      <span className="text-3xl drop-shadow-lg">{cat.icone}</span>
                     ) : (
-                      <MapPin className="h-10 w-10 text-white drop-shadow-md" />
+                      <MapPin className="h-10 w-10 text-white drop-shadow-lg" />
                     )}
-                    <span className="text-white font-semibold text-sm md:text-base drop-shadow-md text-center">
+                    <span className="text-white font-semibold text-sm md:text-base drop-shadow-lg text-center">
                       {cat.nome}
                     </span>
                   </div>
