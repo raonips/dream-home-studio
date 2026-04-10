@@ -123,7 +123,7 @@ const SiteHeader = () => {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/90 backdrop-blur-md border-b border-border">
       <div className="container flex items-center justify-between h-16 md:h-20">
-        <Link to="/" className="flex items-center m-0 p-0">
+        <Link to={isImoveisSection ? "/imoveis" : "/"} className="flex items-center m-0 p-0">
           <img
             src={displayLogo}
             alt="Barra do Jacuípe"
