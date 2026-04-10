@@ -202,7 +202,7 @@ const LocalDetalhe = () => {
             </div>
 
             {/* ── Sidebar ── */}
-            <div className="space-y-6">
+            <div className="flex flex-col gap-6">
               {(local.endereco || local.telefone || local.horario_funcionamento || local.website || local.whatsapp || local.google_maps_link) && (
                 <div className="bg-card rounded-xl border border-border p-6 space-y-4 sticky top-24">
                   <h3 className="font-semibold text-foreground">Informações</h3>
@@ -229,8 +229,8 @@ const LocalDetalhe = () => {
 
               {/* ── Mini Galeria (sidebar, desktop only, min 3 fotos) ── */}
               {galleryImages.length >= 3 && (
-                <div className="hidden md:block bg-card rounded-xl border border-border p-5 shadow-sm">
-                  <h4 className="font-display font-semibold text-foreground mb-4 text-sm">Fotos de {local.nome}</h4>
+                <div className="hidden md:block bg-card rounded-xl border border-border p-6 shadow-sm">
+                  <h4 className="font-display font-semibold text-foreground mb-4 text-sm pt-0.5">Fotos de {local.nome}</h4>
                   <div className="grid grid-cols-2 gap-2.5">
                     {galleryImages.slice(0, 6).map((img, i) => (
                       <button
