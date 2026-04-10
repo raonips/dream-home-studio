@@ -188,7 +188,7 @@ const LocalDetalhe = () => {
                     prose-li:text-muted-foreground prose-li:leading-[1.7]
                     prose-ul:my-4 prose-ol:my-4
                   "
-                  style={{ overflowWrap: 'normal', wordBreak: 'keep-all', hyphens: 'none' }}
+                  style={{ overflowWrap: 'break-word', wordBreak: 'normal', hyphens: 'none' }}
                   dangerouslySetInnerHTML={{ __html: local.descricao }}
                 />
               )}
