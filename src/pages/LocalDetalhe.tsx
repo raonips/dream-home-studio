@@ -176,13 +176,21 @@ const LocalDetalhe = () => {
             {/* ── Main Content ── */}
             <div className="min-w-0 space-y-8">
               {local.descricao && (
-                <div>
-                  <div
-                    className="prose prose-lg max-w-none prose-slate prose-headings:text-foreground prose-p:text-muted-foreground prose-strong:text-foreground prose-a:text-primary"
-                    style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}
-                    dangerouslySetInnerHTML={{ __html: local.descricao }}
-                  />
-                </div>
+                <div
+                  className="
+                    prose prose-lg max-w-[75ch] text-left
+                    prose-headings:font-display prose-headings:text-foreground prose-headings:tracking-tight
+                    prose-h2:text-2xl prose-h2:font-bold prose-h2:mt-10 prose-h2:mb-4
+                    prose-h3:text-xl prose-h3:font-semibold prose-h3:mt-8 prose-h3:mb-3
+                    prose-p:text-muted-foreground prose-p:leading-[1.8] prose-p:mb-5
+                    prose-strong:text-foreground
+                    prose-a:text-primary prose-a:no-underline hover:prose-a:underline
+                    prose-li:text-muted-foreground prose-li:leading-[1.7]
+                    prose-ul:my-4 prose-ol:my-4
+                  "
+                  style={{ overflowWrap: 'break-word', wordBreak: 'normal' }}
+                  dangerouslySetInnerHTML={{ __html: local.descricao }}
+                />
               )}
 
               {local.latitude && local.longitude && (
