@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Menu, X, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -12,7 +12,7 @@ interface NavItem {
   children?: { label: string; href: string }[];
 }
 
-const navItems: NavItem[] = [
+const guiaNavItems: NavItem[] = [
   { label: "Início", href: "/" },
   {
     label: "O Destino",
@@ -33,6 +33,15 @@ const navItems: NavItem[] = [
   { label: "Condomínios", href: "/locais/condominios" },
   { label: "Imóveis", href: "/imoveis" },
   { label: "Blog", href: "/guia" },
+];
+
+const imoveisNavItems: NavItem[] = [
+  { label: "Início", href: "/imoveis" },
+  { label: "Imóveis à Venda", href: "/imoveis/vendas" },
+  { label: "Temporada", href: "/imoveis/temporada" },
+  { label: "Condomínios", href: "/imoveis/condominios" },
+  { label: "Contato", href: "/imoveis/contato" },
+  { label: "Portal Barra", href: "/" },
 ];
 
 const DropdownMenu = ({
@@ -103,6 +112,9 @@ const SiteHeader = () => {
   const location = useLocation();
   const { logo_url, header_logo_url } = useSiteSettings();
   const displayLogo = header_logo_url || logo_url || logoDefault;
+
+  const isImoveisSection = location.pathname.startsWith("/imoveis");
+  const navItems = isImoveisSection ? imoveisNavItems : guiaNavItems;
 
   const toggleMobileDropdown = (label: string) => {
     setMobileDropdowns((prev) => ({ ...prev, [label]: !prev[label] }));
