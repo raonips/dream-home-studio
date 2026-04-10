@@ -158,7 +158,7 @@ const GuiaPostDetalhe = () => {
 
           {/* Content */}
           {post.conteudo && (
-            <SafeHtmlContent
+            <PostContentRenderer
               html={post.conteudo}
               className="max-w-none dark:prose-invert"
             />
