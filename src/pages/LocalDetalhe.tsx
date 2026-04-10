@@ -216,6 +216,30 @@ const LocalDetalhe = () => {
                   <a href={local.google_maps_link} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full py-2.5 bg-muted text-foreground rounded-lg font-medium hover:bg-muted/80 transition-colors text-sm"><ExternalLink className="h-4 w-4" /> Ver no Google Maps</a>
                 )}
               </div>
+
+              {/* ── Mini Galeria (sidebar, desktop only, min 3 fotos) ── */}
+              {galleryImages.length >= 3 && (
+                <div className="hidden md:block bg-card rounded-xl border border-border p-5 shadow-sm">
+                  <h4 className="font-display font-semibold text-foreground mb-3 text-sm">Fotos de {local.nome}</h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    {galleryImages.slice(0, 6).map((img, i) => (
+                      <button
+                        key={i}
+                        onClick={() => openLightbox(i)}
+                        className="aspect-square rounded-lg overflow-hidden border border-border hover:shadow-md transition-all group"
+                      >
+                        <img
+                          src={img}
+                          alt={`${local.nome} - foto ${i + 1}`}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          loading="lazy"
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <Link to="/" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"><ArrowLeft className="h-4 w-4" /> Voltar ao Guia</Link>
             </div>
           </div>
