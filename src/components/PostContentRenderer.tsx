@@ -2,13 +2,14 @@ import { memo } from "react";
 import DOMPurify from "dompurify";
 import { cn } from "@/lib/utils";
 import LocalCardInPost from "@/components/LocalCardInPost";
+import PropertyCardInPost from "@/components/PropertyCardInPost";
 
 interface PostContentRendererProps {
   html: string | null | undefined;
   className?: string;
 }
 
-const LOCAL_CARD_REGEX = /\[LOCAL_CARD:\s*([a-f0-9-]{36})\]/gi;
+const CARD_REGEX = /\[(LOCAL_CARD|PROPERTY_CARD):\s*([a-f0-9-]{36})\]/gi;
 
 /**
  * Renders blog post HTML content, replacing [LOCAL_CARD: uuid] markers
@@ -27,8 +28,8 @@ const PostContentRenderer = memo(({ html, className }: PostContentRendererProps)
     FORBID_TAGS: ["script"],
   });
 
-  // Check if content has any LOCAL_CARD markers
-  if (!LOCAL_CARD_REGEX.test(clean)) {
+  // Check if content has any card markers
+  if (!CARD_REGEX.test(clean)) {
     return (
       <div
         className={cn("safe-html-content prose prose-lg max-w-[75ch]", className)}
@@ -38,18 +39,19 @@ const PostContentRenderer = memo(({ html, className }: PostContentRendererProps)
   }
 
   // Reset regex lastIndex after test()
-  LOCAL_CARD_REGEX.lastIndex = 0;
+  CARD_REGEX.lastIndex = 0;
 
-  // Split content by LOCAL_CARD markers
-  const parts: { type: "html" | "local"; content: string }[] = [];
+  // Split content by card markers
+  const parts: { type: "html" | "local" | "property"; content: string }[] = [];
   let lastIndex = 0;
   let match: RegExpExecArray | null;
 
-  while ((match = LOCAL_CARD_REGEX.exec(clean)) !== null) {
+  while ((match = CARD_REGEX.exec(clean)) !== null) {
     if (match.index > lastIndex) {
       parts.push({ type: "html", content: clean.slice(lastIndex, match.index) });
     }
-    parts.push({ type: "local", content: match[1] });
+    const cardType = match[1].toUpperCase() === "LOCAL_CARD" ? "local" : "property";
+    parts.push({ type: cardType, content: match[2] });
     lastIndex = match.index + match[0].length;
   }
 
@@ -62,6 +64,8 @@ const PostContentRenderer = memo(({ html, className }: PostContentRendererProps)
       {parts.map((part, i) =>
         part.type === "local" ? (
           <LocalCardInPost key={`local-${part.content}`} localId={part.content} />
+        ) : part.type === "property" ? (
+          <PropertyCardInPost key={`prop-${part.content}`} propertyId={part.content} />
         ) : (
           <div key={i} dangerouslySetInnerHTML={{ __html: part.content }} />
         )
