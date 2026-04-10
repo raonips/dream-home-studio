@@ -194,34 +194,36 @@ const LocalDetalhe = () => {
             </div>
 
             {/* ── Sidebar ── */}
-            <div className="space-y-4">
-              <div className="bg-card rounded-xl border border-border p-6 space-y-4 sticky top-24">
-                <h3 className="font-semibold text-foreground">Informações</h3>
-                {local.endereco && (
-                  <div className="flex items-start gap-3 text-sm"><MapPin className="h-4 w-4 text-primary mt-0.5 shrink-0" /><span className="text-muted-foreground">{local.endereco}</span></div>
-                )}
-                {local.telefone && (
-                  <div className="flex items-center gap-3 text-sm"><Phone className="h-4 w-4 text-primary shrink-0" /><a href={`tel:${local.telefone}`} className="text-muted-foreground hover:text-primary transition-colors">{local.telefone}</a></div>
-                )}
-                {local.horario_funcionamento && (
-                  <div className="flex items-start gap-3 text-sm"><Clock className="h-4 w-4 text-primary mt-0.5 shrink-0" /><span className="text-muted-foreground">{local.horario_funcionamento}</span></div>
-                )}
-                {local.website && (
-                  <div className="flex items-center gap-3 text-sm"><Globe className="h-4 w-4 text-primary shrink-0" /><a href={local.website} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate">{local.website.replace(/^https?:\/\//, "")}</a></div>
-                )}
-                {local.whatsapp && (
-                  <a href={`https://wa.me/${local.whatsapp}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full py-2.5 bg-[#25D366] text-white rounded-lg font-medium hover:bg-[#1da851] transition-colors text-sm">WhatsApp</a>
-                )}
-                {local.google_maps_link && (
-                  <a href={local.google_maps_link} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full py-2.5 bg-muted text-foreground rounded-lg font-medium hover:bg-muted/80 transition-colors text-sm"><ExternalLink className="h-4 w-4" /> Ver no Google Maps</a>
-                )}
-              </div>
+            <div className="space-y-5">
+              {(local.endereco || local.telefone || local.horario_funcionamento || local.website || local.whatsapp || local.google_maps_link) && (
+                <div className="bg-card rounded-xl border border-border p-6 space-y-4 sticky top-24">
+                  <h3 className="font-semibold text-foreground">Informações</h3>
+                  {local.endereco && (
+                    <div className="flex items-start gap-3 text-sm"><MapPin className="h-4 w-4 text-primary mt-0.5 shrink-0" /><span className="text-muted-foreground">{local.endereco}</span></div>
+                  )}
+                  {local.telefone && (
+                    <div className="flex items-center gap-3 text-sm"><Phone className="h-4 w-4 text-primary shrink-0" /><a href={`tel:${local.telefone}`} className="text-muted-foreground hover:text-primary transition-colors">{local.telefone}</a></div>
+                  )}
+                  {local.horario_funcionamento && (
+                    <div className="flex items-start gap-3 text-sm"><Clock className="h-4 w-4 text-primary mt-0.5 shrink-0" /><span className="text-muted-foreground">{local.horario_funcionamento}</span></div>
+                  )}
+                  {local.website && (
+                    <div className="flex items-center gap-3 text-sm"><Globe className="h-4 w-4 text-primary shrink-0" /><a href={local.website} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate">{local.website.replace(/^https?:\/\//, "")}</a></div>
+                  )}
+                  {local.whatsapp && (
+                    <a href={`https://wa.me/${local.whatsapp}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full py-2.5 bg-[#25D366] text-white rounded-lg font-medium hover:bg-[#1da851] transition-colors text-sm">WhatsApp</a>
+                  )}
+                  {local.google_maps_link && (
+                    <a href={local.google_maps_link} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full py-2.5 bg-muted text-foreground rounded-lg font-medium hover:bg-muted/80 transition-colors text-sm"><ExternalLink className="h-4 w-4" /> Ver no Google Maps</a>
+                  )}
+                </div>
+              )}
 
               {/* ── Mini Galeria (sidebar, desktop only, min 3 fotos) ── */}
               {galleryImages.length >= 3 && (
                 <div className="hidden md:block bg-card rounded-xl border border-border p-5 shadow-sm">
-                  <h4 className="font-display font-semibold text-foreground mb-3 text-sm">Fotos de {local.nome}</h4>
-                  <div className="grid grid-cols-2 gap-2">
+                  <h4 className="font-display font-semibold text-foreground mb-4 text-sm">Fotos de {local.nome}</h4>
+                  <div className="grid grid-cols-2 gap-2.5">
                     {galleryImages.slice(0, 6).map((img, i) => (
                       <button
                         key={i}
