@@ -99,9 +99,11 @@ const CATEGORIA_GROUP_MAP: Record<string, string[]> = {
 };
 
 const MapaGeral = () => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const initialCategoria = searchParams.get("categoria");
   const condominioFilter = searchParams.get("condominio");
+  const localFilter = searchParams.get("local");
 
   const [allLocais, setAllLocais] = useState<MapLocal[]>([]);
   const [loading, setLoading] = useState(true);
@@ -112,6 +114,10 @@ const MapaGeral = () => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.LayerGroup | null>(null);
+
+  // Determine if we have a single-item focus (condominio or local slug)
+  const singleSlugFilter = condominioFilter || localFilter;
+  const hasUrlFilter = !!singleSlugFilter || !!initialCategoria;
 
   useEffect(() => {
     const fetchAll = async () => {
