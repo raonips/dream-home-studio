@@ -6,7 +6,7 @@ interface SafeHtmlContentProps {
   html: string | null | undefined;
   className?: string;
   /** Additional DOMPurify config */
-  sanitizeConfig?: DOMPurify.Config;
+  sanitizeConfig?: Record<string, unknown>;
 }
 
 /**
