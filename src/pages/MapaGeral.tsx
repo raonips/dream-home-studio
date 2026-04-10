@@ -696,7 +696,7 @@ const MapaGeral = () => {
             <Badge
               variant={showTemporada ? "default" : "outline"}
               className={`cursor-pointer gap-1 ${showTemporada ? "bg-purple-600" : "border-purple-300 text-purple-700"}`}
-              onClick={() => { setShowTemporada(!showTemporada); setCondoPropertyFilter(null); setShowFilters(false); }}
+              onClick={() => { skipNextFitRef.current = true; setShowTemporada(!showTemporada); setCondoPropertyFilter(null); setShowFilters(false); }}
             >
               🔑 Temporada ({temporadaCount})
             </Badge>
