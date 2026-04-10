@@ -266,7 +266,7 @@ const MapaGeral = () => {
       const bounds = L.latLngBounds(withCoords.map(l => [l.latitude!, l.longitude!] as [number, number]));
       mapInstanceRef.current.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
     }
-  }, [withCoords, selectedCategoria]);
+  }, [withCoords, selectedCategoria, condominioFilter]);
 
   return (
     <>
