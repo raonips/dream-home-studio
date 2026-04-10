@@ -453,6 +453,7 @@ export type Database = {
           banner_publicidade: string | null
           categoria: string
           created_at: string
+          cupom_desconto: string | null
           descricao: string | null
           endereco: string | null
           google_maps_link: string | null
@@ -471,6 +472,7 @@ export type Database = {
           telefone: string | null
           updated_at: string
           url_vendas: string | null
+          valor_desconto: string | null
           website: string | null
           whatsapp: string | null
         }
@@ -479,6 +481,7 @@ export type Database = {
           banner_publicidade?: string | null
           categoria?: string
           created_at?: string
+          cupom_desconto?: string | null
           descricao?: string | null
           endereco?: string | null
           google_maps_link?: string | null
@@ -497,6 +500,7 @@ export type Database = {
           telefone?: string | null
           updated_at?: string
           url_vendas?: string | null
+          valor_desconto?: string | null
           website?: string | null
           whatsapp?: string | null
         }
@@ -505,6 +509,7 @@ export type Database = {
           banner_publicidade?: string | null
           categoria?: string
           created_at?: string
+          cupom_desconto?: string | null
           descricao?: string | null
           endereco?: string | null
           google_maps_link?: string | null
@@ -523,6 +528,7 @@ export type Database = {
           telefone?: string | null
           updated_at?: string
           url_vendas?: string | null
+          valor_desconto?: string | null
           website?: string | null
           whatsapp?: string | null
         }
