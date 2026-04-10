@@ -149,26 +149,9 @@ const GuiaHome = () => {
             {settings.hero_subtitle || "Descubra as maravilhas naturais e culturais de Barra do Jacuípe!"}
           </p>
 
-          {/* Search bar */}
-          <div className="w-full max-w-2xl bg-white rounded-xl shadow-hero p-2 flex flex-col sm:flex-row gap-2">
-            <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-muted/50 rounded-lg">
-              <Search className="h-4 w-4 text-muted-foreground shrink-0" />
-              <input
-                type="text"
-                placeholder="O que você está procurando?"
-                className="bg-transparent outline-none w-full text-sm text-foreground placeholder:text-muted-foreground"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && searchQuery.trim() && navigate(`/busca?q=${encodeURIComponent(searchQuery.trim())}`)}
-              />
-            </div>
-            <button
-              onClick={() => searchQuery.trim() && navigate(`/busca?q=${encodeURIComponent(searchQuery.trim())}`)}
-              className="bg-primary text-primary-foreground px-6 py-2.5 rounded-lg font-medium text-sm hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
-            >
-              <Search className="h-4 w-4" />
-              Pesquisar
-            </button>
+          {/* Search bar — Smart autocomplete */}
+          <div className="w-full max-w-2xl">
+            <SmartSearch variant="hero" placeholder="Buscar locais, imóveis, categorias..." />
           </div>
         </div>
       </section>
