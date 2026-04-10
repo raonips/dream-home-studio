@@ -292,18 +292,13 @@ const LocalFormDialog = ({ open, onOpenChange, editing, onSuccess }: Props) => {
               </div>
             </TabsContent>
 
-            {/* ── Tab: Arquivos (Logo) ── */}
+            {/* ── Tab: Arquivos (Logo with Cropper) ── */}
             <TabsContent value="files" className="space-y-4 mt-4">
-              <div className="space-y-2">
-                <GuiaImageUploadField
-                  label="Logo / Logomarca"
-                  value={form.logo_url}
-                  onChange={(url) => setForm((f) => ({ ...f, logo_url: url }))}
-                  bucket="property-images"
-                  folder={`logos/${form.slug || 'novo-local'}`}
-                  aspectHint="Recomendado: PNG transparente, quadrado (ex: 500×500px)"
-                />
-              </div>
+              <LogoUploadWithCropper
+                value={form.logo_url}
+                onChange={(url) => setForm((f) => ({ ...f, logo_url: url }))}
+                slug={form.slug || 'novo-local'}
+              />
 
               {form.logo_url && (
                 <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
