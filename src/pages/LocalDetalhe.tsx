@@ -204,7 +204,7 @@ const LocalDetalhe = () => {
             {/* ── Sidebar ── */}
             <div className="flex flex-col gap-6">
               {(local.endereco || local.telefone || local.horario_funcionamento || local.website || local.whatsapp || local.google_maps_link) && (
-                <div className="bg-card rounded-xl border border-border p-6 space-y-4 sticky top-24">
+                <div className="bg-card rounded-xl border border-border p-6 space-y-4 md:sticky md:top-24">
                   <h3 className="font-semibold text-foreground">Informações</h3>
                   {local.endereco && (
                     <div className="flex items-start gap-3 text-sm"><MapPin className="h-4 w-4 text-primary mt-0.5 shrink-0" /><span className="text-muted-foreground">{local.endereco}</span></div>
