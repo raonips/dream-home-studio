@@ -154,11 +154,12 @@ const MapaGeral = () => {
   const filtered = useMemo(() => {
     let items = allLocais;
 
-    // Condomínio filter from URL takes priority
-    if (condominioFilter) {
+    // Single-item filters: condominio or local slug → show ONLY that item
+    if (localFilter) {
+      items = items.filter(l => l.slug === localFilter);
+    } else if (condominioFilter) {
       items = items.filter(l => l.slug === condominioFilter);
     } else if (selectedCategoria) {
-      // Check if this is a category group (e.g. "gastronomia" → ["restaurante","padaria","gastronomia"])
       const groupCats = CATEGORIA_GROUP_MAP[selectedCategoria];
       if (groupCats) {
         items = items.filter(l => groupCats.includes(l.categoria));
@@ -172,7 +173,7 @@ const MapaGeral = () => {
       items = items.filter(l => l.nome.toLowerCase().includes(s) || l.endereco?.toLowerCase().includes(s));
     }
     return items;
-  }, [allLocais, selectedCategoria, search]);
+  }, [allLocais, selectedCategoria, search, condominioFilter, localFilter]);
 
   const withCoords = useMemo(() => filtered.filter(l => l.latitude && l.longitude), [filtered]);
 
