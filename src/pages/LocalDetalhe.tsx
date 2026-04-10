@@ -203,50 +203,54 @@ const LocalDetalhe = () => {
 
             {/* ── Sidebar ── */}
             <div className="flex flex-col gap-6">
-              {(local.endereco || local.telefone || local.horario_funcionamento || local.website || local.whatsapp || local.google_maps_link) && (
-                <div className="bg-card rounded-xl border border-border p-6 space-y-4 md:sticky md:top-24">
-                  <h3 className="font-semibold text-foreground">Informações</h3>
-                  {local.endereco && (
-                    <div className="flex items-start gap-3 text-sm"><MapPin className="h-4 w-4 text-primary mt-0.5 shrink-0" /><span className="text-muted-foreground">{local.endereco}</span></div>
+              {((local.endereco || local.telefone || local.horario_funcionamento || local.website || local.whatsapp || local.google_maps_link) || galleryImages.length >= 3) && (
+                <div className="flex flex-col gap-6 md:sticky md:top-24 md:self-start">
+                  {(local.endereco || local.telefone || local.horario_funcionamento || local.website || local.whatsapp || local.google_maps_link) && (
+                    <div className="bg-card rounded-xl border border-border p-6 space-y-4">
+                      <h3 className="font-semibold text-foreground">Informações</h3>
+                      {local.endereco && (
+                        <div className="flex items-start gap-3 text-sm"><MapPin className="h-4 w-4 text-primary mt-0.5 shrink-0" /><span className="text-muted-foreground">{local.endereco}</span></div>
+                      )}
+                      {local.telefone && (
+                        <div className="flex items-center gap-3 text-sm"><Phone className="h-4 w-4 text-primary shrink-0" /><a href={`tel:${local.telefone}`} className="text-muted-foreground hover:text-primary transition-colors">{local.telefone}</a></div>
+                      )}
+                      {local.horario_funcionamento && (
+                        <div className="flex items-start gap-3 text-sm"><Clock className="h-4 w-4 text-primary mt-0.5 shrink-0" /><span className="text-muted-foreground">{local.horario_funcionamento}</span></div>
+                      )}
+                      {local.website && (
+                        <div className="flex items-center gap-3 text-sm"><Globe className="h-4 w-4 text-primary shrink-0" /><a href={local.website} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate">{local.website.replace(/^https?:\/\//, "")}</a></div>
+                      )}
+                      {local.whatsapp && (
+                        <a href={`https://wa.me/${local.whatsapp}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full py-2.5 bg-[#25D366] text-white rounded-lg font-medium hover:bg-[#1da851] transition-colors text-sm">WhatsApp</a>
+                      )}
+                      {local.google_maps_link && (
+                        <a href={local.google_maps_link} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full py-2.5 bg-muted text-foreground rounded-lg font-medium hover:bg-muted/80 transition-colors text-sm"><ExternalLink className="h-4 w-4" /> Ver no Google Maps</a>
+                      )}
+                    </div>
                   )}
-                  {local.telefone && (
-                    <div className="flex items-center gap-3 text-sm"><Phone className="h-4 w-4 text-primary shrink-0" /><a href={`tel:${local.telefone}`} className="text-muted-foreground hover:text-primary transition-colors">{local.telefone}</a></div>
-                  )}
-                  {local.horario_funcionamento && (
-                    <div className="flex items-start gap-3 text-sm"><Clock className="h-4 w-4 text-primary mt-0.5 shrink-0" /><span className="text-muted-foreground">{local.horario_funcionamento}</span></div>
-                  )}
-                  {local.website && (
-                    <div className="flex items-center gap-3 text-sm"><Globe className="h-4 w-4 text-primary shrink-0" /><a href={local.website} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate">{local.website.replace(/^https?:\/\//, "")}</a></div>
-                  )}
-                  {local.whatsapp && (
-                    <a href={`https://wa.me/${local.whatsapp}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full py-2.5 bg-[#25D366] text-white rounded-lg font-medium hover:bg-[#1da851] transition-colors text-sm">WhatsApp</a>
-                  )}
-                  {local.google_maps_link && (
-                    <a href={local.google_maps_link} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full py-2.5 bg-muted text-foreground rounded-lg font-medium hover:bg-muted/80 transition-colors text-sm"><ExternalLink className="h-4 w-4" /> Ver no Google Maps</a>
-                  )}
-                </div>
-              )}
 
-              {/* ── Mini Galeria (sidebar, desktop only, min 3 fotos) ── */}
-              {galleryImages.length >= 3 && (
-                <div className="hidden md:block bg-card rounded-xl border border-border p-6 shadow-sm">
-                  <h4 className="font-display font-semibold text-foreground mb-4 text-sm pt-0.5">Fotos de {local.nome}</h4>
-                  <div className="grid grid-cols-2 gap-2.5">
-                    {galleryImages.slice(0, 6).map((img, i) => (
-                      <button
-                        key={i}
-                        onClick={() => openLightbox(i)}
-                        className="aspect-square rounded-lg overflow-hidden border border-border hover:shadow-md transition-all group"
-                      >
-                        <img
-                          src={img}
-                          alt={`${local.nome} - foto ${i + 1}`}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          loading="lazy"
-                        />
-                      </button>
-                    ))}
-                  </div>
+                  {/* ── Mini Galeria (sidebar, desktop only, min 3 fotos) ── */}
+                  {galleryImages.length >= 3 && (
+                    <div className="hidden md:block bg-card rounded-xl border border-border p-6 shadow-sm">
+                      <h4 className="font-display font-semibold text-foreground mb-4 pt-1 text-sm">Fotos de {local.nome}</h4>
+                      <div className="grid grid-cols-2 gap-2.5">
+                        {galleryImages.slice(0, 6).map((img, i) => (
+                          <button
+                            key={i}
+                            onClick={() => openLightbox(i)}
+                            className="aspect-square rounded-lg overflow-hidden border border-border hover:shadow-md transition-all group"
+                          >
+                            <img
+                              src={img}
+                              alt={`${local.nome} - foto ${i + 1}`}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                              loading="lazy"
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
