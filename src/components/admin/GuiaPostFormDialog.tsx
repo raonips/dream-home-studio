@@ -123,15 +123,16 @@ const GuiaPostFormDialog = ({ open, onOpenChange, post, categorias, onSaved }: P
             <RichTextEditor ref={quillRef} value={form.conteudo} onChange={(v) => setForm({ ...form, conteudo: v })} />
           </div>
 
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setLocalSelectorOpen(true)}
-          >
-            <MapPin className="h-4 w-4 mr-2" />
-            Inserir Card de Local
-          </Button>
+          <div className="flex gap-2 flex-wrap">
+            <Button type="button" variant="outline" size="sm" onClick={() => setLocalSelectorOpen(true)}>
+              <MapPin className="h-4 w-4 mr-2" />
+              Inserir Card de Local
+            </Button>
+            <Button type="button" variant="outline" size="sm" onClick={() => setPropertySelectorOpen(true)}>
+              <Home className="h-4 w-4 mr-2" />
+              Inserir Card de Imóvel
+            </Button>
+          </div>
 
           <LocalSelectorDialog
             open={localSelectorOpen}
@@ -144,12 +145,26 @@ const GuiaPostFormDialog = ({ open, onOpenChange, post, categorias, onSaved }: P
                 editor.insertText(length - 1, "\n");
                 editor.clipboard.dangerouslyPasteHTML(length, `<p>${marker}</p>`);
               } else {
-                setForm((prev) => ({
-                  ...prev,
-                  conteudo: (prev.conteudo || "") + `<p>${marker}</p>`,
-                }));
+                setForm((prev) => ({ ...prev, conteudo: (prev.conteudo || "") + `<p>${marker}</p>` }));
               }
               toast({ title: `Card de "${nome}" inserido` });
+            }}
+          />
+
+          <PropertySelectorDialog
+            open={propertySelectorOpen}
+            onOpenChange={setPropertySelectorOpen}
+            onSelect={(id, title) => {
+              const marker = `[PROPERTY_CARD: ${id}]`;
+              const editor = quillRef.current?.getEditor?.();
+              if (editor) {
+                const length = editor.getLength();
+                editor.insertText(length - 1, "\n");
+                editor.clipboard.dangerouslyPasteHTML(length, `<p>${marker}</p>`);
+              } else {
+                setForm((prev) => ({ ...prev, conteudo: (prev.conteudo || "") + `<p>${marker}</p>` }));
+              }
+              toast({ title: `Card de "${title}" inserido` });
             }}
           />
 
