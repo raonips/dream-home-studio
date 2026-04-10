@@ -288,6 +288,66 @@ const LocalFormDialog = ({ open, onOpenChange, editing, onSuccess }: Props) => {
               </div>
             </TabsContent>
 
+            {/* ── Tab: Arquivos (Logo) ── */}
+            <TabsContent value="files" className="space-y-4 mt-4">
+              <div className="space-y-2">
+                <GuiaImageUploadField
+                  label="Logo / Logomarca"
+                  value={form.logo_url}
+                  onChange={(url) => setForm((f) => ({ ...f, logo_url: url }))}
+                  bucket="property-images"
+                  folder={`logos/${form.slug || 'novo-local'}`}
+                  aspectHint="Recomendado: PNG transparente, quadrado (ex: 500×500px)"
+                />
+              </div>
+
+              {form.logo_url && (
+                <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
+                  <p className="text-sm font-medium text-foreground">Preview da Logo</p>
+                  <div className="flex justify-center">
+                    <img
+                      src={form.logo_url}
+                      alt="Logo"
+                      className="max-h-32 max-w-[200px] object-contain rounded-md shadow-sm"
+                    />
+                  </div>
+                  <div className="flex gap-2 justify-center">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={async () => {
+                        try {
+                          const res = await fetch(form.logo_url);
+                          const blob = await res.blob();
+                          const a = document.createElement('a');
+                          a.href = URL.createObjectURL(blob);
+                          a.download = `logo-${form.slug || 'local'}.${blob.type.split('/')[1] || 'png'}`;
+                          a.click();
+                          URL.revokeObjectURL(a.href);
+                        } catch {
+                          toast({ variant: 'destructive', title: 'Erro ao baixar logo' });
+                        }
+                      }}
+                    >
+                      <Download className="h-4 w-4 mr-1.5" /> Baixar Logo
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        navigator.clipboard.writeText(form.logo_url);
+                        sonnerToast.success('Link copiado para a área de transferência!');
+                      }}
+                    >
+                      <Link className="h-4 w-4 mr-1.5" /> Copiar Link
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </TabsContent>
+
             {/* ── Tab: Contato ── */}
             <TabsContent value="contact" className="space-y-4 mt-4">
               <div className="grid grid-cols-2 gap-4">
