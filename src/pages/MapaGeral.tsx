@@ -185,8 +185,8 @@ const MapaGeral = () => {
         const shortName = local.nome.length > 18 ? local.nome.substring(0, 16) + "…" : local.nome;
         markerHtml = `
           <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
-            <div style="width:40px;height:40px;border-radius:50%;background:white;border:2.5px solid ${color};box-shadow:0 2px 8px rgba(0,0,0,.18);display:flex;align-items:center;justify-content:center;overflow:hidden;">
-              <img src="${local.logo_url}" style="width:32px;height:32px;border-radius:50%;object-fit:contain;" />
+            <div style="width:44px;height:44px;border-radius:50%;background:white;box-shadow:0 2px 8px rgba(0,0,0,.18);display:flex;align-items:center;justify-content:center;overflow:hidden;">
+              <img src="${local.logo_url}" style="width:44px;height:44px;object-fit:cover;" />
             </div>
             <span style="font-family:'Inter',sans-serif;font-size:10px;font-weight:600;color:#1a1a1a;background:rgba(255,255,255,.92);padding:1px 6px;border-radius:4px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.12);max-width:120px;text-overflow:ellipsis;overflow:hidden;">${shortName}</span>
           </div>`;
@@ -374,8 +374,8 @@ const MapaGeral = () => {
                           className="w-full h-full object-cover"
                         />
                         {local.logo_url && (
-                          <div className="absolute -bottom-1 -left-1 w-8 h-8 rounded-full bg-white border-2 border-white shadow-sm overflow-hidden">
-                            <img src={local.logo_url} alt="" className="w-full h-full object-contain" />
+                          <div className="absolute -bottom-1 -left-1 w-8 h-8 rounded-full overflow-hidden shadow-sm">
+                            <img src={local.logo_url} alt="" className="w-full h-full object-cover" />
                           </div>
                         )}
                       </div>
