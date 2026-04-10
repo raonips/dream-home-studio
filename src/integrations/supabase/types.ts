@@ -185,6 +185,7 @@ export type Database = {
           descricao: string | null
           icone: string | null
           id: string
+          imagem: string | null
           nome: string
           ordem: number | null
           slug: string
@@ -195,6 +196,7 @@ export type Database = {
           descricao?: string | null
           icone?: string | null
           id?: string
+          imagem?: string | null
           nome: string
           ordem?: number | null
           slug: string
@@ -205,6 +207,7 @@ export type Database = {
           descricao?: string | null
           icone?: string | null
           id?: string
+          imagem?: string | null
           nome?: string
           ordem?: number | null
           slug?: string

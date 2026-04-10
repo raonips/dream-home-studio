@@ -1,0 +1,1 @@
+ALTER TABLE public.guia_categorias ADD COLUMN imagem text DEFAULT NULL;
