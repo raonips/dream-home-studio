@@ -90,11 +90,23 @@ const CATEGORIA_COLORS: Record<string, string> = {
 const DEFAULT_CENTER: [number, number] = [-12.695, -38.14];
 const DEFAULT_ZOOM = 13;
 
+// Maps URL category groups to individual DB categories
+const CATEGORIA_GROUP_MAP: Record<string, string[]> = {
+  gastronomia: ["restaurante", "padaria", "gastronomia"],
+  hospedagem: ["hospedagem"],
+  utilidade: ["utilidade", "gas", "limpeza", "farmacia", "saude", "mercado"],
+  condominio: ["condominio"],
+};
+
 const MapaGeral = () => {
+  const [searchParams] = useSearchParams();
+  const initialCategoria = searchParams.get("categoria");
+  const condominioFilter = searchParams.get("condominio");
+
   const [allLocais, setAllLocais] = useState<MapLocal[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [selectedCategoria, setSelectedCategoria] = useState<string | null>(null);
+  const [selectedCategoria, setSelectedCategoria] = useState<string | null>(initialCategoria);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const mapRef = useRef<HTMLDivElement>(null);
