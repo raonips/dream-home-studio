@@ -10,9 +10,10 @@ import RichTextEditor from '@/components/admin/RichTextEditor';
 import ImageGalleryUpload from '@/components/admin/ImageGalleryUpload';
 import GuiaImageUploadField from '@/components/admin/GuiaImageUploadField';
 import SmartMap from '@/components/SmartMap';
-import { Loader2, FileText, Settings, MapPin, Phone } from 'lucide-react';
+import { Loader2, FileText, Settings, MapPin, Phone, Image, Download, Link } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { toast as sonnerToast } from 'sonner';
 
 export interface LocalRow {
   id: string;
@@ -36,6 +37,7 @@ export interface LocalRow {
   banner_publicidade?: string | null;
   seo_title?: string | null;
   seo_description?: string | null;
+  logo_url?: string | null;
 }
 
 const CATEGORIAS = [
@@ -76,6 +78,7 @@ const LocalFormDialog = ({ open, onOpenChange, editing, onSuccess }: Props) => {
     seo_title: '', seo_description: '',
     latitude: DEFAULT_LAT, longitude: DEFAULT_LNG,
     url_vendas: '', banner_publicidade: '',
+    logo_url: '',
   });
 
   useEffect(() => {
@@ -99,6 +102,7 @@ const LocalFormDialog = ({ open, onOpenChange, editing, onSuccess }: Props) => {
         longitude: editing.longitude ?? DEFAULT_LNG,
         url_vendas: editing.url_vendas || '',
         banner_publicidade: editing.banner_publicidade || '',
+        logo_url: editing.logo_url || '',
       });
       const editImages: string[] = [];
       if (editing.imagem_destaque) editImages.push(editing.imagem_destaque);
@@ -115,7 +119,7 @@ const LocalFormDialog = ({ open, onOpenChange, editing, onSuccess }: Props) => {
         endereco: '', horario_funcionamento: '', website: '',
         ativo: true, ordem: 0, seo_title: '', seo_description: '',
         latitude: DEFAULT_LAT, longitude: DEFAULT_LNG,
-        url_vendas: '', banner_publicidade: '',
+        url_vendas: '', banner_publicidade: '', logo_url: '',
       });
       setImages([]);
     }
@@ -158,6 +162,7 @@ const LocalFormDialog = ({ open, onOpenChange, editing, onSuccess }: Props) => {
       banner_publicidade: form.banner_publicidade?.trim() || null,
       seo_title: form.seo_title.trim() || null,
       seo_description: form.seo_description.trim() || null,
+      logo_url: form.logo_url?.trim() || null,
     } as any;
 
     let error;
@@ -186,9 +191,12 @@ const LocalFormDialog = ({ open, onOpenChange, editing, onSuccess }: Props) => {
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <Tabs defaultValue="main" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="main" className="flex items-center gap-1.5 text-xs">
                 <FileText className="h-3.5 w-3.5" /> Dados
+              </TabsTrigger>
+              <TabsTrigger value="files" className="flex items-center gap-1.5 text-xs">
+                <Image className="h-3.5 w-3.5" /> Arquivos
               </TabsTrigger>
               <TabsTrigger value="contact" className="flex items-center gap-1.5 text-xs">
                 <Phone className="h-3.5 w-3.5" /> Contato
@@ -278,6 +286,66 @@ const LocalFormDialog = ({ open, onOpenChange, editing, onSuccess }: Props) => {
                 <Switch checked={form.ativo} onCheckedChange={(v) => setForm((f) => ({ ...f, ativo: v }))} />
                 <Label>Ativo (visível no site)</Label>
               </div>
+            </TabsContent>
+
+            {/* ── Tab: Arquivos (Logo) ── */}
+            <TabsContent value="files" className="space-y-4 mt-4">
+              <div className="space-y-2">
+                <GuiaImageUploadField
+                  label="Logo / Logomarca"
+                  value={form.logo_url}
+                  onChange={(url) => setForm((f) => ({ ...f, logo_url: url }))}
+                  bucket="property-images"
+                  folder={`logos/${form.slug || 'novo-local'}`}
+                  aspectHint="Recomendado: PNG transparente, quadrado (ex: 500×500px)"
+                />
+              </div>
+
+              {form.logo_url && (
+                <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
+                  <p className="text-sm font-medium text-foreground">Preview da Logo</p>
+                  <div className="flex justify-center">
+                    <img
+                      src={form.logo_url}
+                      alt="Logo"
+                      className="max-h-32 max-w-[200px] object-contain rounded-md shadow-sm"
+                    />
+                  </div>
+                  <div className="flex gap-2 justify-center">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={async () => {
+                        try {
+                          const res = await fetch(form.logo_url);
+                          const blob = await res.blob();
+                          const a = document.createElement('a');
+                          a.href = URL.createObjectURL(blob);
+                          a.download = `logo-${form.slug || 'local'}.${blob.type.split('/')[1] || 'png'}`;
+                          a.click();
+                          URL.revokeObjectURL(a.href);
+                        } catch {
+                          toast({ variant: 'destructive', title: 'Erro ao baixar logo' });
+                        }
+                      }}
+                    >
+                      <Download className="h-4 w-4 mr-1.5" /> Baixar Logo
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        navigator.clipboard.writeText(form.logo_url);
+                        sonnerToast.success('Link copiado para a área de transferência!');
+                      }}
+                    >
+                      <Link className="h-4 w-4 mr-1.5" /> Copiar Link
+                    </Button>
+                  </div>
+                </div>
+              )}
             </TabsContent>
 
             {/* ── Tab: Contato ── */}
