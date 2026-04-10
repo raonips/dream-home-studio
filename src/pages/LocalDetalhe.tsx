@@ -194,7 +194,7 @@ const LocalDetalhe = () => {
             </div>
 
             {/* ── Sidebar ── */}
-            <div className="space-y-5">
+            <div className="space-y-6">
               {(local.endereco || local.telefone || local.horario_funcionamento || local.website || local.whatsapp || local.google_maps_link) && (
                 <div className="bg-card rounded-xl border border-border p-6 space-y-4 sticky top-24">
                   <h3 className="font-semibold text-foreground">Informações</h3>
