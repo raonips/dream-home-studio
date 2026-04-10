@@ -42,6 +42,8 @@ export interface LocalRow {
   seo_title?: string | null;
   seo_description?: string | null;
   logo_url?: string | null;
+  cupom_desconto?: string | null;
+  valor_desconto?: string | null;
 }
 
 const CATEGORIAS = [
@@ -193,7 +195,7 @@ const LocalFormDialog = ({ open, onOpenChange, editing, onSuccess }: Props) => {
     seo_title: '', seo_description: '',
     latitude: DEFAULT_LAT, longitude: DEFAULT_LNG,
     url_vendas: '', banner_publicidade: '',
-    logo_url: '',
+    logo_url: '', cupom_desconto: '', valor_desconto: '',
   });
 
   useEffect(() => {
@@ -218,6 +220,8 @@ const LocalFormDialog = ({ open, onOpenChange, editing, onSuccess }: Props) => {
         url_vendas: editing.url_vendas || '',
         banner_publicidade: editing.banner_publicidade || '',
         logo_url: editing.logo_url || '',
+        cupom_desconto: (editing as any).cupom_desconto || '',
+        valor_desconto: (editing as any).valor_desconto || '',
       });
       const editImages: string[] = [];
       if (editing.imagem_destaque) editImages.push(editing.imagem_destaque);
@@ -235,6 +239,7 @@ const LocalFormDialog = ({ open, onOpenChange, editing, onSuccess }: Props) => {
         ativo: true, ordem: 0, seo_title: '', seo_description: '',
         latitude: DEFAULT_LAT, longitude: DEFAULT_LNG,
         url_vendas: '', banner_publicidade: '', logo_url: '',
+        cupom_desconto: '', valor_desconto: '',
       });
       setImages([]);
     }
@@ -278,6 +283,8 @@ const LocalFormDialog = ({ open, onOpenChange, editing, onSuccess }: Props) => {
       seo_title: form.seo_title.trim() || null,
       seo_description: form.seo_description.trim() || null,
       logo_url: form.logo_url?.trim() || null,
+      cupom_desconto: form.cupom_desconto?.trim() || null,
+      valor_desconto: form.valor_desconto?.trim() || null,
     } as any;
 
     let error;
@@ -381,6 +388,30 @@ const LocalFormDialog = ({ open, onOpenChange, editing, onSuccess }: Props) => {
                   />
                 </div>
               )}
+
+              {/* ── Cupom de Desconto ── */}
+              <div className="rounded-lg border border-amber-300/30 bg-amber-50/50 dark:bg-amber-950/20 p-4 space-y-4">
+                <h3 className="text-sm font-semibold text-amber-700 dark:text-amber-400">🎟️ Cupom de Desconto</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Código do Cupom</Label>
+                    <Input
+                      value={form.cupom_desconto}
+                      onChange={set('cupom_desconto')}
+                      placeholder="Ex: BARRA10"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Valor do Desconto</Label>
+                    <Input
+                      value={form.valor_desconto}
+                      onChange={set('valor_desconto')}
+                      placeholder="Ex: 10% OFF ou R$ 20,00"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">Se preenchido, o cupom será exibido no card e incluído na mensagem do WhatsApp.</p>
+              </div>
 
               <div className="space-y-2">
                 <Label>Descrição</Label>
