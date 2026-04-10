@@ -12,7 +12,8 @@ import RichTextEditor from "./RichTextEditor";
 import GuiaImageUploadField from "./GuiaImageUploadField";
 import { removeStorageFiles } from "@/lib/storageCleanup";
 import LocalSelectorDialog from "./LocalSelectorDialog";
-import { MapPin } from "lucide-react";
+import PropertySelectorDialog from "./PropertySelectorDialog";
+import { MapPin, Home } from "lucide-react";
 
 interface GuiaPost {
   id: string;
