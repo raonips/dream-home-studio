@@ -7,11 +7,13 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { uploadToStorageWithProgress } from '@/lib/storageUpload';
 import { removeStorageFiles } from '@/lib/storageCleanup';
+import { processAndUploadGuiaImage } from '@/lib/guiaImageUpload';
 import imageCompression from 'browser-image-compression';
+import { createSafeStoragePath, uploadToStorageWithProgress } from '@/lib/storageUpload';
 
 const WatermarkSettings = lazy(() => import('@/components/admin/WatermarkSettings'));
 
@@ -23,6 +25,7 @@ const AdminGuiaSiteConfig = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const logoRef = useRef<HTMLInputElement>(null);
   const heroRef = useRef<HTMLInputElement>(null);
 
@@ -105,10 +108,7 @@ const AdminGuiaSiteConfig = () => {
     }
   };
 
-  const handleLogoUpload = async (
-    e: React.ChangeEvent<HTMLInputElement>,
-    ref: React.RefObject<HTMLInputElement>
-  ) => {
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 10 * 1024 * 1024) {
@@ -116,22 +116,23 @@ const AdminGuiaSiteConfig = () => {
       return;
     }
     setUploading('logo_url');
+    setUploadProgress(5);
     try {
-      const safePath = `site/guia-${Date.now()}-${file.name.replace(/[^a-z0-9.]/gi, '-')}`;
-      const result = await uploadToStorageWithProgress({
-        bucket: BUCKET,
-        path: safePath,
+      const publicUrl = await processAndUploadGuiaImage({
         file,
-        onProgress: () => {},
+        bucket: BUCKET,
+        folder: 'site',
+        oldUrl: form.logo_url || undefined,
+        onProgress: setUploadProgress,
       });
-      const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(result.path);
-      setForm((f) => ({ ...f, logo_url: urlData.publicUrl }));
-      toast({ title: 'Logo enviada!' });
+      setForm((f) => ({ ...f, logo_url: publicUrl }));
+      toast({ title: 'Logo otimizada e enviada!' });
     } catch (err: any) {
       toast({ variant: 'destructive', title: 'Erro no upload', description: err.message });
     } finally {
       setUploading(null);
-      if (ref.current) ref.current.value = '';
+      setUploadProgress(0);
+      if (logoRef.current) logoRef.current.value = '';
     }
   };
 
@@ -143,36 +144,45 @@ const AdminGuiaSiteConfig = () => {
       return;
     }
     setUploading('hero_image_url');
+    setUploadProgress(5);
     try {
+      // Delete old files
       const oldUrls = [form.hero_bg_desktop, form.hero_bg_mobile, form.hero_image_url].filter(Boolean);
       if (oldUrls.length > 0) {
         await removeStorageFiles(oldUrls);
       }
 
+      setUploadProgress(15);
+
+      // Compress to WebP — desktop (1920px) + mobile (800px)
       const [desktopBlob, mobileBlob] = await Promise.all([
         imageCompression(file, {
           maxSizeMB: 0.3,
           maxWidthOrHeight: 1920,
           fileType: 'image/webp',
           useWebWorker: true,
+          initialQuality: 0.8,
         }),
         imageCompression(file, {
           maxSizeMB: 0.1,
           maxWidthOrHeight: 800,
           fileType: 'image/webp',
           useWebWorker: true,
+          initialQuality: 0.8,
         }),
       ]);
 
-      const ts = Date.now();
+      setUploadProgress(50);
+
       const baseName = file.name.replace(/[^a-z0-9]/gi, '-').replace(/-+/g, '-');
+      const ts = Date.now();
 
       const files = [
         { blob: desktopBlob, suffix: 'desktop' },
         { blob: mobileBlob, suffix: 'mobile' },
       ].map(({ blob, suffix }) => {
         const f = new File([blob], `guia-${ts}-${baseName}-${suffix}.webp`, { type: 'image/webp' });
-        const path = `site/${f.name}`;
+        const path = createSafeStoragePath({ folder: 'site', file: f });
         return { file: f, path };
       });
 
@@ -181,6 +191,8 @@ const AdminGuiaSiteConfig = () => {
           uploadToStorageWithProgress({ bucket: BUCKET, path, file: f, onProgress: () => {} })
         )
       );
+
+      setUploadProgress(90);
 
       const urls = files.map(({ path }) =>
         supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl
@@ -192,12 +204,13 @@ const AdminGuiaSiteConfig = () => {
         hero_bg_desktop: urls[0],
         hero_bg_mobile: urls[1],
       }));
-      toast({ title: 'Banner enviado! (2 versões: Desktop + Mobile WebP)' });
+      toast({ title: 'Banner otimizado e enviado! (Desktop + Mobile WebP)' });
     } catch (err: any) {
       console.error('[HeroBanner] Upload failed:', err);
       toast({ variant: 'destructive', title: 'Erro no upload do banner', description: err?.message || 'Erro desconhecido' });
     } finally {
       setUploading(null);
+      setUploadProgress(0);
       if (heroRef.current) heroRef.current.value = '';
     }
   };
@@ -237,24 +250,28 @@ const AdminGuiaSiteConfig = () => {
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Logo do Guia</CardTitle>
-                <CardDescription>Exibida nas páginas do Guia Local. O nome exibido será "Barra do Jacuípe". Recomendado: PNG transparente, máx. 250×80px.</CardDescription>
+                <CardDescription>Exibida nas páginas do Guia Local. Recomendado: PNG transparente, máx. 250×80px. Convertida para WebP.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center gap-4">
                   {form.logo_url ? (
                     <div className="relative">
                       <img src={form.logo_url} alt="Logo Guia" className="h-14 max-w-[200px] object-contain rounded border border-border p-1 bg-background" />
-                      <Button type="button" variant="destructive" size="icon" className="absolute -top-2 -right-2 h-6 w-6" onClick={() => setForm((f) => ({ ...f, logo_url: '' }))}>
+                      <Button type="button" variant="destructive" size="icon" className="absolute -top-2 -right-2 h-6 w-6" onClick={() => {
+                        if (form.logo_url) removeStorageFiles([form.logo_url]).catch(() => {});
+                        setForm((f) => ({ ...f, logo_url: '' }));
+                      }}>
                         <X className="h-3 w-3" />
                       </Button>
                     </div>
                   ) : null}
                   <Button type="button" variant="outline" size="sm" onClick={() => logoRef.current?.click()} disabled={uploading === 'logo_url'}>
                     {uploading === 'logo_url' ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Upload className="h-4 w-4 mr-2" />}
-                    {form.logo_url ? 'Trocar logo' : 'Enviar logo'}
+                    {uploading === 'logo_url' ? 'Otimizando e enviando...' : form.logo_url ? 'Trocar logo' : 'Enviar logo'}
                   </Button>
                 </div>
-                <input ref={logoRef} type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" className="hidden" onChange={(e) => handleLogoUpload(e, logoRef)} />
+                {uploading === 'logo_url' && <Progress value={uploadProgress} className="h-1.5" />}
+                <input ref={logoRef} type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" className="hidden" onChange={handleLogoUpload} />
               </CardContent>
             </Card>
 
@@ -297,11 +314,12 @@ const AdminGuiaSiteConfig = () => {
                     <p className="text-xs text-muted-foreground mt-1">JPG ou PNG, máx. 10MB — será convertido para WebP</p>
                   </div>
                 )}
+                {uploading === 'hero_image_url' && <Progress value={uploadProgress} className="h-1.5" />}
                 <input ref={heroRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleHeroBannerUpload} />
                 {(form.hero_bg_desktop || form.hero_image_url) && (
                   <Button type="button" variant="outline" size="sm" onClick={() => heroRef.current?.click()} disabled={uploading === 'hero_image_url'}>
                     {uploading === 'hero_image_url' ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Upload className="h-4 w-4 mr-2" />}
-                    Trocar banner
+                    {uploading === 'hero_image_url' ? 'Otimizando e enviando...' : 'Trocar banner'}
                   </Button>
                 )}
               </CardContent>

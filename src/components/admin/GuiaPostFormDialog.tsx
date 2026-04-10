@@ -9,6 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2, Save } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import RichTextEditor from "./RichTextEditor";
+import GuiaImageUploadField from "./GuiaImageUploadField";
+import { removeStorageFiles } from "@/lib/storageCleanup";
 
 interface GuiaPost {
   id: string;
@@ -114,7 +116,16 @@ const GuiaPostFormDialog = ({ open, onOpenChange, post, categorias, onSaved }: P
             <Label>Conteúdo</Label>
             <RichTextEditor value={form.conteudo} onChange={(v) => setForm({ ...form, conteudo: v })} />
           </div>
-          <div><Label>Imagem Destaque (URL)</Label><Input value={form.imagem_destaque} onChange={(e) => setForm({ ...form, imagem_destaque: e.target.value })} /></div>
+
+          <GuiaImageUploadField
+            label="Imagem Destaque"
+            value={form.imagem_destaque}
+            onChange={(url) => setForm({ ...form, imagem_destaque: url })}
+            bucket="property-images"
+            folder="guia-posts"
+            aspectHint="Recomendado: 1200×630px"
+          />
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>Categoria</Label>

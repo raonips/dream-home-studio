@@ -3,12 +3,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import RichTextEditor from '@/components/admin/RichTextEditor';
 import ImageGalleryUpload from '@/components/admin/ImageGalleryUpload';
+import GuiaImageUploadField from '@/components/admin/GuiaImageUploadField';
 import SmartMap from '@/components/SmartMap';
 import { Loader2, FileText, Settings, MapPin, Phone } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -49,7 +49,6 @@ const CATEGORIAS = [
   { value: 'utilidade', label: 'Utilidade' },
 ];
 
-// Default center: Barra do Jacuípe
 const DEFAULT_LAT = -12.6946;
 const DEFAULT_LNG = -38.1345;
 
@@ -245,15 +244,14 @@ const LocalFormDialog = ({ open, onOpenChange, editing, onSuccess }: Props) => {
                     />
                     <p className="text-xs text-muted-foreground">Link do botão "Ver Imóveis Disponíveis" no banner.</p>
                   </div>
-                  <div className="space-y-2">
-                    <Label>URL do Banner de Publicidade</Label>
-                    <Input
-                      value={form.banner_publicidade}
-                      onChange={set('banner_publicidade')}
-                      placeholder="https://... (URL da imagem de fundo do banner)"
-                    />
-                    <p className="text-xs text-muted-foreground">Se vazio, será usada uma imagem padrão de luxo.</p>
-                  </div>
+                  <GuiaImageUploadField
+                    label="Banner de Publicidade"
+                    value={form.banner_publicidade}
+                    onChange={(url) => setForm((f) => ({ ...f, banner_publicidade: url }))}
+                    bucket="property-images"
+                    folder="locais/banners"
+                    aspectHint="Recomendado: 1200×400px (imagem de fundo do banner)"
+                  />
                 </div>
               )}
 
@@ -377,7 +375,7 @@ const LocalFormDialog = ({ open, onOpenChange, editing, onSuccess }: Props) => {
               </div>
               <div className="space-y-2">
                 <Label>Descrição SEO</Label>
-                <Textarea value={form.seo_description} onChange={set('seo_description')} placeholder="Ex: Encontre pães frescos e café da manhã..." rows={3} maxLength={160} />
+                <Input value={form.seo_description} onChange={set('seo_description')} placeholder="Ex: Encontre pães frescos e café da manhã..." maxLength={160} />
                 <p className="text-xs text-muted-foreground">{form.seo_description.length}/160 caracteres</p>
               </div>
             </TabsContent>
