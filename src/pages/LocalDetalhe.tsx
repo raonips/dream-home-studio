@@ -51,6 +51,38 @@ interface AdTemplate {
   custom_html: string;
 }
 
+const CouponBadge = ({ code, value }: { code: string; value: string | null }) => {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = () => {
+    navigator.clipboard.writeText(code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <div className="rounded-xl border border-amber-300/50 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950/30 dark:to-yellow-950/20 p-4 space-y-2">
+      <div className="flex items-center gap-2">
+        <Ticket className="h-4 w-4 text-amber-600" />
+        <span className="text-xs font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wide">Cupom ativo</span>
+        {value && (
+          <span className="ml-auto text-xs font-bold text-amber-800 dark:text-amber-300 bg-amber-200/60 dark:bg-amber-800/40 px-2 py-0.5 rounded-full">{value}</span>
+        )}
+      </div>
+      <div className="flex items-center gap-2">
+        <code className="flex-1 text-sm font-mono font-bold text-amber-900 dark:text-amber-200 bg-white/70 dark:bg-black/20 px-3 py-1.5 rounded-lg border border-amber-200/50 tracking-widest">
+          {code}
+        </code>
+        <button
+          onClick={handleCopy}
+          className="flex items-center gap-1 text-xs font-medium text-amber-700 dark:text-amber-400 hover:text-amber-900 transition-colors px-2 py-1.5 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/30"
+        >
+          {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+          {copied ? 'Copiado!' : 'Copiar'}
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const CATEGORIA_LABELS: Record<string, string> = {
   condominio: "Condomínio",
   mercado: "Mercado",
