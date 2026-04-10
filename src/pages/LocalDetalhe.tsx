@@ -352,7 +352,7 @@ const LocalDetalhe = () => {
         )}
       </div>
 
-      <Lightbox images={extraImages} initialIndex={lightboxIndex} open={lightboxOpen} onClose={() => setLightboxOpen(false)} />
+      <Lightbox images={galleryImages} initialIndex={lightboxIndex} open={lightboxOpen} onClose={() => setLightboxOpen(false)} />
     </>
   );
 };
