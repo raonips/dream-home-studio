@@ -11,6 +11,8 @@ import { useToast } from "@/hooks/use-toast";
 import RichTextEditor from "./RichTextEditor";
 import GuiaImageUploadField from "./GuiaImageUploadField";
 import { removeStorageFiles } from "@/lib/storageCleanup";
+import LocalSelectorDialog from "./LocalSelectorDialog";
+import { MapPin } from "lucide-react";
 
 interface GuiaPost {
   id: string;
@@ -47,6 +49,7 @@ const GuiaPostFormDialog = ({ open, onOpenChange, post, categorias, onSaved }: P
     seo_title: "", seo_description: "", seo_keywords: "",
   });
   const [saving, setSaving] = useState(false);
+  const [localSelectorOpen, setLocalSelectorOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -116,6 +119,29 @@ const GuiaPostFormDialog = ({ open, onOpenChange, post, categorias, onSaved }: P
             <Label>Conteúdo</Label>
             <RichTextEditor value={form.conteudo} onChange={(v) => setForm({ ...form, conteudo: v })} />
           </div>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setLocalSelectorOpen(true)}
+          >
+            <MapPin className="h-4 w-4 mr-2" />
+            Inserir Card de Local
+          </Button>
+
+          <LocalSelectorDialog
+            open={localSelectorOpen}
+            onOpenChange={setLocalSelectorOpen}
+            onSelect={(id, nome) => {
+              const marker = `[LOCAL_CARD: ${id}]`;
+              setForm((prev) => ({
+                ...prev,
+                conteudo: (prev.conteudo || "") + `<p>${marker}</p>`,
+              }));
+              toast({ title: `Card de "${nome}" inserido` });
+            }}
+          />
 
           <GuiaImageUploadField
             label="Imagem Destaque"
