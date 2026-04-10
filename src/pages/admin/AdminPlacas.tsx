@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Plus, Trash2, Loader2, Link2, Unlink, Printer, QrCode } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,8 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
+import PlacaQrCode from '@/components/admin/PlacaQrCode';
+import QrLogoUpload from '@/components/admin/QrLogoUpload';
 
 interface PlacaRow {
   id: string;
@@ -38,14 +40,15 @@ const AdminPlacas = () => {
   const [batchCount, setBatchCount] = useState('10');
   const [linkDialog, setLinkDialog] = useState<PlacaRow | null>(null);
   const [selectedPropertyId, setSelectedPropertyId] = useState('');
+  const [qrLogoUrl, setQrLogoUrl] = useState<string | null>(null);
   const { toast } = useToast();
-  const printRef = useRef<HTMLDivElement>(null);
 
-  const fetchAll = async () => {
+  const fetchAll = useCallback(async () => {
     setLoading(true);
-    const [placasRes, propsRes] = await Promise.all([
+    const [placasRes, propsRes, settingsRes] = await Promise.all([
       supabase.from('placas_qr').select('*, properties:imovel_vinculado_id(title)').order('id_placa'),
       supabase.from('properties').select('id, title').eq('status', 'active').order('title'),
+      supabase.from('site_settings').select('qr_logo_url' as any).limit(1).single(),
     ]);
     if (placasRes.data) {
       setPlacas(placasRes.data.map((p: any) => ({
@@ -54,10 +57,11 @@ const AdminPlacas = () => {
       })));
     }
     if (propsRes.data) setProperties(propsRes.data as any);
+    if (settingsRes.data) setQrLogoUrl((settingsRes.data as any).qr_logo_url || null);
     setLoading(false);
-  };
+  }, []);
 
-  useEffect(() => { fetchAll(); }, []);
+  useEffect(() => { fetchAll(); }, [fetchAll]);
 
   const handleCreateBatch = async () => {
     const count = parseInt(batchCount);
@@ -65,15 +69,11 @@ const AdminPlacas = () => {
       toast({ variant: 'destructive', title: 'Quantidade inválida (1-100)' });
       return;
     }
-
-    // Find next available number
     const existing = placas.map(p => parseInt(p.id_placa)).filter(n => !isNaN(n));
     const maxNum = existing.length > 0 ? Math.max(...existing) : 0;
-
     const newPlacas = Array.from({ length: count }, (_, i) => ({
       id_placa: String(maxNum + i + 1).padStart(3, '0'),
     }));
-
     const { error } = await supabase.from('placas_qr').insert(newPlacas as any);
     if (error) {
       toast({ variant: 'destructive', title: 'Erro ao criar placas', description: error.message });
@@ -117,10 +117,18 @@ const AdminPlacas = () => {
 
     const qrItems = placas.map(p => {
       const url = `${SITE_DOMAIN}/qr/${p.id_placa}`;
-      const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}`;
+      // Use qrserver API with logo overlay for print
+      const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&ecc=H&data=${encodeURIComponent(url)}`;
+      const logoHtml = qrLogoUrl ? `
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:white;padding:4px;border-radius:4px;">
+          <img src="${qrLogoUrl}" width="60" height="60" style="display:block;" />
+        </div>` : '';
       return `
         <div style="display:inline-block;text-align:center;margin:16px;page-break-inside:avoid;">
-          <img src="${qrApiUrl}" width="200" height="200" />
+          <div style="position:relative;display:inline-block;">
+            <img src="${qrApiUrl}" width="200" height="200" />
+            ${logoHtml}
+          </div>
           <div style="margin-top:8px;font-weight:bold;font-size:16px;">Placa ${p.id_placa}</div>
           <div style="font-size:11px;color:#666;">${url}</div>
         </div>
@@ -134,7 +142,7 @@ const AdminPlacas = () => {
       </head><body>
       <h1 style="text-align:center;">QR Codes das Placas</h1>
       <div style="display:flex;flex-wrap:wrap;justify-content:center;">${qrItems}</div>
-      <script>window.onload=function(){window.print();}</script>
+      <script>window.onload=function(){setTimeout(function(){window.print();},1000);}</script>
       </body></html>
     `);
     printWindow.document.close();
@@ -158,6 +166,8 @@ const AdminPlacas = () => {
           </div>
         </div>
 
+        <QrLogoUpload currentLogoUrl={qrLogoUrl} onLogoChange={setQrLogoUrl} />
+
         <Card>
           <CardContent className="p-0">
             {loading ? (
@@ -173,45 +183,54 @@ const AdminPlacas = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Placa</TableHead>
-                    <TableHead>QR Code URL</TableHead>
+                    <TableHead>QR Code</TableHead>
                     <TableHead>Imóvel Vinculado</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {placas.map((p) => (
-                    <TableRow key={p.id}>
-                      <TableCell className="font-mono font-bold">{p.id_placa}</TableCell>
-                      <TableCell className="text-xs font-mono text-muted-foreground max-w-[200px] truncate">
-                        {SITE_DOMAIN}/qr/{p.id_placa}
-                      </TableCell>
-                      <TableCell className="max-w-[200px] truncate">
-                        {p.property_title || <span className="text-muted-foreground italic">Nenhum</span>}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={p.imovel_vinculado_id ? 'default' : 'secondary'}>
-                          {p.imovel_vinculado_id ? 'Vinculada' : 'Livre'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
-                          {p.imovel_vinculado_id ? (
-                            <Button variant="ghost" size="icon" onClick={() => handleUnlink(p)} title="Desvincular">
-                              <Unlink className="h-4 w-4" />
+                  {placas.map((p) => {
+                    const url = `${SITE_DOMAIN}/qr/${p.id_placa}`;
+                    return (
+                      <TableRow key={p.id}>
+                        <TableCell className="font-mono font-bold">{p.id_placa}</TableCell>
+                        <TableCell>
+                          <PlacaQrCode
+                            url={url}
+                            idPlaca={p.id_placa}
+                            logoUrl={qrLogoUrl}
+                            size={64}
+                            showDownload
+                          />
+                        </TableCell>
+                        <TableCell className="max-w-[200px] truncate">
+                          {p.property_title || <span className="text-muted-foreground italic">Nenhum</span>}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={p.imovel_vinculado_id ? 'default' : 'secondary'}>
+                            {p.imovel_vinculado_id ? 'Vinculada' : 'Livre'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-1">
+                            {p.imovel_vinculado_id ? (
+                              <Button variant="ghost" size="icon" onClick={() => handleUnlink(p)} title="Desvincular">
+                                <Unlink className="h-4 w-4" />
+                              </Button>
+                            ) : (
+                              <Button variant="ghost" size="icon" onClick={() => { setLinkDialog(p); setSelectedPropertyId(''); }} title="Vincular Imóvel">
+                                <Link2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                            <Button variant="ghost" size="icon" className="text-destructive" onClick={() => setDeleteId(p.id)}>
+                              <Trash2 className="h-4 w-4" />
                             </Button>
-                          ) : (
-                            <Button variant="ghost" size="icon" onClick={() => { setLinkDialog(p); setSelectedPropertyId(''); }} title="Vincular Imóvel">
-                              <Link2 className="h-4 w-4" />
-                            </Button>
-                          )}
-                          <Button variant="ghost" size="icon" className="text-destructive" onClick={() => setDeleteId(p.id)}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             )}

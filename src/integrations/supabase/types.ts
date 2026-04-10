@@ -716,6 +716,7 @@ export type Database = {
           map_provider: string | null
           og_image_url: string | null
           primary_color: string | null
+          qr_logo_url: string | null
           site_description: string | null
           site_keywords: string | null
           site_name: string | null
@@ -752,6 +753,7 @@ export type Database = {
           map_provider?: string | null
           og_image_url?: string | null
           primary_color?: string | null
+          qr_logo_url?: string | null
           site_description?: string | null
           site_keywords?: string | null
           site_name?: string | null
@@ -788,6 +790,7 @@ export type Database = {
           map_provider?: string | null
           og_image_url?: string | null
           primary_color?: string | null
+          qr_logo_url?: string | null
           site_description?: string | null
           site_keywords?: string | null
           site_name?: string | null
