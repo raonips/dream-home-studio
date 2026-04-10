@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,8 +9,12 @@ import { Switch } from '@/components/ui/switch';
 import RichTextEditor from '@/components/admin/RichTextEditor';
 import ImageGalleryUpload from '@/components/admin/ImageGalleryUpload';
 import GuiaImageUploadField from '@/components/admin/GuiaImageUploadField';
+import ImageCropperDialog from '@/components/admin/ImageCropperDialog';
 import SmartMap from '@/components/SmartMap';
-import { Loader2, FileText, Settings, MapPin, Phone, Image, Download, Link } from 'lucide-react';
+import { Loader2, FileText, Settings, MapPin, Phone, Image, Download, Link, Upload, Crop } from 'lucide-react';
+import { processAndUploadGuiaImage } from '@/lib/guiaImageUpload';
+import { removeStorageFiles } from '@/lib/storageCleanup';
+import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { toast as sonnerToast } from 'sonner';
@@ -65,6 +69,117 @@ interface Props {
 
 const generateSlug = (name: string) =>
   name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+
+/* ── Logo Upload with Cropper sub-component ── */
+const LogoUploadWithCropper = ({ value, onChange, slug }: { value: string; onChange: (url: string) => void; slug: string }) => {
+  const [cropperOpen, setCropperOpen] = useState(false);
+  const [rawImageSrc, setRawImageSrc] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
+
+  const handleFileSelect = useCallback((file: File) => {
+    if (!file.type.startsWith('image/')) {
+      toast({ variant: 'destructive', title: 'Selecione uma imagem válida' });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ variant: 'destructive', title: 'Imagem muito grande (máx 5MB)' });
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setRawImageSrc(reader.result as string);
+      setCropperOpen(true);
+    };
+    reader.readAsDataURL(file);
+  }, [toast]);
+
+  const handleCropComplete = useCallback(async (blob: Blob) => {
+    setUploading(true);
+    setProgress(5);
+    try {
+      const file = new File([blob], `logo-${slug}.webp`, { type: 'image/webp' });
+      const publicUrl = await processAndUploadGuiaImage({
+        file,
+        bucket: 'property-images',
+        folder: `logos/${slug}`,
+        oldUrl: value || undefined,
+        onProgress: setProgress,
+      });
+      onChange(publicUrl);
+      toast({ title: 'Logo recortada e enviada!' });
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: 'Erro no upload', description: err.message });
+    } finally {
+      setTimeout(() => { setUploading(false); setProgress(0); }, 300);
+      if (inputRef.current) inputRef.current.value = '';
+    }
+  }, [onChange, value, slug, toast]);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file) handleFileSelect(file);
+  }, [handleFileSelect]);
+
+  const removeImage = useCallback(() => {
+    if (value) removeStorageFiles([value]).catch(() => {});
+    onChange('');
+  }, [onChange, value]);
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <Label className="flex items-center gap-1.5">
+          <Crop className="h-4 w-4" /> Logo / Logomarca
+        </Label>
+        {value && (
+          <Button type="button" variant="ghost" size="sm" className="h-7 text-xs text-destructive" onClick={removeImage}>
+            Remover
+          </Button>
+        )}
+      </div>
+
+      <div
+        className="border-2 border-dashed border-input rounded-lg p-6 text-center cursor-pointer hover:border-primary transition-colors"
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={handleDrop}
+        onClick={() => !uploading && inputRef.current?.click()}
+      >
+        {uploading ? (
+          <div className="space-y-2">
+            <Loader2 className="h-5 w-5 mx-auto text-primary animate-spin" />
+            <p className="text-xs text-primary font-medium">Enviando logo recortada...</p>
+          </div>
+        ) : (
+          <>
+            <Upload className="h-5 w-5 mx-auto text-muted-foreground mb-1" />
+            <p className="text-xs text-muted-foreground">Clique ou arraste uma imagem para recortar</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">A ferramenta de recorte abrirá automaticamente</p>
+          </>
+        )}
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          disabled={uploading}
+          onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFileSelect(f); }}
+        />
+      </div>
+      {uploading && <Progress value={progress} className="h-1.5" />}
+
+      <ImageCropperDialog
+        open={cropperOpen}
+        onOpenChange={setCropperOpen}
+        imageSrc={rawImageSrc}
+        onCropComplete={handleCropComplete}
+      />
+    </div>
+  );
+};
 
 const LocalFormDialog = ({ open, onOpenChange, editing, onSuccess }: Props) => {
   const { toast } = useToast();
@@ -288,18 +403,13 @@ const LocalFormDialog = ({ open, onOpenChange, editing, onSuccess }: Props) => {
               </div>
             </TabsContent>
 
-            {/* ── Tab: Arquivos (Logo) ── */}
+            {/* ── Tab: Arquivos (Logo with Cropper) ── */}
             <TabsContent value="files" className="space-y-4 mt-4">
-              <div className="space-y-2">
-                <GuiaImageUploadField
-                  label="Logo / Logomarca"
-                  value={form.logo_url}
-                  onChange={(url) => setForm((f) => ({ ...f, logo_url: url }))}
-                  bucket="property-images"
-                  folder={`logos/${form.slug || 'novo-local'}`}
-                  aspectHint="Recomendado: PNG transparente, quadrado (ex: 500×500px)"
-                />
-              </div>
+              <LogoUploadWithCropper
+                value={form.logo_url}
+                onChange={(url) => setForm((f) => ({ ...f, logo_url: url }))}
+                slug={form.slug || 'novo-local'}
+              />
 
               {form.logo_url && (
                 <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
