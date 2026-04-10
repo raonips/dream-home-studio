@@ -175,23 +175,6 @@ const LocalDetalhe = () => {
           <div className="grid md:grid-cols-[1fr_320px] gap-8 overflow-hidden">
             {/* ── Main Content ── */}
             <div className="min-w-0 space-y-8">
-              {extraImages.length > 0 && (
-                <div>
-                  <h2 className="text-lg font-semibold text-foreground mb-3">Fotos</h2>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {extraImages.map((img, i) => (
-                      <button
-                        key={i}
-                        onClick={() => { setLightboxIndex(i); setLightboxOpen(true); }}
-                        className="aspect-[4/3] rounded-lg overflow-hidden border border-border hover:opacity-90 transition-opacity"
-                      >
-                        <img src={img} alt={`${local.nome} foto ${i + 1}`} className="w-full h-full object-cover" loading="lazy" />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
               {local.descricao && (
                 <div>
                   <div
