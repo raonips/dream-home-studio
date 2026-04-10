@@ -34,6 +34,8 @@ export interface LocalRow {
   longitude?: number | null;
   url_vendas?: string | null;
   banner_publicidade?: string | null;
+  seo_title?: string | null;
+  seo_description?: string | null;
 }
 
 const CATEGORIAS = [
@@ -91,8 +93,8 @@ const LocalFormDialog = ({ open, onOpenChange, editing, onSuccess }: Props) => {
         website: editing.website || '',
         ativo: editing.ativo,
         ordem: editing.ordem,
-        seo_title: '',
-        seo_description: '',
+        seo_title: editing.seo_title || '',
+        seo_description: editing.seo_description || '',
         latitude: editing.latitude ?? DEFAULT_LAT,
         longitude: editing.longitude ?? DEFAULT_LNG,
         url_vendas: editing.url_vendas || '',
@@ -154,6 +156,8 @@ const LocalFormDialog = ({ open, onOpenChange, editing, onSuccess }: Props) => {
       longitude: form.longitude || null,
       url_vendas: form.url_vendas?.trim() || null,
       banner_publicidade: form.banner_publicidade?.trim() || null,
+      seo_title: form.seo_title.trim() || null,
+      seo_description: form.seo_description.trim() || null,
     } as any;
 
     let error;
