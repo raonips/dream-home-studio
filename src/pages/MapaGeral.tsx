@@ -530,28 +530,41 @@ const MapaGeral = () => {
     });
 
     // Fit bounds logic:
-    // - Skip zoom when toggling property filters (showVenda/showTemporada) to respect user's current view
-    // - Only auto-zoom for: single slug focus, condo property filter, category filter, or text search
-    if (skipNextFitRef.current) {
-      skipNextFitRef.current = false;
-      return;
-    }
+    // Auto-fit ONLY on: initial load (once), single slug focus, condo property filter, or forced (text search)
+    // NEVER auto-fit when user has interacted and is just switching categories
 
     const allCoordsItems = [
       ...filteredLocais.filter(l => l.latitude && l.longitude).map(l => [l.latitude!, l.longitude!] as [number, number]),
       ...filteredProperties.filter(p => p.latitude && p.longitude).map(p => [p.latitude!, p.longitude!] as [number, number]),
     ];
 
-    // Only fit bounds for specific contexts, NOT for manual property toggles
-    const shouldFitBounds = !!singleSlugFilter || !!condoPropertyFilter || !!selectedCategoria || isPropertySearch;
+    const isInitialLoad = !initialFitDoneRef.current && allCoordsItems.length > 0;
+    const isSingleFocusNav = !!singleSlugFilter || !!condoPropertyFilter;
+    const isForced = forceFitRef.current;
 
-    if (shouldFitBounds) {
-      if (allCoordsItems.length === 1 && (singleSlugFilter || condoPropertyFilter)) {
+    if (isInitialLoad || isSingleFocusNav || isForced) {
+      if (isForced) forceFitRef.current = false;
+      initialFitDoneRef.current = true;
+      // Temporarily disable user interaction tracking during programmatic zoom
+      userInteractedRef.current = false;
+
+      if (allCoordsItems.length === 1 && isSingleFocusNav) {
         mapInstanceRef.current.setView(allCoordsItems[0], 17);
       } else if (allCoordsItems.length > 0) {
         const bounds = L.latLngBounds(allCoordsItems);
         mapInstanceRef.current.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
       }
+    } else if (isInitialLoad) {
+      initialFitDoneRef.current = true;
+    }
+
+    // Check if there are off-screen results for the "Centralizar" button
+    if (mapInstanceRef.current && allCoordsItems.length > 0 && !isSingleFocusNav) {
+      const currentBounds = mapInstanceRef.current.getBounds();
+      const someOffScreen = allCoordsItems.some(c => !currentBounds.contains(c as L.LatLngExpression));
+      setHasOffScreenResults(someOffScreen);
+    } else {
+      setHasOffScreenResults(false);
     }
   }, [filteredLocais, filteredProperties, selectedCategoria, condominioFilter, localFilter, singleSlugFilter, condoPropertyFilter, condoPropertyCounts, isPropertySearch]);
 
