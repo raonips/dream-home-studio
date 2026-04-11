@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, X, MapPin, Home, Grid3X3, Loader2 } from 'lucide-react';
 import { cn, fuzzyMatch, parseSearchIntent } from '@/lib/utils';
@@ -181,8 +181,15 @@ const SmartSearch = ({ variant = 'hero', className, placeholder = 'O que você e
     }
   };
 
-  // Group results by type
-  const grouped = (['categoria', 'local', 'imovel', 'temporada'] as const)
+  // Compute current intent for feedback label
+  const currentIntent = useMemo(() => parseSearchIntent(debouncedQuery), [debouncedQuery]);
+
+  // Group results by type, reorder if intent detected
+  const groupOrder = currentIntent.transactionType
+    ? (['imovel', 'temporada', 'local', 'categoria'] as const)
+    : (['categoria', 'local', 'imovel', 'temporada'] as const);
+
+  const grouped = groupOrder
     .map((type) => ({
       type,
       items: results.filter((r) => r.type === type),
@@ -282,6 +289,16 @@ const SmartSearch = ({ variant = 'hero', className, placeholder = 'O que você e
                 {!loading && results.length === 0 && debouncedQuery.length >= 2 && (
                   <div className="py-8 text-center text-muted-foreground text-sm">
                     Nenhum resultado para "{debouncedQuery}"
+                  </div>
+                )}
+
+                {/* Intent feedback label */}
+                {!loading && currentIntent.transactionType && results.length > 0 && (
+                  <div className="px-4 py-2 bg-primary/10 border-b border-border">
+                    <span className="text-xs font-medium text-primary">
+                      Exibindo Imóveis para {currentIntent.intentLabel}
+                      {currentIntent.cleanQuery ? ` em "${currentIntent.cleanQuery}"` : ''}
+                    </span>
                   </div>
                 )}
 
