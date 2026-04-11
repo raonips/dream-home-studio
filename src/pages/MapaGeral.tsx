@@ -290,12 +290,16 @@ const MapaGeral = () => {
       );
     }
 
-    // Search matches a condomínio → show its properties automatically
-    if (isCondoSearch && !isPropertySearch) {
-      const condoProps = allProperties.filter(p =>
+    // Search matches a condomínio → show its properties (filtered by intent if present)
+    if (isCondoSearch) {
+      let condoProps = allProperties.filter(p =>
         p.condominio_slug && searchMatchedCondoSlugs.has(p.condominio_slug) &&
         p.latitude && p.longitude
       );
+      // Filter by intent transaction type
+      if (searchIntent.transactionType) {
+        condoProps = condoProps.filter(p => p.transaction_type === searchIntent.transactionType);
+      }
       // Also include manually toggled properties
       let manualProps: MapProperty[] = [];
       if (showVenda) {
@@ -307,12 +311,18 @@ const MapaGeral = () => {
       return [...condoProps, ...filterByBounds(manualProps)];
     }
 
-    // Smart search → show matching properties (zoom will adjust for search results)
+    // Smart search → show matching properties (filtered by intent)
     if (isPropertySearch) {
-      return allProperties.filter(p =>
+      const searchTerm = searchIntent.cleanQuery || search;
+      let props = allProperties.filter(p =>
         p.latitude && p.longitude &&
-        (fuzzyMatch(p.title || "", search).match ||
-         fuzzyMatch(p.location || "", search).match)
+        (fuzzyMatch(p.title || "", searchTerm).match ||
+         fuzzyMatch(p.location || "", searchTerm).match)
+      );
+      if (searchIntent.transactionType) {
+        props = props.filter(p => p.transaction_type === searchIntent.transactionType);
+      }
+      return props;
       );
     }
 
