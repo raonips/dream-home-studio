@@ -194,17 +194,14 @@ const MapaGeral = () => {
   /* ── Detect if search matches a condomínio name (from Guia locais OR condominios table) ── */
   const searchMatchedCondoSlugs = useMemo(() => {
     if (!search.trim()) return new Set<string>();
-    const s = normalizeText(search);
     const slugs = new Set<string>();
-    // Match from Guia locais (categoria condominio)
     allLocais.forEach(l => {
-      if (l.categoria === "condominio" && normalizeText(l.nome).includes(s) && l.slug) {
+      if (l.categoria === "condominio" && fuzzyMatch(l.nome, search).match && l.slug) {
         slugs.add(l.slug);
       }
     });
-    // Match from condominios table (properties use these slugs)
     Object.entries(condominioNames).forEach(([slug, name]) => {
-      if (normalizeText(name).includes(s)) {
+      if (fuzzyMatch(name, search).match) {
         slugs.add(slug);
       }
     });
@@ -243,8 +240,7 @@ const MapaGeral = () => {
     }
 
     if (search.trim() && !isPropertySearch) {
-      const s = normalizeText(search);
-      items = items.filter(l => normalizeText(l.nome).includes(s) || (l.endereco && normalizeText(l.endereco).includes(s)));
+      items = items.filter(l => fuzzyMatch(l.nome, search).match || (l.endereco && fuzzyMatch(l.endereco, search).match));
     }
     return items;
   }, [allLocais, selectedCategoria, search, condominioFilter, localFilter, isPropertySearch, condoPropertyFilter]);
@@ -307,11 +303,10 @@ const MapaGeral = () => {
 
     // Smart search → show matching properties (zoom will adjust for search results)
     if (isPropertySearch) {
-      const s = normalizeText(search);
       return allProperties.filter(p =>
         p.latitude && p.longitude &&
-        (normalizeText(p.title || "").includes(s) ||
-         normalizeText(p.location || "").includes(s))
+        (fuzzyMatch(p.title || "", search).match ||
+         fuzzyMatch(p.location || "", search).match)
       );
     }
 
@@ -329,8 +324,7 @@ const MapaGeral = () => {
 
     // Text filter on properties
     if (search.trim() && props.length > 0) {
-      const s = normalizeText(search);
-      props = props.filter(p => normalizeText(p.title || "").includes(s) || normalizeText(p.location || "").includes(s));
+      props = props.filter(p => fuzzyMatch(p.title || "", search).match || fuzzyMatch(p.location || "", search).match);
     }
 
     return props;
