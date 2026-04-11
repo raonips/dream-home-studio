@@ -151,11 +151,14 @@ const MapaGeral = () => {
   const hasUrlFilter = !!singleSlugFilter || !!initialCategoria;
 
   /* ── Fetch data ── */
+  const [condominioNames, setCondominioNames] = useState<Record<string, string>>({});
+
   useEffect(() => {
     const fetchAll = async () => {
-      const [locaisRes, propertiesRes] = await Promise.all([
+      const [locaisRes, propertiesRes, condominiosRes] = await Promise.all([
         supabase.from("locais").select("id,nome,slug,descricao,categoria,imagem_destaque,logo_url,endereco,latitude,longitude").eq("ativo", true),
         supabase.from("properties").select("id,title,slug,transaction_type,featured_image,thumbnail_url,latitude,longitude,bedrooms,bathrooms,price,price_formatted,condominio_slug,location").eq("status", "active"),
+        supabase.from("condominios").select("slug,name"),
       ]);
 
       const locais: MapLocal[] = (locaisRes.data || []).map((l: any) => ({
@@ -164,6 +167,13 @@ const MapaGeral = () => {
         logo_url: l.logo_url, endereco: l.endereco,
         latitude: l.latitude, longitude: l.longitude, tipo: "local" as const,
       }));
+
+      // Build slug→name map from condominios table (used for property search matching)
+      const condoMap: Record<string, string> = {};
+      (condominiosRes.data || []).forEach((c: any) => {
+        if (c.slug && c.name) condoMap[c.slug] = c.name;
+      });
+      setCondominioNames(condoMap);
 
       setAllLocais(locais);
       setAllProperties(propertiesRes.data || []);
