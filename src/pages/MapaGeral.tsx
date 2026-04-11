@@ -180,6 +180,21 @@ const MapaGeral = () => {
     return propertyTerms.some(t => s.includes(t));
   }, [search]);
 
+  /* ── Detect if search matches a condomínio name ── */
+  const searchMatchedCondoSlugs = useMemo(() => {
+    if (!search.trim()) return new Set<string>();
+    const s = search.toLowerCase();
+    const slugs = new Set<string>();
+    allLocais.forEach(l => {
+      if (l.categoria === "condominio" && l.nome.toLowerCase().includes(s) && l.slug) {
+        slugs.add(l.slug);
+      }
+    });
+    return slugs;
+  }, [allLocais, search]);
+
+  const isCondoSearch = searchMatchedCondoSlugs.size > 0;
+
   /* ── Guia categories (excluding property types) ── */
   const categorias = useMemo(() => {
     const cats = new Set(allLocais.map(l => l.categoria));
