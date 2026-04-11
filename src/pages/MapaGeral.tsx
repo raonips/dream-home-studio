@@ -153,9 +153,8 @@ const MapaGeral = () => {
   /* ── Fetch data ── */
   useEffect(() => {
     const fetchAll = async () => {
-      const [locaisRes, condominiosRes, propertiesRes] = await Promise.all([
+      const [locaisRes, propertiesRes] = await Promise.all([
         supabase.from("locais").select("id,nome,slug,descricao,categoria,imagem_destaque,logo_url,endereco,latitude,longitude").eq("ativo", true),
-        supabase.from("condominios").select("id,name,slug,description,featured_image,thumbnail_url,latitude,longitude"),
         supabase.from("properties").select("id,title,slug,transaction_type,featured_image,thumbnail_url,latitude,longitude,bedrooms,bathrooms,price,price_formatted,condominio_slug,location").eq("status", "active"),
       ]);
 
@@ -166,14 +165,7 @@ const MapaGeral = () => {
         latitude: l.latitude, longitude: l.longitude, tipo: "local" as const,
       }));
 
-      const condominios: MapLocal[] = (condominiosRes.data || []).map((c: any) => ({
-        id: c.id, nome: c.name, slug: c.slug, descricao: c.description,
-        categoria: "condominio", imagem_destaque: c.featured_image || c.thumbnail_url,
-        logo_url: null, endereco: null,
-        latitude: c.latitude, longitude: c.longitude, tipo: "condominio" as const,
-      }));
-
-      setAllLocais([...locais, ...condominios]);
+      setAllLocais(locais);
       setAllProperties(propertiesRes.data || []);
       setLoading(false);
     };
