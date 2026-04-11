@@ -48,7 +48,7 @@ const SmartSearch = ({ variant = 'hero', className, placeholder = 'O que você e
   const containerRef = useRef<HTMLDivElement>(null);
   const debouncedQuery = useDebounce(query.trim(), 300);
 
-  // Search Supabase
+  // Search Supabase with accent-insensitive filtering
   useEffect(() => {
     if (debouncedQuery.length < 2) {
       setResults([]);
@@ -58,64 +58,74 @@ const SmartSearch = ({ variant = 'hero', className, placeholder = 'O que você e
     let cancelled = false;
     const doSearch = async () => {
       setLoading(true);
-      const term = `%${debouncedQuery}%`;
+      const normalizedQuery = normalizeText(debouncedQuery);
 
+      // Fetch broader results (accent-insensitive matching done client-side)
       const [catRes, localRes, propRes] = await Promise.all([
         supabase
           .from('guia_categorias')
           .select('id, nome, slug, icone')
-          .ilike('nome', term)
-          .limit(4),
+          .limit(20),
         supabase
           .from('locais')
           .select('id, nome, slug, categoria, imagem_destaque')
           .eq('ativo', true)
-          .ilike('nome', term)
           .order('ordem')
-          .limit(5),
+          .limit(30),
         supabase
           .from('properties')
           .select('id, title, slug, location, thumbnail_url, image_url, transaction_type')
           .eq('status', 'active')
-          .ilike('title', term)
-          .limit(5),
+          .limit(30),
       ]);
 
       if (cancelled) return;
 
       const items: SearchResult[] = [];
 
-      (catRes.data ?? []).forEach((c: any) =>
-        items.push({
-          id: c.id,
-          title: c.nome,
-          url: `/guia/categoria/${c.slug}`,
-          type: 'categoria',
-          icon: c.icone,
-        })
-      );
+      // Filter categories by normalized text match
+      (catRes.data ?? [])
+        .filter((c: any) => normalizeText(c.nome).includes(normalizedQuery))
+        .slice(0, 4)
+        .forEach((c: any) =>
+          items.push({
+            id: c.id,
+            title: c.nome,
+            url: `/guia/categoria/${c.slug}`,
+            type: 'categoria',
+            icon: c.icone,
+          })
+        );
 
-      (localRes.data ?? []).forEach((l: any) =>
-        items.push({
-          id: l.id,
-          title: l.nome,
-          subtitle: l.categoria,
-          url: `/locais/${l.slug}`,
-          type: 'local',
-          image: l.imagem_destaque,
-        })
-      );
+      // Filter locais by normalized text match
+      (localRes.data ?? [])
+        .filter((l: any) => normalizeText(l.nome).includes(normalizedQuery))
+        .slice(0, 5)
+        .forEach((l: any) =>
+          items.push({
+            id: l.id,
+            title: l.nome,
+            subtitle: l.categoria,
+            url: `/locais/${l.slug}`,
+            type: 'local',
+            image: l.imagem_destaque,
+          })
+        );
 
-      (propRes.data ?? []).forEach((p: any) =>
-        items.push({
-          id: p.id,
-          title: p.title || 'Imóvel',
-          subtitle: p.location,
-          url: `/imoveis/${p.transaction_type === 'temporada' ? 'temporada' : 'venda'}/${p.slug || p.id}`,
-          type: 'imovel',
-          image: p.thumbnail_url || p.image_url,
-        })
-      );
+      // Filter properties by normalized text match
+      (propRes.data ?? [])
+        .filter((p: any) => normalizeText(p.title || '').includes(normalizedQuery))
+        .slice(0, 5)
+        .forEach((p: any) =>
+          items.push({
+            id: p.id,
+            title: p.title || 'Imóvel',
+            subtitle: p.location,
+            url: `/imoveis/${p.transaction_type === 'temporada' ? 'temporada' : 'venda'}/${p.slug || p.id}`,
+            type: 'imovel',
+            image: p.thumbnail_url || p.image_url,
+          })
+        );
 
       setResults(items);
       setHighlightIdx(-1);
