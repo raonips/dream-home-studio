@@ -3,6 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Search, MapPin, Home, Grid3X3, Loader2, ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { normalizeText } from '@/lib/utils';
 import SmartSearch from '@/components/SmartSearch';
 
 interface SearchResult {

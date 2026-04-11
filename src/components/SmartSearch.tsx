@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, X, MapPin, Home, Grid3X3, Loader2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, normalizeText } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 
 /* ── Types ── */
