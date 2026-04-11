@@ -62,7 +62,7 @@ const SmartSearch = ({ variant = 'hero', className, placeholder = 'O que você e
       const [catRes, localRes, propRes] = await Promise.all([
         supabase.from('guia_categorias').select('id, nome, slug, icone').limit(50),
         supabase.from('locais').select('id, nome, slug, categoria, imagem_destaque').eq('ativo', true).order('ordem').limit(100),
-        supabase.from('properties').select('id, title, slug, location, thumbnail_url, image_url, transaction_type').eq('status', 'active').limit(100),
+        supabase.from('properties').select('id, title, slug, location, thumbnail_url, image_url, transaction_type, condominio_slug').eq('status', 'active').limit(200),
       ]);
 
       if (cancelled) return;
@@ -81,8 +81,12 @@ const SmartSearch = ({ variant = 'hero', className, placeholder = 'O que você e
       });
 
       (propRes.data ?? []).forEach((p: any) => {
-        const { match, score } = fuzzyMatch(p.title || '', debouncedQuery);
-        if (match) items.push({ id: p.id, title: p.title || 'Imóvel', subtitle: p.location, url: `/imoveis/${p.transaction_type === 'temporada' ? 'temporada' : 'venda'}/${p.slug || p.id}`, type: 'imovel', image: p.thumbnail_url || p.image_url, score });
+        const titleMatch = fuzzyMatch(p.title || '', debouncedQuery);
+        const locationMatch = fuzzyMatch(p.location || '', debouncedQuery);
+        const condoMatch = fuzzyMatch((p.condominio_slug || '').replace(/-/g, ' '), debouncedQuery);
+        const bestScore = Math.max(titleMatch.score, locationMatch.score, condoMatch.score);
+        const matched = titleMatch.match || locationMatch.match || condoMatch.match;
+        if (matched) items.push({ id: p.id, title: p.title || 'Imóvel', subtitle: p.location, url: `/imoveis/${p.transaction_type === 'temporada' ? 'temporada' : 'venda'}/${p.slug || p.id}`, type: 'imovel', image: p.thumbnail_url || p.image_url, score: bestScore });
       });
 
       // Sort by score descending, then limit per type
