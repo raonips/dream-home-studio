@@ -11,7 +11,7 @@ interface SearchResult {
   title: string;
   subtitle?: string;
   url: string;
-  type: 'categoria' | 'local' | 'imovel';
+  type: 'categoria' | 'local' | 'imovel' | 'temporada';
   image?: string;
   icon?: string;
 }
@@ -20,6 +20,7 @@ const TYPE_CONFIG = {
   categoria: { label: 'Categorias', Icon: Grid3X3, color: 'text-amber-500', bg: 'bg-amber-50' },
   local: { label: 'Locais', Icon: MapPin, color: 'text-emerald-500', bg: 'bg-emerald-50' },
   imovel: { label: 'Imóveis', Icon: Home, color: 'text-blue-500', bg: 'bg-blue-50' },
+  temporada: { label: 'Temporada', Icon: Home, color: 'text-purple-500', bg: 'bg-purple-50' },
 };
 
 const BuscaPage = () => {
@@ -62,7 +63,8 @@ const BuscaPage = () => {
         const condoMatch = fuzzyMatch((p.condominio_slug || '').replace(/-/g, ' '), q.trim());
         const bestScore = Math.max(titleMatch.score, locationMatch.score, condoMatch.score);
         const matched = titleMatch.match || locationMatch.match || condoMatch.match;
-        if (matched) items.push({ id: p.id, title: p.title || 'Imóvel', subtitle: [p.location, p.price_formatted].filter(Boolean).join(' • '), url: `/imoveis/${p.transaction_type === 'temporada' ? 'temporada' : 'venda'}/${p.slug || p.id}`, type: 'imovel', image: p.thumbnail_url || p.image_url, score: bestScore });
+        const isTemporada = p.transaction_type === 'temporada';
+        if (matched) items.push({ id: p.id, title: p.title || 'Imóvel', subtitle: [p.location, p.price_formatted].filter(Boolean).join(' • '), url: `/imoveis/${isTemporada ? 'temporada' : 'venda'}/${p.slug || p.id}`, type: isTemporada ? 'temporada' : 'imovel', image: p.thumbnail_url || p.image_url, score: bestScore });
       });
 
       items.sort((a, b) => b.score - a.score);
@@ -74,7 +76,7 @@ const BuscaPage = () => {
     return () => { cancelled = true; };
   }, [q]);
 
-  const grouped = (['categoria', 'local', 'imovel'] as const)
+  const grouped = (['categoria', 'local', 'imovel', 'temporada'] as const)
     .map((type) => ({ type, items: results.filter((r) => r.type === type) }))
     .filter((g) => g.items.length > 0);
 
