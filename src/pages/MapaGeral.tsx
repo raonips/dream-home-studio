@@ -194,17 +194,17 @@ const MapaGeral = () => {
   /* ── Detect if search matches a condomínio name (from Guia locais OR condominios table) ── */
   const searchMatchedCondoSlugs = useMemo(() => {
     if (!search.trim()) return new Set<string>();
-    const s = search.toLowerCase();
+    const s = normalizeText(search);
     const slugs = new Set<string>();
     // Match from Guia locais (categoria condominio)
     allLocais.forEach(l => {
-      if (l.categoria === "condominio" && l.nome.toLowerCase().includes(s) && l.slug) {
+      if (l.categoria === "condominio" && normalizeText(l.nome).includes(s) && l.slug) {
         slugs.add(l.slug);
       }
     });
     // Match from condominios table (properties use these slugs)
     Object.entries(condominioNames).forEach(([slug, name]) => {
-      if (name.toLowerCase().includes(s)) {
+      if (normalizeText(name).includes(s)) {
         slugs.add(slug);
       }
     });
