@@ -19,3 +19,12 @@ export function stripHtml(html: string): string {
     .replace(/\s+/g, " ")
     .trim();
 }
+
+/** Normalize string for accent-insensitive search (remove accents + lowercase). */
+export function normalizeText(text: string): string {
+  if (!text) return "";
+  return text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
