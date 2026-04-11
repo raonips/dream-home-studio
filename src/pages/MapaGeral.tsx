@@ -180,6 +180,21 @@ const MapaGeral = () => {
     return propertyTerms.some(t => s.includes(t));
   }, [search]);
 
+  /* ── Detect if search matches a condomínio name ── */
+  const searchMatchedCondoSlugs = useMemo(() => {
+    if (!search.trim()) return new Set<string>();
+    const s = search.toLowerCase();
+    const slugs = new Set<string>();
+    allLocais.forEach(l => {
+      if (l.categoria === "condominio" && l.nome.toLowerCase().includes(s) && l.slug) {
+        slugs.add(l.slug);
+      }
+    });
+    return slugs;
+  }, [allLocais, search]);
+
+  const isCondoSearch = searchMatchedCondoSlugs.size > 0;
+
   /* ── Guia categories (excluding property types) ── */
   const categorias = useMemo(() => {
     const cats = new Set(allLocais.map(l => l.categoria));
@@ -255,6 +270,23 @@ const MapaGeral = () => {
       );
     }
 
+    // Search matches a condomínio → show its properties automatically
+    if (isCondoSearch && !isPropertySearch) {
+      const condoProps = allProperties.filter(p =>
+        p.condominio_slug && searchMatchedCondoSlugs.has(p.condominio_slug) &&
+        p.latitude && p.longitude
+      );
+      // Also include manually toggled properties
+      let manualProps: MapProperty[] = [];
+      if (showVenda) {
+        manualProps = [...manualProps, ...allProperties.filter(p => p.transaction_type === "venda" && p.latitude && p.longitude && !condoProps.some(cp => cp.id === p.id))];
+      }
+      if (showTemporada) {
+        manualProps = [...manualProps, ...allProperties.filter(p => p.transaction_type === "temporada" && p.latitude && p.longitude && !condoProps.some(cp => cp.id === p.id))];
+      }
+      return [...condoProps, ...filterByBounds(manualProps)];
+    }
+
     // Smart search → show matching properties (zoom will adjust for search results)
     if (isPropertySearch) {
       const s = search.toLowerCase();
@@ -283,7 +315,7 @@ const MapaGeral = () => {
     }
 
     return props;
-  }, [allProperties, showVenda, showTemporada, search, isPropertySearch, condoPropertyFilter, mapBounds, guiaCondoSlugs]);
+  }, [allProperties, showVenda, showTemporada, search, isPropertySearch, isCondoSearch, searchMatchedCondoSlugs, condoPropertyFilter, mapBounds, guiaCondoSlugs]);
 
   /* ── Combined items for sidebar list ── */
   const allFiltered = useMemo(() => {
