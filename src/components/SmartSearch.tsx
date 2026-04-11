@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, X, MapPin, Home, Grid3X3, Loader2 } from 'lucide-react';
-import { cn, fuzzyMatch } from '@/lib/utils';
+import { cn, fuzzyMatch, parseSearchIntent } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 
 /* ── Types ── */
@@ -49,7 +49,7 @@ const SmartSearch = ({ variant = 'hero', className, placeholder = 'O que você e
   const containerRef = useRef<HTMLDivElement>(null);
   const debouncedQuery = useDebounce(query.trim(), 300);
 
-  // Search Supabase with accent-insensitive filtering
+  // Search Supabase with accent-insensitive filtering + intent detection
   useEffect(() => {
     if (debouncedQuery.length < 2) {
       setResults([]);
@@ -59,6 +59,10 @@ const SmartSearch = ({ variant = 'hero', className, placeholder = 'O que você e
     let cancelled = false;
     const doSearch = async () => {
       setLoading(true);
+
+      // Parse intent from query
+      const intent = parseSearchIntent(debouncedQuery);
+      const searchTerm = intent.cleanQuery || debouncedQuery;
 
       const [catRes, localRes, propRes] = await Promise.all([
         supabase.from('guia_categorias').select('id, nome, slug, icone').limit(50),
@@ -71,35 +75,54 @@ const SmartSearch = ({ variant = 'hero', className, placeholder = 'O que você e
       type Scored = SearchResult & { score: number };
       const items: Scored[] = [];
 
-      (catRes.data ?? []).forEach((c: any) => {
-        const { match, score } = fuzzyMatch(c.nome, debouncedQuery);
-        if (match) items.push({ id: c.id, title: c.nome, url: `/guia/categoria/${c.slug}`, type: 'categoria', icon: c.icone, score });
-      });
+      // If intent detected, skip categorias/locais or deprioritize them
+      const hasPropertyIntent = !!intent.transactionType;
+
+      if (!hasPropertyIntent) {
+        (catRes.data ?? []).forEach((c: any) => {
+          const { match, score } = fuzzyMatch(c.nome, searchTerm);
+          if (match) items.push({ id: c.id, title: c.nome, url: `/guia/categoria/${c.slug}`, type: 'categoria', icon: c.icone, score });
+        });
+      }
 
       (localRes.data ?? []).forEach((l: any) => {
-        const { match, score } = fuzzyMatch(l.nome, debouncedQuery);
-        if (match) items.push({ id: l.id, title: l.nome, subtitle: l.categoria, url: `/locais/${l.slug}`, type: 'local', image: l.imagem_destaque, score });
+        const { match, score } = fuzzyMatch(l.nome, searchTerm);
+        if (match) items.push({ id: l.id, title: l.nome, subtitle: l.categoria, url: `/locais/${l.slug}`, type: 'local', image: l.imagem_destaque, score: hasPropertyIntent ? score - 50 : score });
       });
 
       (propRes.data ?? []).forEach((p: any) => {
-        const titleMatch = fuzzyMatch(p.title || '', debouncedQuery);
-        const locationMatch = fuzzyMatch(p.location || '', debouncedQuery);
-        const condoMatch = fuzzyMatch((p.condominio_slug || '').replace(/-/g, ' '), debouncedQuery);
+        const titleMatch = fuzzyMatch(p.title || '', searchTerm);
+        const locationMatch = fuzzyMatch(p.location || '', searchTerm);
+        const condoMatch = fuzzyMatch((p.condominio_slug || '').replace(/-/g, ' '), searchTerm);
         const bestScore = Math.max(titleMatch.score, locationMatch.score, condoMatch.score);
         const matched = titleMatch.match || locationMatch.match || condoMatch.match;
         const isTemporada = p.transaction_type === 'temporada';
-        if (matched) items.push({ id: p.id, title: p.title || 'Imóvel', subtitle: p.location, url: `/imoveis/${isTemporada ? 'temporada' : 'venda'}/${p.slug || p.id}`, type: isTemporada ? 'temporada' : 'imovel', image: p.thumbnail_url || p.image_url, score: bestScore });
+
+        // If intent is set, only show matching transaction type
+        if (intent.transactionType) {
+          if (intent.transactionType === 'temporada' && !isTemporada) return;
+          if (intent.transactionType === 'venda' && isTemporada) return;
+        }
+
+        if (matched) items.push({ id: p.id, title: p.title || 'Imóvel', subtitle: p.location, url: `/imoveis/${isTemporada ? 'temporada' : 'venda'}/${p.slug || p.id}`, type: isTemporada ? 'temporada' : 'imovel', image: p.thumbnail_url || p.image_url, score: bestScore + (hasPropertyIntent ? 10 : 0) });
       });
 
       // Sort by score descending, then limit per type
       items.sort((a, b) => b.score - a.score);
-      const catItems = items.filter(i => i.type === 'categoria').slice(0, 6);
-      const localItems = items.filter(i => i.type === 'local').slice(0, 8);
-      const propItems = items.filter(i => i.type === 'imovel').slice(0, 10);
-      const tempItems = items.filter(i => i.type === 'temporada').slice(0, 10);
-      const final: SearchResult[] = [...catItems, ...localItems, ...propItems, ...tempItems];
 
-      setResults(final);
+      // If intent detected, prioritize property results
+      if (hasPropertyIntent) {
+        const propItems = items.filter(i => i.type === 'imovel' || i.type === 'temporada').slice(0, 15);
+        const localItems = items.filter(i => i.type === 'local').slice(0, 3);
+        setResults([...propItems, ...localItems]);
+      } else {
+        const catItems = items.filter(i => i.type === 'categoria').slice(0, 6);
+        const localItems = items.filter(i => i.type === 'local').slice(0, 8);
+        const propItems = items.filter(i => i.type === 'imovel').slice(0, 10);
+        const tempItems = items.filter(i => i.type === 'temporada').slice(0, 10);
+        setResults([...catItems, ...localItems, ...propItems, ...tempItems]);
+      }
+
       setHighlightIdx(-1);
       setLoading(false);
     };
@@ -158,8 +181,15 @@ const SmartSearch = ({ variant = 'hero', className, placeholder = 'O que você e
     }
   };
 
-  // Group results by type
-  const grouped = (['categoria', 'local', 'imovel', 'temporada'] as const)
+  // Compute current intent for feedback label
+  const currentIntent = useMemo(() => parseSearchIntent(debouncedQuery), [debouncedQuery]);
+
+  // Group results by type, reorder if intent detected
+  const groupOrder = currentIntent.transactionType
+    ? (['imovel', 'temporada', 'local', 'categoria'] as const)
+    : (['categoria', 'local', 'imovel', 'temporada'] as const);
+
+  const grouped = groupOrder
     .map((type) => ({
       type,
       items: results.filter((r) => r.type === type),
@@ -259,6 +289,16 @@ const SmartSearch = ({ variant = 'hero', className, placeholder = 'O que você e
                 {!loading && results.length === 0 && debouncedQuery.length >= 2 && (
                   <div className="py-8 text-center text-muted-foreground text-sm">
                     Nenhum resultado para "{debouncedQuery}"
+                  </div>
+                )}
+
+                {/* Intent feedback label */}
+                {!loading && currentIntent.transactionType && results.length > 0 && (
+                  <div className="px-4 py-2 bg-primary/10 border-b border-border">
+                    <span className="text-xs font-medium text-primary">
+                      Exibindo Imóveis para {currentIntent.intentLabel}
+                      {currentIntent.cleanQuery ? ` em "${currentIntent.cleanQuery}"` : ''}
+                    </span>
                   </div>
                 )}
 

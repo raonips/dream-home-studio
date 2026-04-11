@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { normalizeText, fuzzyMatch, expandQuery } from "@/lib/utils";
+import { normalizeText, fuzzyMatch, expandQuery, parseSearchIntent } from "@/lib/utils";
 import {
   Search, MapPin, Loader2, X, Filter,
   Store, UtensilsCrossed, Hotel, Home, Pill,
@@ -183,30 +183,36 @@ const MapaGeral = () => {
     fetchAll();
   }, []);
 
+  /* ── Intent detection from search ── */
+  const searchIntent = useMemo(() => parseSearchIntent(search), [search]);
+
   /* ── Smart search: auto-enable property filters when searching property-like terms ── */
   const isPropertySearch = useMemo(() => {
     if (!search.trim()) return false;
+    // If intent detected, it's a property search
+    if (searchIntent.transactionType) return true;
     const s = normalizeText(search);
-    const propertyTerms = ["casa", "terreno", "apartamento", "apto", "quarto", "quartos", "suite", "suit", "venda", "temporada", "aluguel", "imovel", "imov"];
+    const propertyTerms = ["casa", "terreno", "apartamento", "apto", "quarto", "quartos", "suite", "suit", "imovel", "imov"];
     return propertyTerms.some(t => s.includes(t));
-  }, [search]);
+  }, [search, searchIntent]);
 
-  /* ── Detect if search matches a condomínio name (from Guia locais OR condominios table) ── */
+  /* ── Detect if search matches a condomínio name (using cleaned query without intent keywords) ── */
   const searchMatchedCondoSlugs = useMemo(() => {
-    if (!search.trim()) return new Set<string>();
+    const term = searchIntent.cleanQuery || search;
+    if (!term.trim()) return new Set<string>();
     const slugs = new Set<string>();
     allLocais.forEach(l => {
-      if (l.categoria === "condominio" && fuzzyMatch(l.nome, search).match && l.slug) {
+      if (l.categoria === "condominio" && fuzzyMatch(l.nome, term).match && l.slug) {
         slugs.add(l.slug);
       }
     });
     Object.entries(condominioNames).forEach(([slug, name]) => {
-      if (fuzzyMatch(name, search).match) {
+      if (fuzzyMatch(name, term).match) {
         slugs.add(slug);
       }
     });
     return slugs;
-  }, [allLocais, search, condominioNames]);
+  }, [allLocais, search, searchIntent, condominioNames]);
 
   const isCondoSearch = searchMatchedCondoSlugs.size > 0;
 
@@ -284,12 +290,16 @@ const MapaGeral = () => {
       );
     }
 
-    // Search matches a condomínio → show its properties automatically
-    if (isCondoSearch && !isPropertySearch) {
-      const condoProps = allProperties.filter(p =>
+    // Search matches a condomínio → show its properties (filtered by intent if present)
+    if (isCondoSearch) {
+      let condoProps = allProperties.filter(p =>
         p.condominio_slug && searchMatchedCondoSlugs.has(p.condominio_slug) &&
         p.latitude && p.longitude
       );
+      // Filter by intent transaction type
+      if (searchIntent.transactionType) {
+        condoProps = condoProps.filter(p => p.transaction_type === searchIntent.transactionType);
+      }
       // Also include manually toggled properties
       let manualProps: MapProperty[] = [];
       if (showVenda) {
@@ -301,13 +311,18 @@ const MapaGeral = () => {
       return [...condoProps, ...filterByBounds(manualProps)];
     }
 
-    // Smart search → show matching properties (zoom will adjust for search results)
+    // Smart search → show matching properties (filtered by intent)
     if (isPropertySearch) {
-      return allProperties.filter(p =>
+      const searchTerm = searchIntent.cleanQuery || search;
+      let props = allProperties.filter(p =>
         p.latitude && p.longitude &&
-        (fuzzyMatch(p.title || "", search).match ||
-         fuzzyMatch(p.location || "", search).match)
+        (fuzzyMatch(p.title || "", searchTerm).match ||
+         fuzzyMatch(p.location || "", searchTerm).match)
       );
+      if (searchIntent.transactionType) {
+        props = props.filter(p => p.transaction_type === searchIntent.transactionType);
+      }
+      return props;
     }
 
     // Manual toggles — filter by current visible bounds
@@ -328,7 +343,7 @@ const MapaGeral = () => {
     }
 
     return props;
-  }, [allProperties, showVenda, showTemporada, search, isPropertySearch, isCondoSearch, searchMatchedCondoSlugs, condoPropertyFilter, mapBounds, guiaCondoSlugs]);
+  }, [allProperties, showVenda, showTemporada, search, searchIntent, isPropertySearch, isCondoSearch, searchMatchedCondoSlugs, condoPropertyFilter, mapBounds, guiaCondoSlugs]);
 
   /* ── Combined items for sidebar list ── */
   const allFiltered = useMemo(() => {
@@ -708,10 +723,30 @@ const MapaGeral = () => {
         )}
 
         {isPropertySearch && !condoPropertyFilter && !hasUrlFilter && (
-          <div className="border-b border-border bg-blue-50 dark:bg-blue-950/30 px-4 py-2 flex items-center justify-between shrink-0">
+          <div className="border-b border-border bg-primary/5 px-4 py-2 flex items-center justify-between shrink-0">
             <p className="text-sm text-foreground flex items-center gap-1.5">
-              <Search className="h-4 w-4 text-blue-600" />
-              <span>Buscando imóveis: <strong>{search}</strong> ({filteredProperties.length} resultados)</span>
+              <Search className="h-4 w-4 text-primary" />
+              <span>
+                {searchIntent.transactionType
+                  ? <>Exibindo Imóveis para <strong>{searchIntent.intentLabel}</strong>{searchIntent.cleanQuery ? <> em "<strong>{searchIntent.cleanQuery}</strong>"</> : ''} ({filteredProperties.length} resultados)</>
+                  : <>Buscando imóveis: <strong>{search}</strong> ({filteredProperties.length} resultados)</>
+                }
+              </span>
+            </p>
+            <Button variant="ghost" size="sm" onClick={() => setSearch("")} className="text-xs gap-1">
+              <X className="h-3.5 w-3.5" />
+              Limpar busca
+            </Button>
+          </div>
+        )}
+
+        {isCondoSearch && !isPropertySearch && searchIntent.transactionType && (
+          <div className="border-b border-border bg-primary/5 px-4 py-2 flex items-center justify-between shrink-0">
+            <p className="text-sm text-foreground flex items-center gap-1.5">
+              <Home className="h-4 w-4 text-primary" />
+              <span>
+                Exibindo Imóveis para <strong>{searchIntent.intentLabel}</strong> ({filteredProperties.length} resultados)
+              </span>
             </p>
             <Button variant="ghost" size="sm" onClick={() => setSearch("")} className="text-xs gap-1">
               <X className="h-3.5 w-3.5" />
