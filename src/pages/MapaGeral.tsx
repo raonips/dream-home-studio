@@ -723,10 +723,30 @@ const MapaGeral = () => {
         )}
 
         {isPropertySearch && !condoPropertyFilter && !hasUrlFilter && (
-          <div className="border-b border-border bg-blue-50 dark:bg-blue-950/30 px-4 py-2 flex items-center justify-between shrink-0">
+          <div className="border-b border-border bg-primary/5 px-4 py-2 flex items-center justify-between shrink-0">
             <p className="text-sm text-foreground flex items-center gap-1.5">
-              <Search className="h-4 w-4 text-blue-600" />
-              <span>Buscando imóveis: <strong>{search}</strong> ({filteredProperties.length} resultados)</span>
+              <Search className="h-4 w-4 text-primary" />
+              <span>
+                {searchIntent.transactionType
+                  ? <>Exibindo Imóveis para <strong>{searchIntent.intentLabel}</strong>{searchIntent.cleanQuery ? <> em "<strong>{searchIntent.cleanQuery}</strong>"</> : ''} ({filteredProperties.length} resultados)</>
+                  : <>Buscando imóveis: <strong>{search}</strong> ({filteredProperties.length} resultados)</>
+                }
+              </span>
+            </p>
+            <Button variant="ghost" size="sm" onClick={() => setSearch("")} className="text-xs gap-1">
+              <X className="h-3.5 w-3.5" />
+              Limpar busca
+            </Button>
+          </div>
+        )}
+
+        {isCondoSearch && !isPropertySearch && searchIntent.transactionType && (
+          <div className="border-b border-border bg-primary/5 px-4 py-2 flex items-center justify-between shrink-0">
+            <p className="text-sm text-foreground flex items-center gap-1.5">
+              <Home className="h-4 w-4 text-primary" />
+              <span>
+                Exibindo Imóveis para <strong>{searchIntent.intentLabel}</strong> ({filteredProperties.length} resultados)
+              </span>
             </p>
             <Button variant="ghost" size="sm" onClick={() => setSearch("")} className="text-xs gap-1">
               <X className="h-3.5 w-3.5" />
