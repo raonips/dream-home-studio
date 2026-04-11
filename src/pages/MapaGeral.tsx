@@ -352,6 +352,9 @@ const MapaGeral = () => {
     const updateBounds = () => setMapBounds(map.getBounds());
     map.on("moveend", updateBounds);
     map.on("zoomend", updateBounds);
+    // Track user interaction (pan/zoom) to block auto-fit
+    map.on("dragstart", () => { userInteractedRef.current = true; });
+    map.on("zoomstart", () => { userInteractedRef.current = true; });
     // Set initial bounds
     updateBounds();
 
