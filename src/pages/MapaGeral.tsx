@@ -711,7 +711,7 @@ const MapaGeral = () => {
             <Badge
               variant={showVenda ? "default" : "outline"}
               className={`cursor-pointer gap-1 ${showVenda ? "bg-blue-600" : "border-blue-300 text-blue-700"}`}
-              onClick={() => { skipNextFitRef.current = true; setShowVenda(!showVenda); setCondoPropertyFilter(null); setShowFilters(false); }}
+              onClick={() => { setShowVenda(!showVenda); setCondoPropertyFilter(null); setShowFilters(false); }}
             >
               🏠 À Venda ({vendaCount})
             </Badge>
