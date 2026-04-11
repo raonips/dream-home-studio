@@ -646,7 +646,7 @@ const MapaGeral = () => {
             <Badge
               variant={showTemporada ? "default" : "outline"}
               className={`cursor-pointer gap-1 transition-colors ${showTemporada ? "bg-purple-600 hover:bg-purple-700" : "hover:bg-purple-50 border-purple-300 text-purple-700"}`}
-              onClick={() => { skipNextFitRef.current = true; setShowTemporada(!showTemporada); setCondoPropertyFilter(null); }}
+              onClick={() => { setShowTemporada(!showTemporada); setCondoPropertyFilter(null); }}
             >
               <KeyRound className="h-3 w-3" />
               🔑 Temporada ({temporadaCount})
