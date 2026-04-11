@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Search, MapPin, Home, Grid3X3, Loader2, ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { fuzzyMatch } from '@/lib/utils';
+import { fuzzyMatch, parseSearchIntent } from '@/lib/utils';
 import SmartSearch from '@/components/SmartSearch';
 
 interface SearchResult {
@@ -36,6 +36,9 @@ const BuscaPage = () => {
     const doSearch = async () => {
       setLoading(true);
 
+      const intent = parseSearchIntent(q.trim());
+      const searchTerm = intent.cleanQuery || q.trim();
+
       const [catRes, localRes, propRes] = await Promise.all([
         supabase.from('guia_categorias').select('id, nome, slug, icone, descricao').limit(50),
         supabase.from('locais').select('id, nome, slug, categoria, imagem_destaque, endereco').eq('ativo', true).order('ordem').limit(200),
@@ -46,25 +49,34 @@ const BuscaPage = () => {
 
       type Scored = SearchResult & { score: number };
       const items: Scored[] = [];
+      const hasPropertyIntent = !!intent.transactionType;
 
-      (catRes.data ?? []).forEach((c: any) => {
-        const { match, score } = fuzzyMatch(c.nome, q.trim());
-        if (match) items.push({ id: c.id, title: c.nome, subtitle: c.descricao, url: `/guia/categoria/${c.slug}`, type: 'categoria', icon: c.icone, score });
-      });
+      if (!hasPropertyIntent) {
+        (catRes.data ?? []).forEach((c: any) => {
+          const { match, score } = fuzzyMatch(c.nome, searchTerm);
+          if (match) items.push({ id: c.id, title: c.nome, subtitle: c.descricao, url: `/guia/categoria/${c.slug}`, type: 'categoria', icon: c.icone, score });
+        });
+      }
 
       (localRes.data ?? []).forEach((l: any) => {
-        const { match, score } = fuzzyMatch(l.nome, q.trim());
-        if (match) items.push({ id: l.id, title: l.nome, subtitle: l.endereco || l.categoria, url: `/locais/${l.slug}`, type: 'local', image: l.imagem_destaque, score });
+        const { match, score } = fuzzyMatch(l.nome, searchTerm);
+        if (match) items.push({ id: l.id, title: l.nome, subtitle: l.endereco || l.categoria, url: `/locais/${l.slug}`, type: 'local', image: l.imagem_destaque, score: hasPropertyIntent ? score - 50 : score });
       });
 
       (propRes.data ?? []).forEach((p: any) => {
-        const titleMatch = fuzzyMatch(p.title || '', q.trim());
-        const locationMatch = fuzzyMatch(p.location || '', q.trim());
-        const condoMatch = fuzzyMatch((p.condominio_slug || '').replace(/-/g, ' '), q.trim());
+        const titleMatch = fuzzyMatch(p.title || '', searchTerm);
+        const locationMatch = fuzzyMatch(p.location || '', searchTerm);
+        const condoMatch = fuzzyMatch((p.condominio_slug || '').replace(/-/g, ' '), searchTerm);
         const bestScore = Math.max(titleMatch.score, locationMatch.score, condoMatch.score);
         const matched = titleMatch.match || locationMatch.match || condoMatch.match;
         const isTemporada = p.transaction_type === 'temporada';
-        if (matched) items.push({ id: p.id, title: p.title || 'Imóvel', subtitle: [p.location, p.price_formatted].filter(Boolean).join(' • '), url: `/imoveis/${isTemporada ? 'temporada' : 'venda'}/${p.slug || p.id}`, type: isTemporada ? 'temporada' : 'imovel', image: p.thumbnail_url || p.image_url, score: bestScore });
+
+        if (intent.transactionType) {
+          if (intent.transactionType === 'temporada' && !isTemporada) return;
+          if (intent.transactionType === 'venda' && isTemporada) return;
+        }
+
+        if (matched) items.push({ id: p.id, title: p.title || 'Imóvel', subtitle: [p.location, p.price_formatted].filter(Boolean).join(' • '), url: `/imoveis/${isTemporada ? 'temporada' : 'venda'}/${p.slug || p.id}`, type: isTemporada ? 'temporada' : 'imovel', image: p.thumbnail_url || p.image_url, score: bestScore + (hasPropertyIntent ? 10 : 0) });
       });
 
       items.sort((a, b) => b.score - a.score);
