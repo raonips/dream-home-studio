@@ -138,8 +138,14 @@ const MapaGeral = () => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.LayerGroup | null>(null);
-  // Track whether we should skip auto-zoom (user toggled property filter, not search)
-  const skipNextFitRef = useRef(false);
+  // Track whether user has interacted with the map (pan/zoom)
+  const userInteractedRef = useRef(false);
+  // Track whether this is the initial load (auto-fit only once)
+  const initialFitDoneRef = useRef(false);
+  // Track whether we should force fit (e.g. text search)
+  const forceFitRef = useRef(false);
+  // Track whether there are off-screen results to show the "Centralizar" button
+  const [hasOffScreenResults, setHasOffScreenResults] = useState(false);
 
   const singleSlugFilter = condominioFilter || localFilter;
   const hasUrlFilter = !!singleSlugFilter || !!initialCategoria;
