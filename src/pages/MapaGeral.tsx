@@ -183,13 +183,18 @@ const MapaGeral = () => {
     fetchAll();
   }, []);
 
+  /* ── Intent detection from search ── */
+  const searchIntent = useMemo(() => parseSearchIntent(search), [search]);
+
   /* ── Smart search: auto-enable property filters when searching property-like terms ── */
   const isPropertySearch = useMemo(() => {
     if (!search.trim()) return false;
+    // If intent detected, it's a property search
+    if (searchIntent.transactionType) return true;
     const s = normalizeText(search);
-    const propertyTerms = ["casa", "terreno", "apartamento", "apto", "quarto", "quartos", "suite", "suit", "venda", "temporada", "aluguel", "imovel", "imov"];
+    const propertyTerms = ["casa", "terreno", "apartamento", "apto", "quarto", "quartos", "suite", "suit", "imovel", "imov"];
     return propertyTerms.some(t => s.includes(t));
-  }, [search]);
+  }, [search, searchIntent]);
 
   /* ── Detect if search matches a condomínio name (from Guia locais OR condominios table) ── */
   const searchMatchedCondoSlugs = useMemo(() => {
