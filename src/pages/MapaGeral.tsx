@@ -812,6 +812,27 @@ const MapaGeral = () => {
           {/* Right: Map */}
           <div className="hidden md:block flex-1 relative">
             <div ref={mapRef} className="w-full h-full" />
+            {hasOffScreenResults && (
+              <Button
+                size="sm"
+                variant="secondary"
+                className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[1000] shadow-lg gap-1.5"
+                onClick={() => {
+                  const allCoordsItems = [
+                    ...filteredLocais.filter(l => l.latitude && l.longitude).map(l => [l.latitude!, l.longitude!] as [number, number]),
+                    ...filteredProperties.filter(p => p.latitude && p.longitude).map(p => [p.latitude!, p.longitude!] as [number, number]),
+                  ];
+                  if (allCoordsItems.length > 0 && mapInstanceRef.current) {
+                    userInteractedRef.current = false;
+                    const bounds = L.latLngBounds(allCoordsItems);
+                    mapInstanceRef.current.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
+                    setHasOffScreenResults(false);
+                  }
+                }}
+              >
+                🔍 Ver todos os resultados no mapa
+              </Button>
+            )}
           </div>
         </div>
       </div>
