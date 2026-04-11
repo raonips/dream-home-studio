@@ -10,7 +10,7 @@ interface SearchResult {
   title: string;
   subtitle?: string;
   url: string;
-  type: 'categoria' | 'local' | 'imovel';
+  type: 'categoria' | 'local' | 'imovel' | 'temporada';
   image?: string;
   icon?: string;
 }
@@ -26,6 +26,7 @@ const TYPE_CONFIG = {
   categoria: { label: 'Categorias', Icon: Grid3X3, color: 'text-amber-500' },
   local: { label: 'Locais', Icon: MapPin, color: 'text-emerald-500' },
   imovel: { label: 'Imóveis', Icon: Home, color: 'text-blue-500' },
+  temporada: { label: 'Temporada', Icon: Home, color: 'text-purple-500' },
 };
 
 function useDebounce<T>(value: T, delay: number): T {
@@ -86,7 +87,8 @@ const SmartSearch = ({ variant = 'hero', className, placeholder = 'O que você e
         const condoMatch = fuzzyMatch((p.condominio_slug || '').replace(/-/g, ' '), debouncedQuery);
         const bestScore = Math.max(titleMatch.score, locationMatch.score, condoMatch.score);
         const matched = titleMatch.match || locationMatch.match || condoMatch.match;
-        if (matched) items.push({ id: p.id, title: p.title || 'Imóvel', subtitle: p.location, url: `/imoveis/${p.transaction_type === 'temporada' ? 'temporada' : 'venda'}/${p.slug || p.id}`, type: 'imovel', image: p.thumbnail_url || p.image_url, score: bestScore });
+        const isTemporada = p.transaction_type === 'temporada';
+        if (matched) items.push({ id: p.id, title: p.title || 'Imóvel', subtitle: p.location, url: `/imoveis/${isTemporada ? 'temporada' : 'venda'}/${p.slug || p.id}`, type: isTemporada ? 'temporada' : 'imovel', image: p.thumbnail_url || p.image_url, score: bestScore });
       });
 
       // Sort by score descending, then limit per type
@@ -94,7 +96,8 @@ const SmartSearch = ({ variant = 'hero', className, placeholder = 'O que você e
       const catItems = items.filter(i => i.type === 'categoria').slice(0, 4);
       const localItems = items.filter(i => i.type === 'local').slice(0, 5);
       const propItems = items.filter(i => i.type === 'imovel').slice(0, 5);
-      const final: SearchResult[] = [...catItems, ...localItems, ...propItems];
+      const tempItems = items.filter(i => i.type === 'temporada').slice(0, 5);
+      const final: SearchResult[] = [...catItems, ...localItems, ...propItems, ...tempItems];
 
       setResults(final);
       setHighlightIdx(-1);
@@ -156,7 +159,7 @@ const SmartSearch = ({ variant = 'hero', className, placeholder = 'O que você e
   };
 
   // Group results by type
-  const grouped = (['categoria', 'local', 'imovel'] as const)
+  const grouped = (['categoria', 'local', 'imovel', 'temporada'] as const)
     .map((type) => ({
       type,
       items: results.filter((r) => r.type === type),
