@@ -323,7 +323,6 @@ const MapaGeral = () => {
         props = props.filter(p => p.transaction_type === searchIntent.transactionType);
       }
       return props;
-      );
     }
 
     // Manual toggles — filter by current visible bounds
