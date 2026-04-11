@@ -3,7 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Search, MapPin, Home, Grid3X3, Loader2, ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { normalizeText } from '@/lib/utils';
+import { fuzzyMatch } from '@/lib/utils';
 import SmartSearch from '@/components/SmartSearch';
 
 interface SearchResult {
@@ -34,38 +34,35 @@ const BuscaPage = () => {
     let cancelled = false;
     const doSearch = async () => {
       setLoading(true);
-      const normalizedQuery = normalizeText(q.trim());
 
-      // Fetch broader results (accent-insensitive matching done client-side)
       const [catRes, localRes, propRes] = await Promise.all([
         supabase.from('guia_categorias').select('id, nome, slug, icone, descricao').limit(50),
-        supabase.from('locais').select('id, nome, slug, categoria, imagem_destaque, endereco').eq('ativo', true).order('ordem').limit(100),
-        supabase.from('properties').select('id, title, slug, location, thumbnail_url, image_url, transaction_type, price_formatted').eq('status', 'active').limit(100),
+        supabase.from('locais').select('id, nome, slug, categoria, imagem_destaque, endereco').eq('ativo', true).order('ordem').limit(200),
+        supabase.from('properties').select('id, title, slug, location, thumbnail_url, image_url, transaction_type, price_formatted').eq('status', 'active').limit(200),
       ]);
 
       if (cancelled) return;
 
-      const items: SearchResult[] = [];
+      type Scored = SearchResult & { score: number };
+      const items: Scored[] = [];
 
-      // Filter categories by normalized text match
-      (catRes.data ?? [])
-        .filter((c: any) => normalizeText(c.nome).includes(normalizedQuery))
-        .slice(0, 10)
-        .forEach((c: any) => items.push({ id: c.id, title: c.nome, subtitle: c.descricao, url: `/guia/categoria/${c.slug}`, type: 'categoria', icon: c.icone }));
+      (catRes.data ?? []).forEach((c: any) => {
+        const { match, score } = fuzzyMatch(c.nome, q.trim());
+        if (match) items.push({ id: c.id, title: c.nome, subtitle: c.descricao, url: `/guia/categoria/${c.slug}`, type: 'categoria', icon: c.icone, score });
+      });
 
-      // Filter locais by normalized text match
-      (localRes.data ?? [])
-        .filter((l: any) => normalizeText(l.nome).includes(normalizedQuery))
-        .slice(0, 20)
-        .forEach((l: any) => items.push({ id: l.id, title: l.nome, subtitle: l.endereco || l.categoria, url: `/locais/${l.slug}`, type: 'local', image: l.imagem_destaque }));
+      (localRes.data ?? []).forEach((l: any) => {
+        const { match, score } = fuzzyMatch(l.nome, q.trim());
+        if (match) items.push({ id: l.id, title: l.nome, subtitle: l.endereco || l.categoria, url: `/locais/${l.slug}`, type: 'local', image: l.imagem_destaque, score });
+      });
 
-      // Filter properties by normalized text match
-      (propRes.data ?? [])
-        .filter((p: any) => normalizeText(p.title || '').includes(normalizedQuery))
-        .slice(0, 20)
-        .forEach((p: any) => items.push({ id: p.id, title: p.title || 'Imóvel', subtitle: [p.location, p.price_formatted].filter(Boolean).join(' • '), url: `/imoveis/${p.transaction_type === 'temporada' ? 'temporada' : 'venda'}/${p.slug || p.id}`, type: 'imovel', image: p.thumbnail_url || p.image_url }));
+      (propRes.data ?? []).forEach((p: any) => {
+        const { match, score } = fuzzyMatch(p.title || '', q.trim());
+        if (match) items.push({ id: p.id, title: p.title || 'Imóvel', subtitle: [p.location, p.price_formatted].filter(Boolean).join(' • '), url: `/imoveis/${p.transaction_type === 'temporada' ? 'temporada' : 'venda'}/${p.slug || p.id}`, type: 'imovel', image: p.thumbnail_url || p.image_url, score });
+      });
 
-      setResults(items);
+      items.sort((a, b) => b.score - a.score);
+      setResults(items.map(({ score, ...rest }) => rest));
       setLoading(false);
     };
 
