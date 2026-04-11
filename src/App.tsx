@@ -22,6 +22,7 @@ const Condominios = lazy(() => import("./pages/Condominios"));
 const CondominioDetalhe = lazy(() => import("./pages/CondominioDetalhe"));
 const Contato = lazy(() => import("./pages/Contato"));
 const ImovelDetalhe = lazy(() => import("./pages/ImovelDetalhe"));
+const PropertySlugRedirect = lazy(() => import("./components/PropertySlugRedirect"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Login = lazy(() => import("./pages/Login"));
 
@@ -152,6 +153,7 @@ const App = () => (
                         <Route path="/imoveis/venda/:slug" element={<ImovelDetalhe />} />
                         <Route path="/imoveis/temporada/:slug" element={<ImovelDetalhe />} />
                         <Route path="/imoveis/imovel/:id" element={<ImovelDetalhe />} />
+                        <Route path="/imoveis/:slug" element={<PropertySlugRedirect />} />
 
                         {/* Locais - listing by category */}
                         <Route path="/locais/gastronomia" element={<LocaisListagem />} />
