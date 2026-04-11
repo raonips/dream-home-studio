@@ -93,10 +93,10 @@ const SmartSearch = ({ variant = 'hero', className, placeholder = 'O que você e
 
       // Sort by score descending, then limit per type
       items.sort((a, b) => b.score - a.score);
-      const catItems = items.filter(i => i.type === 'categoria').slice(0, 4);
-      const localItems = items.filter(i => i.type === 'local').slice(0, 5);
-      const propItems = items.filter(i => i.type === 'imovel').slice(0, 5);
-      const tempItems = items.filter(i => i.type === 'temporada').slice(0, 5);
+      const catItems = items.filter(i => i.type === 'categoria').slice(0, 6);
+      const localItems = items.filter(i => i.type === 'local').slice(0, 8);
+      const propItems = items.filter(i => i.type === 'imovel').slice(0, 10);
+      const tempItems = items.filter(i => i.type === 'temporada').slice(0, 10);
       const final: SearchResult[] = [...catItems, ...localItems, ...propItems, ...tempItems];
 
       setResults(final);
