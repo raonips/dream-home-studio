@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { normalizeText } from "@/lib/utils";
+import { normalizeText, fuzzyMatch, expandQuery } from "@/lib/utils";
 import {
   Search, MapPin, Loader2, X, Filter,
   Store, UtensilsCrossed, Hotel, Home, Pill,
