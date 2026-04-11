@@ -343,7 +343,7 @@ const MapaGeral = () => {
     }
 
     return props;
-  }, [allProperties, showVenda, showTemporada, search, isPropertySearch, isCondoSearch, searchMatchedCondoSlugs, condoPropertyFilter, mapBounds, guiaCondoSlugs]);
+  }, [allProperties, showVenda, showTemporada, search, searchIntent, isPropertySearch, isCondoSearch, searchMatchedCondoSlugs, condoPropertyFilter, mapBounds, guiaCondoSlugs]);
 
   /* ── Combined items for sidebar list ── */
   const allFiltered = useMemo(() => {
