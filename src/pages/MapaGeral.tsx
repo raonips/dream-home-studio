@@ -190,18 +190,25 @@ const MapaGeral = () => {
     return propertyTerms.some(t => s.includes(t));
   }, [search]);
 
-  /* ── Detect if search matches a condomínio name ── */
+  /* ── Detect if search matches a condomínio name (from Guia locais OR condominios table) ── */
   const searchMatchedCondoSlugs = useMemo(() => {
     if (!search.trim()) return new Set<string>();
     const s = search.toLowerCase();
     const slugs = new Set<string>();
+    // Match from Guia locais (categoria condominio)
     allLocais.forEach(l => {
       if (l.categoria === "condominio" && l.nome.toLowerCase().includes(s) && l.slug) {
         slugs.add(l.slug);
       }
     });
+    // Match from condominios table (properties use these slugs)
+    Object.entries(condominioNames).forEach(([slug, name]) => {
+      if (name.toLowerCase().includes(s)) {
+        slugs.add(slug);
+      }
+    });
     return slugs;
-  }, [allLocais, search]);
+  }, [allLocais, search, condominioNames]);
 
   const isCondoSearch = searchMatchedCondoSlugs.size > 0;
 
