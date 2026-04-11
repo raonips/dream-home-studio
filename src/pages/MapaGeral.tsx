@@ -186,8 +186,8 @@ const MapaGeral = () => {
   /* ── Smart search: auto-enable property filters when searching property-like terms ── */
   const isPropertySearch = useMemo(() => {
     if (!search.trim()) return false;
-    const s = search.toLowerCase();
-    const propertyTerms = ["casa", "terreno", "apartamento", "apto", "quarto", "quartos", "suite", "suíte", "venda", "temporada", "aluguel", "imóvel", "imovel"];
+    const s = normalizeText(search);
+    const propertyTerms = ["casa", "terreno", "apartamento", "apto", "quarto", "quartos", "suite", "suit", "venda", "temporada", "aluguel", "imovel", "imov"];
     return propertyTerms.some(t => s.includes(t));
   }, [search]);
 
@@ -243,8 +243,8 @@ const MapaGeral = () => {
     }
 
     if (search.trim() && !isPropertySearch) {
-      const s = search.toLowerCase();
-      items = items.filter(l => l.nome.toLowerCase().includes(s) || l.endereco?.toLowerCase().includes(s));
+      const s = normalizeText(search);
+      items = items.filter(l => normalizeText(l.nome).includes(s) || (l.endereco && normalizeText(l.endereco).includes(s)));
     }
     return items;
   }, [allLocais, selectedCategoria, search, condominioFilter, localFilter, isPropertySearch, condoPropertyFilter]);
@@ -307,10 +307,11 @@ const MapaGeral = () => {
 
     // Smart search → show matching properties (zoom will adjust for search results)
     if (isPropertySearch) {
-      const s = search.toLowerCase();
+      const s = normalizeText(search);
       return allProperties.filter(p =>
         p.latitude && p.longitude &&
-        (p.title?.toLowerCase().includes(s) || p.location?.toLowerCase().includes(s))
+        (normalizeText(p.title || "").includes(s) ||
+         normalizeText(p.location || "").includes(s))
       );
     }
 
@@ -328,8 +329,8 @@ const MapaGeral = () => {
 
     // Text filter on properties
     if (search.trim() && props.length > 0) {
-      const s = search.toLowerCase();
-      props = props.filter(p => p.title?.toLowerCase().includes(s) || p.location?.toLowerCase().includes(s));
+      const s = normalizeText(search);
+      props = props.filter(p => normalizeText(p.title || "").includes(s) || normalizeText(p.location || "").includes(s));
     }
 
     return props;
