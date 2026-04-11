@@ -88,7 +88,13 @@ const BuscaPage = () => {
     return () => { cancelled = true; };
   }, [q]);
 
-  const grouped = (['categoria', 'local', 'imovel', 'temporada'] as const)
+  const currentIntent = useMemo(() => parseSearchIntent(q), [q]);
+
+  const groupOrder = currentIntent.transactionType
+    ? (['imovel', 'temporada', 'local', 'categoria'] as const)
+    : (['categoria', 'local', 'imovel', 'temporada'] as const);
+
+  const grouped = groupOrder
     .map((type) => ({ type, items: results.filter((r) => r.type === type) }))
     .filter((g) => g.items.length > 0);
 
@@ -125,6 +131,14 @@ const BuscaPage = () => {
             </div>
           ) : (
             <div className="space-y-8">
+              {currentIntent.transactionType && results.length > 0 && (
+                <div className="px-4 py-3 bg-primary/10 rounded-xl border border-primary/20">
+                  <span className="text-sm font-medium text-primary">
+                    Exibindo Imóveis para {currentIntent.intentLabel}
+                    {currentIntent.cleanQuery ? ` em "${currentIntent.cleanQuery}"` : ''}
+                  </span>
+                </div>
+              )}
               <p className="text-sm text-muted-foreground">
                 {results.length} resultado{results.length !== 1 ? 's' : ''} encontrado{results.length !== 1 ? 's' : ''}
               </p>
