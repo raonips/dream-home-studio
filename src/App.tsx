@@ -153,6 +153,7 @@ const App = () => (
                         <Route path="/imoveis/venda/:slug" element={<ImovelDetalhe />} />
                         <Route path="/imoveis/temporada/:slug" element={<ImovelDetalhe />} />
                         <Route path="/imoveis/imovel/:id" element={<ImovelDetalhe />} />
+                        <Route path="/imoveis/:slug" element={<PropertySlugRedirect />} />
 
                         {/* Locais - listing by category */}
                         <Route path="/locais/gastronomia" element={<LocaisListagem />} />
