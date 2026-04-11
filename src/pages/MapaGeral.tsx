@@ -586,7 +586,7 @@ const MapaGeral = () => {
             <Input
               placeholder="Buscar local ou imóvel..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => { setSearch(e.target.value); if (e.target.value.trim()) forceFitRef.current = true; }}
               className="pl-9 h-9"
             />
             {search && (
