@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { normalizeText } from "@/lib/utils";
 import {
   Search, MapPin, Loader2, X, Filter,
   Store, UtensilsCrossed, Hotel, Home, Pill,
@@ -185,25 +186,25 @@ const MapaGeral = () => {
   /* ── Smart search: auto-enable property filters when searching property-like terms ── */
   const isPropertySearch = useMemo(() => {
     if (!search.trim()) return false;
-    const s = search.toLowerCase();
-    const propertyTerms = ["casa", "terreno", "apartamento", "apto", "quarto", "quartos", "suite", "suíte", "venda", "temporada", "aluguel", "imóvel", "imovel"];
+    const s = normalizeText(search);
+    const propertyTerms = ["casa", "terreno", "apartamento", "apto", "quarto", "quartos", "suite", "suit", "venda", "temporada", "aluguel", "imovel", "imov"];
     return propertyTerms.some(t => s.includes(t));
   }, [search]);
 
   /* ── Detect if search matches a condomínio name (from Guia locais OR condominios table) ── */
   const searchMatchedCondoSlugs = useMemo(() => {
     if (!search.trim()) return new Set<string>();
-    const s = search.toLowerCase();
+    const s = normalizeText(search);
     const slugs = new Set<string>();
     // Match from Guia locais (categoria condominio)
     allLocais.forEach(l => {
-      if (l.categoria === "condominio" && l.nome.toLowerCase().includes(s) && l.slug) {
+      if (l.categoria === "condominio" && normalizeText(l.nome).includes(s) && l.slug) {
         slugs.add(l.slug);
       }
     });
     // Match from condominios table (properties use these slugs)
     Object.entries(condominioNames).forEach(([slug, name]) => {
-      if (name.toLowerCase().includes(s)) {
+      if (normalizeText(name).includes(s)) {
         slugs.add(slug);
       }
     });
@@ -242,8 +243,8 @@ const MapaGeral = () => {
     }
 
     if (search.trim() && !isPropertySearch) {
-      const s = search.toLowerCase();
-      items = items.filter(l => l.nome.toLowerCase().includes(s) || l.endereco?.toLowerCase().includes(s));
+      const s = normalizeText(search);
+      items = items.filter(l => normalizeText(l.nome).includes(s) || (l.endereco && normalizeText(l.endereco).includes(s)));
     }
     return items;
   }, [allLocais, selectedCategoria, search, condominioFilter, localFilter, isPropertySearch, condoPropertyFilter]);
@@ -306,10 +307,11 @@ const MapaGeral = () => {
 
     // Smart search → show matching properties (zoom will adjust for search results)
     if (isPropertySearch) {
-      const s = search.toLowerCase();
+      const s = normalizeText(search);
       return allProperties.filter(p =>
         p.latitude && p.longitude &&
-        (p.title?.toLowerCase().includes(s) || p.location?.toLowerCase().includes(s))
+        (normalizeText(p.title || "").includes(s) ||
+         normalizeText(p.location || "").includes(s))
       );
     }
 
@@ -327,8 +329,8 @@ const MapaGeral = () => {
 
     // Text filter on properties
     if (search.trim() && props.length > 0) {
-      const s = search.toLowerCase();
-      props = props.filter(p => p.title?.toLowerCase().includes(s) || p.location?.toLowerCase().includes(s));
+      const s = normalizeText(search);
+      props = props.filter(p => normalizeText(p.title || "").includes(s) || normalizeText(p.location || "").includes(s));
     }
 
     return props;
