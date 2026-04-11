@@ -138,8 +138,14 @@ const MapaGeral = () => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.LayerGroup | null>(null);
-  // Track whether we should skip auto-zoom (user toggled property filter, not search)
-  const skipNextFitRef = useRef(false);
+  // Track whether user has interacted with the map (pan/zoom)
+  const userInteractedRef = useRef(false);
+  // Track whether this is the initial load (auto-fit only once)
+  const initialFitDoneRef = useRef(false);
+  // Track whether we should force fit (e.g. text search)
+  const forceFitRef = useRef(false);
+  // Track whether there are off-screen results to show the "Centralizar" button
+  const [hasOffScreenResults, setHasOffScreenResults] = useState(false);
 
   const singleSlugFilter = condominioFilter || localFilter;
   const hasUrlFilter = !!singleSlugFilter || !!initialCategoria;
@@ -346,6 +352,9 @@ const MapaGeral = () => {
     const updateBounds = () => setMapBounds(map.getBounds());
     map.on("moveend", updateBounds);
     map.on("zoomend", updateBounds);
+    // Track user interaction (pan/zoom) to block auto-fit
+    map.on("dragstart", () => { userInteractedRef.current = true; });
+    map.on("zoomstart", () => { userInteractedRef.current = true; });
     // Set initial bounds
     updateBounds();
 
@@ -521,28 +530,41 @@ const MapaGeral = () => {
     });
 
     // Fit bounds logic:
-    // - Skip zoom when toggling property filters (showVenda/showTemporada) to respect user's current view
-    // - Only auto-zoom for: single slug focus, condo property filter, category filter, or text search
-    if (skipNextFitRef.current) {
-      skipNextFitRef.current = false;
-      return;
-    }
+    // Auto-fit ONLY on: initial load (once), single slug focus, condo property filter, or forced (text search)
+    // NEVER auto-fit when user has interacted and is just switching categories
 
     const allCoordsItems = [
       ...filteredLocais.filter(l => l.latitude && l.longitude).map(l => [l.latitude!, l.longitude!] as [number, number]),
       ...filteredProperties.filter(p => p.latitude && p.longitude).map(p => [p.latitude!, p.longitude!] as [number, number]),
     ];
 
-    // Only fit bounds for specific contexts, NOT for manual property toggles
-    const shouldFitBounds = !!singleSlugFilter || !!condoPropertyFilter || !!selectedCategoria || isPropertySearch;
+    const isInitialLoad = !initialFitDoneRef.current && allCoordsItems.length > 0;
+    const isSingleFocusNav = !!singleSlugFilter || !!condoPropertyFilter;
+    const isForced = forceFitRef.current;
 
-    if (shouldFitBounds) {
-      if (allCoordsItems.length === 1 && (singleSlugFilter || condoPropertyFilter)) {
+    if (isInitialLoad || isSingleFocusNav || isForced) {
+      if (isForced) forceFitRef.current = false;
+      initialFitDoneRef.current = true;
+      // Temporarily disable user interaction tracking during programmatic zoom
+      userInteractedRef.current = false;
+
+      if (allCoordsItems.length === 1 && isSingleFocusNav) {
         mapInstanceRef.current.setView(allCoordsItems[0], 17);
       } else if (allCoordsItems.length > 0) {
         const bounds = L.latLngBounds(allCoordsItems);
         mapInstanceRef.current.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
       }
+    } else if (isInitialLoad) {
+      initialFitDoneRef.current = true;
+    }
+
+    // Check if there are off-screen results for the "Centralizar" button
+    if (mapInstanceRef.current && allCoordsItems.length > 0 && !isSingleFocusNav) {
+      const currentBounds = mapInstanceRef.current.getBounds();
+      const someOffScreen = allCoordsItems.some(c => !currentBounds.contains(c as L.LatLngExpression));
+      setHasOffScreenResults(someOffScreen);
+    } else {
+      setHasOffScreenResults(false);
     }
   }, [filteredLocais, filteredProperties, selectedCategoria, condominioFilter, localFilter, singleSlugFilter, condoPropertyFilter, condoPropertyCounts, isPropertySearch]);
 
@@ -564,7 +586,7 @@ const MapaGeral = () => {
             <Input
               placeholder="Buscar local ou imóvel..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => { setSearch(e.target.value); if (e.target.value.trim()) forceFitRef.current = true; }}
               className="pl-9 h-9"
             />
             {search && (
@@ -616,7 +638,7 @@ const MapaGeral = () => {
             <Badge
               variant={showVenda ? "default" : "outline"}
               className={`cursor-pointer gap-1 transition-colors ${showVenda ? "bg-blue-600 hover:bg-blue-700" : "hover:bg-blue-50 border-blue-300 text-blue-700"}`}
-              onClick={() => { skipNextFitRef.current = true; setShowVenda(!showVenda); setCondoPropertyFilter(null); }}
+              onClick={() => { setShowVenda(!showVenda); setCondoPropertyFilter(null); }}
             >
               <DollarSign className="h-3 w-3" />
               🏠 À Venda ({vendaCount})
@@ -624,7 +646,7 @@ const MapaGeral = () => {
             <Badge
               variant={showTemporada ? "default" : "outline"}
               className={`cursor-pointer gap-1 transition-colors ${showTemporada ? "bg-purple-600 hover:bg-purple-700" : "hover:bg-purple-50 border-purple-300 text-purple-700"}`}
-              onClick={() => { skipNextFitRef.current = true; setShowTemporada(!showTemporada); setCondoPropertyFilter(null); }}
+              onClick={() => { setShowTemporada(!showTemporada); setCondoPropertyFilter(null); }}
             >
               <KeyRound className="h-3 w-3" />
               🔑 Temporada ({temporadaCount})
@@ -689,14 +711,14 @@ const MapaGeral = () => {
             <Badge
               variant={showVenda ? "default" : "outline"}
               className={`cursor-pointer gap-1 ${showVenda ? "bg-blue-600" : "border-blue-300 text-blue-700"}`}
-              onClick={() => { skipNextFitRef.current = true; setShowVenda(!showVenda); setCondoPropertyFilter(null); setShowFilters(false); }}
+              onClick={() => { setShowVenda(!showVenda); setCondoPropertyFilter(null); setShowFilters(false); }}
             >
               🏠 À Venda ({vendaCount})
             </Badge>
             <Badge
               variant={showTemporada ? "default" : "outline"}
               className={`cursor-pointer gap-1 ${showTemporada ? "bg-purple-600" : "border-purple-300 text-purple-700"}`}
-              onClick={() => { skipNextFitRef.current = true; setShowTemporada(!showTemporada); setCondoPropertyFilter(null); setShowFilters(false); }}
+              onClick={() => { setShowTemporada(!showTemporada); setCondoPropertyFilter(null); setShowFilters(false); }}
             >
               🔑 Temporada ({temporadaCount})
             </Badge>
@@ -790,6 +812,27 @@ const MapaGeral = () => {
           {/* Right: Map */}
           <div className="hidden md:block flex-1 relative">
             <div ref={mapRef} className="w-full h-full" />
+            {hasOffScreenResults && (
+              <Button
+                size="sm"
+                variant="secondary"
+                className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[1000] shadow-lg gap-1.5"
+                onClick={() => {
+                  const allCoordsItems = [
+                    ...filteredLocais.filter(l => l.latitude && l.longitude).map(l => [l.latitude!, l.longitude!] as [number, number]),
+                    ...filteredProperties.filter(p => p.latitude && p.longitude).map(p => [p.latitude!, p.longitude!] as [number, number]),
+                  ];
+                  if (allCoordsItems.length > 0 && mapInstanceRef.current) {
+                    userInteractedRef.current = false;
+                    const bounds = L.latLngBounds(allCoordsItems);
+                    mapInstanceRef.current.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
+                    setHasOffScreenResults(false);
+                  }
+                }}
+              >
+                🔍 Ver todos os resultados no mapa
+              </Button>
+            )}
           </div>
         </div>
       </div>
