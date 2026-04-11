@@ -270,6 +270,23 @@ const MapaGeral = () => {
       );
     }
 
+    // Search matches a condomínio → show its properties automatically
+    if (isCondoSearch && !isPropertySearch) {
+      const condoProps = allProperties.filter(p =>
+        p.condominio_slug && searchMatchedCondoSlugs.has(p.condominio_slug) &&
+        p.latitude && p.longitude
+      );
+      // Also include manually toggled properties
+      let manualProps: MapProperty[] = [];
+      if (showVenda) {
+        manualProps = [...manualProps, ...allProperties.filter(p => p.transaction_type === "venda" && p.latitude && p.longitude && !condoProps.some(cp => cp.id === p.id))];
+      }
+      if (showTemporada) {
+        manualProps = [...manualProps, ...allProperties.filter(p => p.transaction_type === "temporada" && p.latitude && p.longitude && !condoProps.some(cp => cp.id === p.id))];
+      }
+      return [...condoProps, ...filterByBounds(manualProps)];
+    }
+
     // Smart search → show matching properties (zoom will adjust for search results)
     if (isPropertySearch) {
       const s = search.toLowerCase();
