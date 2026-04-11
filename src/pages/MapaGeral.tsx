@@ -196,22 +196,23 @@ const MapaGeral = () => {
     return propertyTerms.some(t => s.includes(t));
   }, [search, searchIntent]);
 
-  /* ── Detect if search matches a condomínio name (from Guia locais OR condominios table) ── */
+  /* ── Detect if search matches a condomínio name (using cleaned query without intent keywords) ── */
   const searchMatchedCondoSlugs = useMemo(() => {
-    if (!search.trim()) return new Set<string>();
+    const term = searchIntent.cleanQuery || search;
+    if (!term.trim()) return new Set<string>();
     const slugs = new Set<string>();
     allLocais.forEach(l => {
-      if (l.categoria === "condominio" && fuzzyMatch(l.nome, search).match && l.slug) {
+      if (l.categoria === "condominio" && fuzzyMatch(l.nome, term).match && l.slug) {
         slugs.add(l.slug);
       }
     });
     Object.entries(condominioNames).forEach(([slug, name]) => {
-      if (fuzzyMatch(name, search).match) {
+      if (fuzzyMatch(name, term).match) {
         slugs.add(slug);
       }
     });
     return slugs;
-  }, [allLocais, search, condominioNames]);
+  }, [allLocais, search, searchIntent, condominioNames]);
 
   const isCondoSearch = searchMatchedCondoSlugs.size > 0;
 
