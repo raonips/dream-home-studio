@@ -63,7 +63,8 @@ const BuscaPage = () => {
         const condoMatch = fuzzyMatch((p.condominio_slug || '').replace(/-/g, ' '), q.trim());
         const bestScore = Math.max(titleMatch.score, locationMatch.score, condoMatch.score);
         const matched = titleMatch.match || locationMatch.match || condoMatch.match;
-        if (matched) items.push({ id: p.id, title: p.title || 'Imóvel', subtitle: [p.location, p.price_formatted].filter(Boolean).join(' • '), url: `/imoveis/${p.transaction_type === 'temporada' ? 'temporada' : 'venda'}/${p.slug || p.id}`, type: 'imovel', image: p.thumbnail_url || p.image_url, score: bestScore });
+        const isTemporada = p.transaction_type === 'temporada';
+        if (matched) items.push({ id: p.id, title: p.title || 'Imóvel', subtitle: [p.location, p.price_formatted].filter(Boolean).join(' • '), url: `/imoveis/${isTemporada ? 'temporada' : 'venda'}/${p.slug || p.id}`, type: isTemporada ? 'temporada' : 'imovel', image: p.thumbnail_url || p.image_url, score: bestScore });
       });
 
       items.sort((a, b) => b.score - a.score);
