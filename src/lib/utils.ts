@@ -104,3 +104,56 @@ function levenshtein(a: string, b: string): number {
   }
   return dp[m][n];
 }
+
+/* ────────── Intent Detection ────────── */
+
+export interface SearchIntent {
+  /** The cleaned query with intent keywords removed */
+  cleanQuery: string;
+  /** Detected transaction type intent, if any */
+  transactionType: 'venda' | 'temporada' | null;
+  /** Human-readable label for the intent */
+  intentLabel: string | null;
+}
+
+const INTENT_KEYWORDS: { keywords: string[]; type: 'venda' | 'temporada'; label: string }[] = [
+  { keywords: ['temporada', 'aluguel', 'alugar', 'diaria', 'diarias', 'ferias', 'veraneio'], type: 'temporada', label: 'Temporada' },
+  { keywords: ['venda', 'comprar', 'compra', 'a venda', 'avenda', 'investir', 'investimento'], type: 'venda', label: 'Venda' },
+];
+
+/** Parse a search query to extract intent (venda/temporada) and return the cleaned query. */
+export function parseSearchIntent(rawQuery: string): SearchIntent {
+  const normalized = normalizeText(rawQuery);
+  let transactionType: 'venda' | 'temporada' | null = null;
+  let intentLabel: string | null = null;
+  let cleanNormalized = normalized;
+
+  for (const group of INTENT_KEYWORDS) {
+    for (const kw of group.keywords) {
+      // Match as whole word or at boundaries
+      const regex = new RegExp(`\\b${kw}\\b`, 'g');
+      if (regex.test(cleanNormalized)) {
+        transactionType = group.type;
+        intentLabel = group.label;
+        cleanNormalized = cleanNormalized.replace(regex, '').replace(/\s+/g, ' ').trim();
+        break;
+      }
+    }
+    if (transactionType) break;
+  }
+
+  // Rebuild a clean query from original preserving casing roughly
+  // We just strip intent keywords from the original query
+  let cleanQuery = rawQuery;
+  if (transactionType) {
+    for (const group of INTENT_KEYWORDS) {
+      if (group.type !== transactionType) continue;
+      for (const kw of group.keywords) {
+        const regex = new RegExp(`\\b${kw}\\b`, 'gi');
+        cleanQuery = cleanQuery.replace(regex, '').replace(/\s+/g, ' ').trim();
+      }
+    }
+  }
+
+  return { cleanQuery, transactionType, intentLabel };
+}
