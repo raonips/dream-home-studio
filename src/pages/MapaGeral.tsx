@@ -638,7 +638,7 @@ const MapaGeral = () => {
             <Badge
               variant={showVenda ? "default" : "outline"}
               className={`cursor-pointer gap-1 transition-colors ${showVenda ? "bg-blue-600 hover:bg-blue-700" : "hover:bg-blue-50 border-blue-300 text-blue-700"}`}
-              onClick={() => { skipNextFitRef.current = true; setShowVenda(!showVenda); setCondoPropertyFilter(null); }}
+              onClick={() => { setShowVenda(!showVenda); setCondoPropertyFilter(null); }}
             >
               <DollarSign className="h-3 w-3" />
               🏠 À Venda ({vendaCount})
