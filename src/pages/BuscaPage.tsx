@@ -38,7 +38,7 @@ const BuscaPage = () => {
       const [catRes, localRes, propRes] = await Promise.all([
         supabase.from('guia_categorias').select('id, nome, slug, icone, descricao').limit(50),
         supabase.from('locais').select('id, nome, slug, categoria, imagem_destaque, endereco').eq('ativo', true).order('ordem').limit(200),
-        supabase.from('properties').select('id, title, slug, location, thumbnail_url, image_url, transaction_type, price_formatted').eq('status', 'active').limit(200),
+        supabase.from('properties').select('id, title, slug, location, thumbnail_url, image_url, transaction_type, price_formatted, condominio_slug').eq('status', 'active').limit(200),
       ]);
 
       if (cancelled) return;
@@ -57,8 +57,12 @@ const BuscaPage = () => {
       });
 
       (propRes.data ?? []).forEach((p: any) => {
-        const { match, score } = fuzzyMatch(p.title || '', q.trim());
-        if (match) items.push({ id: p.id, title: p.title || 'Imóvel', subtitle: [p.location, p.price_formatted].filter(Boolean).join(' • '), url: `/imoveis/${p.transaction_type === 'temporada' ? 'temporada' : 'venda'}/${p.slug || p.id}`, type: 'imovel', image: p.thumbnail_url || p.image_url, score });
+        const titleMatch = fuzzyMatch(p.title || '', q.trim());
+        const locationMatch = fuzzyMatch(p.location || '', q.trim());
+        const condoMatch = fuzzyMatch((p.condominio_slug || '').replace(/-/g, ' '), q.trim());
+        const bestScore = Math.max(titleMatch.score, locationMatch.score, condoMatch.score);
+        const matched = titleMatch.match || locationMatch.match || condoMatch.match;
+        if (matched) items.push({ id: p.id, title: p.title || 'Imóvel', subtitle: [p.location, p.price_formatted].filter(Boolean).join(' • '), url: `/imoveis/${p.transaction_type === 'temporada' ? 'temporada' : 'venda'}/${p.slug || p.id}`, type: 'imovel', image: p.thumbnail_url || p.image_url, score: bestScore });
       });
 
       items.sort((a, b) => b.score - a.score);
