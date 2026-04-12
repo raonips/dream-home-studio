@@ -3,7 +3,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ExternalLink, Copy, RefreshCw, Home, MapPinned, Newspaper, Building2, FolderOpen, FileText } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
 interface SitemapStats {
@@ -17,7 +16,8 @@ interface SitemapStats {
   static_pages: number;
 }
 
-const SITEMAP_URL = `https://nfzkreaylakmvlrbbjci.supabase.co/functions/v1/sitemap`;
+const SITEMAP_EDGE_URL = `https://nfzkreaylakmvlrbbjci.supabase.co/functions/v1/sitemap`;
+const SITEMAP_PROD_URL = `https://barradojacuipe.com.br/sitemap.xml`;
 
 const AdminSitemap = () => {
   const [stats, setStats] = useState<SitemapStats | null>(null);
@@ -26,7 +26,7 @@ const AdminSitemap = () => {
   const fetchStats = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${SITEMAP_URL}?format=json`);
+      const res = await fetch(`${SITEMAP_EDGE_URL}?format=json`);
       if (!res.ok) throw new Error("Erro ao carregar stats");
       const data = await res.json();
       setStats(data);
@@ -39,13 +39,9 @@ const AdminSitemap = () => {
 
   useEffect(() => { fetchStats(); }, []);
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(SITEMAP_URL);
-    toast({ title: "Link copiado!", description: "Cole no Google Search Console." });
-  };
-
-  const handleOpen = () => {
-    window.open(SITEMAP_URL, "_blank");
+  const handleCopy = (url: string, label: string) => {
+    navigator.clipboard.writeText(url);
+    toast({ title: "Link copiado!", description: `${label} copiado para a área de transferência.` });
   };
 
   const statCards = stats ? [
@@ -73,7 +69,6 @@ const AdminSitemap = () => {
         </Button>
       </div>
 
-      {/* Total counter */}
       {stats && (
         <Card className="border-primary/30 bg-primary/5">
           <CardContent className="py-4 flex items-center justify-between">
@@ -88,7 +83,6 @@ const AdminSitemap = () => {
         </Card>
       )}
 
-      {/* Stat cards grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {statCards.map((s) => (
           <Card key={s.label}>
@@ -103,27 +97,50 @@ const AdminSitemap = () => {
         ))}
       </div>
 
-      {/* Actions */}
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">Acesso ao Sitemap</CardTitle>
           <CardDescription>
-            Envie o link abaixo ao Google Search Console para indexar todas as páginas.
+            Envie a URL oficial ao Google Search Console. Use a URL de backup para acessar os dados diretamente.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center gap-2 p-3 rounded-md bg-muted font-mono text-sm break-all">
-            {SITEMAP_URL}
+        <CardContent className="space-y-5">
+          {/* URL Oficial */}
+          <div>
+            <p className="text-sm font-semibold mb-1.5 flex items-center gap-2">
+              <Badge className="bg-green-600 hover:bg-green-700">Produção</Badge>
+              URL Oficial — envie esta ao Google
+            </p>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 p-3 rounded-md bg-muted font-mono text-sm break-all">
+                {SITEMAP_PROD_URL}
+              </div>
+              <Button size="icon" variant="outline" onClick={() => handleCopy(SITEMAP_PROD_URL, "URL Oficial")}>
+                <Copy className="h-4 w-4" />
+              </Button>
+              <Button size="icon" variant="outline" onClick={() => window.open(SITEMAP_PROD_URL, "_blank")}>
+                <ExternalLink className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
-          <div className="flex gap-3">
-            <Button onClick={handleOpen} className="gap-2">
-              <ExternalLink className="h-4 w-4" />
-              Abrir Sitemap XML
-            </Button>
-            <Button variant="outline" onClick={handleCopy} className="gap-2">
-              <Copy className="h-4 w-4" />
-              Copiar Link do Sitemap
-            </Button>
+
+          {/* URL Backup */}
+          <div>
+            <p className="text-sm font-semibold mb-1.5 flex items-center gap-2">
+              <Badge variant="secondary">Backup</Badge>
+              URL da Edge Function (fonte dos dados)
+            </p>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 p-3 rounded-md bg-muted font-mono text-sm break-all">
+                {SITEMAP_EDGE_URL}
+              </div>
+              <Button size="icon" variant="outline" onClick={() => handleCopy(SITEMAP_EDGE_URL, "URL Backup")}>
+                <Copy className="h-4 w-4" />
+              </Button>
+              <Button size="icon" variant="outline" onClick={() => window.open(SITEMAP_EDGE_URL, "_blank")}>
+                <ExternalLink className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
