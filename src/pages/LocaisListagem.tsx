@@ -84,12 +84,6 @@ const LocaisListagem = () => {
         setLocais((locaisRes.data as Local[]) ?? []);
         setTemporadaProperties([]);
       }
-      setLocais((results[0].data as Local[]) ?? []);
-      if (isHospedagem && results[1]?.data) {
-        setTemporadaProperties(results[1].data as PropertyData[]);
-      } else {
-        setTemporadaProperties([]);
-      }
       setLoading(false);
     };
     fetchData();
