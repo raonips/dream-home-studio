@@ -64,22 +64,26 @@ const LocaisListagem = () => {
         query = query.in("categoria", dbCategorias);
       }
 
-      const promises: Promise<any>[] = [query];
+      const locaisPromise = query.then(r => r);
 
       if (isHospedagem) {
-        promises.push(
-          supabase
-            .from("properties")
-            .select(TEMPORADA_COLS)
-            .eq("status", "active")
-            .in("transaction_type", ["temporada", "ambos"])
-            .order("created_at", { ascending: false })
-            .limit(12)
-        );
+        const propPromise = supabase
+          .from("properties")
+          .select(TEMPORADA_COLS)
+          .eq("status", "active")
+          .in("transaction_type", ["temporada", "ambos"])
+          .order("created_at", { ascending: false })
+          .limit(12)
+          .then(r => r);
+
+        const [locaisRes, propRes] = await Promise.all([locaisPromise, propPromise]);
+        setLocais((locaisRes.data as Local[]) ?? []);
+        setTemporadaProperties((propRes.data as PropertyData[]) ?? []);
+      } else {
+        const locaisRes = await locaisPromise;
+        setLocais((locaisRes.data as Local[]) ?? []);
+        setTemporadaProperties([]);
       }
-
-      const results = await Promise.all(promises);
-
       setLocais((results[0].data as Local[]) ?? []);
       if (isHospedagem && results[1]?.data) {
         setTemporadaProperties(results[1].data as PropertyData[]);
