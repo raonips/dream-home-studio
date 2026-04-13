@@ -12,6 +12,7 @@ const HeroSection = () => {
 
   const desktop = hero_bg_desktop || hero_image_url || '';
   const mobile = hero_bg_mobile || desktop;
+  const hasImage = !!(desktop || mobile);
 
   const [tipo, setTipo] = useState("Todos");
   const [localizacao, setLocalizacao] = useState("Todos");
@@ -31,23 +32,25 @@ const HeroSection = () => {
   const titleParts = hero_title.split('\n');
 
   return (
-    <section className="relative min-h-[85vh] flex items-center justify-center pt-20 bg-muted">
-      <picture>
-        {mobile && mobile !== desktop && (
-          <source media="(max-width: 768px)" srcSet={mobile} />
-        )}
-        {desktop && (
-          <source media="(min-width: 769px)" srcSet={desktop} />
-        )}
-        <img
-          src={desktop || mobile}
-          alt="Litoral de Barra do Jacuípe"
-          className="absolute inset-0 w-full h-full object-cover"
-          fetchPriority="high"
-          decoding="sync"
-          loading="eager"
-        />
-      </picture>
+    <section className="relative min-h-[85vh] flex items-center justify-center pt-20 bg-[#0c2d48]">
+      {hasImage && (
+        <picture>
+          {mobile && mobile !== desktop && (
+            <source media="(max-width: 768px)" srcSet={mobile} />
+          )}
+          {desktop && (
+            <source media="(min-width: 769px)" srcSet={desktop} />
+          )}
+          <img
+            src={desktop || mobile}
+            alt="Litoral de Barra do Jacuípe"
+            className="absolute inset-0 w-full h-full object-cover"
+            fetchPriority="high"
+            decoding="sync"
+            loading="eager"
+          />
+        </picture>
+      )}
 
       <div className="relative container text-center px-4" style={{ zIndex: 3 }}>
         <h1 className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-primary-foreground leading-tight mb-4 md:mb-6 drop-shadow-lg">
