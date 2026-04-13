@@ -136,7 +136,7 @@ const LocaisListagem = () => {
               )}
 
               {isHospedagem && temporadaProperties.length > 0 && (
-                <section className="mt-14">
+                <section className="mt-20 pt-10 border-t border-border/50">
                   <div className="mb-8">
                     <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
                       🏖️ Casas e Imóveis para Temporada
