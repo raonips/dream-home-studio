@@ -36,16 +36,17 @@ const FloatingMapButton = () => {
 
   const isMapPage = location.pathname === "/mapa";
   const isAdminPage = location.pathname.startsWith("/admin");
+  const isImoveisPage = location.pathname.startsWith("/imoveis");
 
   useEffect(() => {
-    if (isMapPage || isAdminPage) return;
+    if (isMapPage || isAdminPage || isImoveisPage) return;
     const handleScroll = () => setVisible(window.scrollY > 200);
     window.addEventListener("scroll", handleScroll, { passive: true });
     handleScroll();
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [isMapPage, isAdminPage]);
+  }, [isMapPage, isAdminPage, isImoveisPage]);
 
-  if (isMapPage || isAdminPage || !visible) return null;
+  if (isMapPage || isAdminPage || isImoveisPage || !visible) return null;
 
   const query = getMapQuery(location.pathname);
 
