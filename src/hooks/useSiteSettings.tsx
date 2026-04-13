@@ -132,10 +132,13 @@ export const SiteSettingsProvider = ({ children }: { children: ReactNode }) => {
       supabase.from('condominios').select('slug, name').order('name'),
     ]).then(([imoveisRes, guiaRes, condominiosRes]) => {
       const condList = (condominiosRes.data as { slug: string; name: string }[]) || [];
-      setAllSettings({
-        imoveis: parseSettings(imoveisRes.data, defaultImoveisSettings, condList),
-        guia: parseSettings(guiaRes.data, defaultGuiaSettings, condList),
-      });
+      const imoveisSettings = parseSettings(imoveisRes.data, defaultImoveisSettings, condList);
+      const guiaSettings = parseSettings(guiaRes.data, defaultGuiaSettings, condList);
+      setAllSettings({ imoveis: imoveisSettings, guia: guiaSettings });
+      try {
+        if (guiaSettings.hero_bg_desktop) localStorage.setItem('hero_bg_desktop', guiaSettings.hero_bg_desktop);
+        if (guiaSettings.hero_bg_mobile) localStorage.setItem('hero_bg_mobile', guiaSettings.hero_bg_mobile);
+      } catch {}
     });
   }, []);
 
