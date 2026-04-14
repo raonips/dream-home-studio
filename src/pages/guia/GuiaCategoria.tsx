@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2, ArrowRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import SafeImage from "@/components/SafeImage";
+import ResponsiveImage from "@/components/ResponsiveImage";
 import {
   Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList,
   BreadcrumbPage, BreadcrumbSeparator
@@ -16,6 +17,7 @@ interface GuiaPost {
   slug: string;
   resumo: string | null;
   imagem_destaque: string | null;
+  imagem_destaque_mobile: string | null;
   published_at: string | null;
 }
 
@@ -45,7 +47,7 @@ const GuiaCategoriaPage = () => {
         setCategoria(cat);
         const { data: p } = await supabase
           .from("guia_posts")
-          .select("id, titulo, slug, resumo, imagem_destaque, published_at")
+          .select("id, titulo, slug, resumo, imagem_destaque, imagem_destaque_mobile, published_at")
           .eq("categoria_id", cat.id)
           .eq("status", "publicado")
           .order("published_at", { ascending: false });
@@ -110,8 +112,9 @@ const GuiaCategoriaPage = () => {
                   <Card className="overflow-hidden h-full hover:shadow-lg transition-shadow">
                     {post.imagem_destaque && (
                       <div className="aspect-video overflow-hidden">
-                        <SafeImage
+                        <ResponsiveImage
                           src={post.imagem_destaque}
+                          mobileSrc={post.imagem_destaque_mobile}
                           alt={post.titulo}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />

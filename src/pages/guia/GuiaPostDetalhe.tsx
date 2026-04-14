@@ -9,6 +9,7 @@ import {
   BreadcrumbPage, BreadcrumbSeparator
 } from "@/components/ui/breadcrumb";
 import SafeImage from "@/components/SafeImage";
+import ResponsiveImage from "@/components/ResponsiveImage";
 import PostContentRenderer from "@/components/PostContentRenderer";
 
 interface GuiaPost {
@@ -18,6 +19,7 @@ interface GuiaPost {
   resumo: string | null;
   conteudo: string | null;
   imagem_destaque: string | null;
+  imagem_destaque_mobile: string | null;
   published_at: string | null;
   tags: string[];
   autor: string | null;
@@ -148,8 +150,9 @@ const GuiaPostDetalhe = () => {
           {/* Featured image */}
           {post.imagem_destaque && (
             <div className="rounded-xl overflow-hidden mb-8">
-              <SafeImage
+              <ResponsiveImage
                 src={post.imagem_destaque}
+                mobileSrc={post.imagem_destaque_mobile}
                 alt={post.titulo}
                 className="w-full aspect-video object-cover"
               />
