@@ -127,15 +127,24 @@ const GuiaHome = () => {
 
       {/* ════════════════ HERO ════════════════ */}
       <section className="relative h-[85vh] min-h-[560px] max-h-[800px] overflow-hidden">
-        {/* Background */}
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{
-            backgroundImage: settings.hero_bg_desktop
-              ? `url(${settings.hero_bg_desktop})`
-              : "url(https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1600&q=80)",
-          }}
-        />
+      {/* Background — using <picture> + <img> for LCP discoverability */}
+        {(settings.hero_bg_desktop || settings.hero_bg_mobile) ? (
+          <picture>
+            {settings.hero_bg_mobile && settings.hero_bg_mobile !== settings.hero_bg_desktop && (
+              <source media="(max-width: 768px)" srcSet={settings.hero_bg_mobile} />
+            )}
+            <img
+              src={settings.hero_bg_desktop || settings.hero_bg_mobile}
+              alt=""
+              className="absolute inset-0 w-full h-full object-cover"
+              fetchPriority="high"
+              decoding="sync"
+              loading="eager"
+            />
+          </picture>
+        ) : (
+          <div className="absolute inset-0 bg-[#0c2d48]" />
+        )}
         {/* Gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/50" />
 
@@ -231,7 +240,7 @@ const GuiaHome = () => {
               <h2 className="text-2xl md:text-3xl font-bold text-foreground">
                 Últimas Dicas & Novidades
               </h2>
-              <p className="text-muted-foreground mt-2">Conteúdo selecionado sobre a região</p>
+              <p className="text-foreground/60 mt-2">Conteúdo selecionado sobre a região</p>
             </div>
 
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

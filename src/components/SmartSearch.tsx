@@ -263,6 +263,7 @@ const SmartSearch = ({ variant = 'hero', className, placeholder = 'O que você e
               {variant === 'hero' && (
                 <button
                   onClick={goToSearch}
+                  aria-label="Pesquisar"
                   className="bg-primary text-primary-foreground px-6 py-2.5 rounded-lg font-medium text-sm hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 shrink-0"
                 >
                   <Search className="h-4 w-4" />
