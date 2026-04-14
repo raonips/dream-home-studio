@@ -8,7 +8,7 @@ import { Plus, Pencil, Trash2, Loader2, Save } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { removeStorageFiles } from "@/lib/storageCleanup";
-import GuiaImageUploadField from "@/components/admin/GuiaImageUploadField";
+import GuiaFeaturedImageUpload from "@/components/admin/GuiaFeaturedImageUpload";
 
 interface GuiaCategoria {
   id: string;
@@ -29,7 +29,7 @@ const AdminGuiaCategorias = () => {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<GuiaCategoria | null>(null);
-  const [form, setForm] = useState({ nome: "", slug: "", descricao: "", icone: "", ordem: 0, imagem: "" });
+  const [form, setForm] = useState({ nome: "", slug: "", descricao: "", icone: "", ordem: 0, imagem: "", imagem_mobile: "" });
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
 
@@ -44,13 +44,13 @@ const AdminGuiaCategorias = () => {
 
   const openNew = () => {
     setEditing(null);
-    setForm({ nome: "", slug: "", descricao: "", icone: "", ordem: 0, imagem: "" });
+    setForm({ nome: "", slug: "", descricao: "", icone: "", ordem: 0, imagem: "", imagem_mobile: "" });
     setDialogOpen(true);
   };
 
   const openEdit = (cat: GuiaCategoria) => {
     setEditing(cat);
-    setForm({ nome: cat.nome, slug: cat.slug, descricao: cat.descricao ?? "", icone: cat.icone ?? "", ordem: cat.ordem, imagem: cat.imagem ?? "" });
+    setForm({ nome: cat.nome, slug: cat.slug, descricao: cat.descricao ?? "", icone: cat.icone ?? "", ordem: cat.ordem, imagem: cat.imagem ?? "", imagem_mobile: cat.imagem_mobile ?? "" });
     setDialogOpen(true);
   };
 
@@ -64,6 +64,7 @@ const AdminGuiaCategorias = () => {
       icone: form.icone.trim() || null,
       ordem: form.ordem,
       imagem: form.imagem.trim() || null,
+      imagem_mobile: form.imagem_mobile.trim() || null,
     };
 
     const { error } = editing
@@ -84,7 +85,9 @@ const AdminGuiaCategorias = () => {
     if (!confirm("Excluir esta categoria?")) return;
     const cat = categorias.find(c => c.id === id);
     if (cat?.imagem) {
-      removeStorageFiles([cat.imagem]).catch(() => {});
+      const toDelete = [cat.imagem];
+      if (cat.imagem_mobile) toDelete.push(cat.imagem_mobile);
+      removeStorageFiles(toDelete).catch(() => {});
     }
     const { error } = await supabase.from("guia_categorias").delete().eq("id", id);
     if (error) {
@@ -139,10 +142,11 @@ const AdminGuiaCategorias = () => {
             <div><Label>Nome</Label><Input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value, slug: slugify(e.target.value) })} /></div>
             <div><Label>Slug</Label><Input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} /></div>
             <div><Label>Descrição</Label><Input value={form.descricao} onChange={(e) => setForm({ ...form, descricao: e.target.value })} /></div>
-            <GuiaImageUploadField
+            <GuiaFeaturedImageUpload
               label="Imagem da Categoria"
               value={form.imagem}
-              onChange={(url) => setForm({ ...form, imagem: url })}
+              mobileValue={form.imagem_mobile}
+              onChange={(desktop, mobile) => setForm({ ...form, imagem: desktop, imagem_mobile: mobile })}
               bucket="categorias"
               folder="categorias"
               aspectHint="Recomendado: 800×450px"
