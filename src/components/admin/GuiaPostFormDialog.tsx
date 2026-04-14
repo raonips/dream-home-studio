@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2, Save, MapPin, Home } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import RichTextEditor from "./RichTextEditor";
-import GuiaImageUploadField from "./GuiaImageUploadField";
+import GuiaFeaturedImageUpload from "./GuiaFeaturedImageUpload";
 import LocalSelectorDialog from "./LocalSelectorDialog";
 import PropertySelectorDialog from "./PropertySelectorDialog";
 
@@ -20,6 +20,7 @@ interface GuiaPost {
   resumo: string | null;
   conteudo: string | null;
   imagem_destaque: string | null;
+  imagem_destaque_mobile: string | null;
   categoria_id: string | null;
   tags: string[];
   autor: string | null;
@@ -44,6 +45,7 @@ const slugify = (text: string) =>
 const GuiaPostFormDialog = ({ open, onOpenChange, post, categorias, onSaved }: Props) => {
   const [form, setForm] = useState({
     titulo: "", slug: "", resumo: "", conteudo: "", imagem_destaque: "",
+    imagem_destaque_mobile: "",
     categoria_id: "", tags: "", autor: "", status: "rascunho",
     seo_title: "", seo_description: "", seo_keywords: "",
   });
@@ -58,6 +60,7 @@ const GuiaPostFormDialog = ({ open, onOpenChange, post, categorias, onSaved }: P
       setForm({
         titulo: post.titulo, slug: post.slug, resumo: post.resumo ?? "",
         conteudo: post.conteudo ?? "", imagem_destaque: post.imagem_destaque ?? "",
+        imagem_destaque_mobile: (post as any).imagem_destaque_mobile ?? "",
         categoria_id: post.categoria_id ?? "", tags: (post.tags ?? []).join(", "),
         autor: post.autor ?? "", status: post.status,
         seo_title: post.seo_title ?? "", seo_description: post.seo_description ?? "",
@@ -66,6 +69,7 @@ const GuiaPostFormDialog = ({ open, onOpenChange, post, categorias, onSaved }: P
     } else {
       setForm({
         titulo: "", slug: "", resumo: "", conteudo: "", imagem_destaque: "",
+        imagem_destaque_mobile: "",
         categoria_id: "", tags: "", autor: "", status: "rascunho",
         seo_title: "", seo_description: "", seo_keywords: "",
       });
@@ -112,6 +116,7 @@ const GuiaPostFormDialog = ({ open, onOpenChange, post, categorias, onSaved }: P
       resumo: form.resumo.trim() || null,
       conteudo: currentContent || form.conteudo || null,
       imagem_destaque: form.imagem_destaque.trim() || null,
+      imagem_destaque_mobile: form.imagem_destaque_mobile.trim() || null,
       categoria_id: form.categoria_id || null,
       tags: form.tags.split(",").map((t) => t.trim()).filter(Boolean),
       autor: form.autor.trim() || null,
@@ -180,10 +185,11 @@ const GuiaPostFormDialog = ({ open, onOpenChange, post, categorias, onSaved }: P
             }}
           />
 
-          <GuiaImageUploadField
+          <GuiaFeaturedImageUpload
             label="Imagem Destaque"
             value={form.imagem_destaque}
-            onChange={(url) => setForm({ ...form, imagem_destaque: url })}
+            mobileValue={form.imagem_destaque_mobile}
+            onChange={(desktop, mobile) => setForm({ ...form, imagem_destaque: desktop, imagem_destaque_mobile: mobile })}
             bucket="property-images"
             folder="guia-posts"
             aspectHint="Recomendado: 1200×630px"
