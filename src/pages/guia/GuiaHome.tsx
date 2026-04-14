@@ -184,8 +184,9 @@ const GuiaHome = () => {
                   to={`/guia/categoria/${cat.slug}`}
                   className="group relative overflow-hidden rounded-2xl col-span-2 md:col-span-2 aspect-[16/7]"
                 >
-                  <img
+                  <ResponsiveImage
                     src={cat.imagem || getFallbackImage(cat.slug)}
+                    mobileSrc={cat.imagem_mobile}
                     alt={cat.nome}
                     className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                     loading="lazy"
@@ -211,8 +212,9 @@ const GuiaHome = () => {
                   to={`/guia/categoria/${cat.slug}`}
                   className="group relative overflow-hidden rounded-2xl aspect-[4/3]"
                 >
-                  <img
+                  <ResponsiveImage
                     src={cat.imagem || getFallbackImage(cat.slug)}
+                    mobileSrc={cat.imagem_mobile}
                     alt={cat.nome}
                     className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                     loading="lazy"
