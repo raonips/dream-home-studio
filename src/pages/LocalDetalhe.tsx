@@ -29,6 +29,7 @@ interface Local {
   whatsapp: string | null;
   google_maps_link: string | null;
   imagem_destaque: string | null;
+  imagem_destaque_mobile: string | null;
   imagens: string[] | null;
   endereco: string | null;
   horario_funcionamento: string | null;
@@ -229,13 +230,18 @@ const LocalDetalhe = () => {
       {/* ══════════════════ HERO ══════════════════ */}
       <section className="relative h-[340px] md:h-[460px] flex items-end overflow-hidden">
         {local.imagem_destaque ? (
-          <img
-            src={local.imagem_destaque}
-            alt={local.nome}
-            className="absolute inset-0 w-full h-full object-cover"
-            loading="eager"
-            fetchPriority="high"
-          />
+          <picture>
+            {local.imagem_destaque_mobile && (
+              <source media="(max-width: 800px)" srcSet={local.imagem_destaque_mobile} />
+            )}
+            <img
+              src={local.imagem_destaque}
+              alt={local.nome}
+              className="absolute inset-0 w-full h-full object-cover"
+              loading="eager"
+              fetchPriority="high"
+            />
+          </picture>
         ) : (
           <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-secondary" />
         )}
