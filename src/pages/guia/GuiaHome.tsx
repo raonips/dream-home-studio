@@ -6,6 +6,7 @@ import { Loader2, ArrowRight, MapPin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import SmartSearch from "@/components/SmartSearch";
 import SafeImage from "@/components/SafeImage";
+import ResponsiveImage from "@/components/ResponsiveImage";
 import { type PropertyData } from "@/components/PropertyCard";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 
@@ -15,6 +16,7 @@ interface GuiaPost {
   slug: string;
   resumo: string | null;
   imagem_destaque: string | null;
+  imagem_destaque_mobile: string | null;
   published_at: string | null;
   categoria_id: string | null;
   tags: string[];
@@ -27,6 +29,7 @@ interface GuiaCategoria {
   descricao: string | null;
   icone: string | null;
   imagem: string | null;
+  imagem_mobile: string | null;
 }
 
 /* ── Category style map: icon + gradient color ── */
@@ -71,7 +74,7 @@ const GuiaHome = () => {
       const [postsRes, catRes] = await Promise.all([
         supabase
           .from("guia_posts")
-          .select("id, titulo, slug, resumo, imagem_destaque, published_at, categoria_id, tags")
+          .select("id, titulo, slug, resumo, imagem_destaque, imagem_destaque_mobile, published_at, categoria_id, tags")
           .eq("status", "publicado")
           .order("published_at", { ascending: false })
           .limit(6),
