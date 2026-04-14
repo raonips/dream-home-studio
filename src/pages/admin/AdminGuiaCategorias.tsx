@@ -18,6 +18,7 @@ interface GuiaCategoria {
   icone: string | null;
   ordem: number;
   imagem: string | null;
+  imagem_mobile: string | null;
 }
 
 const slugify = (text: string) =>
