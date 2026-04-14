@@ -254,8 +254,9 @@ const GuiaHome = () => {
                   <div className="overflow-hidden h-full bg-card rounded-xl border border-border/50 shadow-sm hover:shadow-card-hover transition-shadow">
                     {post.imagem_destaque && (
                       <div className="aspect-video overflow-hidden rounded-t-xl">
-                        <SafeImage
+                        <ResponsiveImage
                           src={post.imagem_destaque}
+                          mobileSrc={post.imagem_destaque_mobile}
                           alt={post.titulo}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         />
