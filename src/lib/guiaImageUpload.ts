@@ -65,3 +65,99 @@ export async function processAndUploadGuiaImage(opts: {
   onProgress?.(100);
   return publicUrl;
 }
+
+/**
+ * Generates and uploads both desktop (1400px, 80% quality) and mobile (800px, 70% quality)
+ * WebP versions of a featured image.
+ */
+export async function processAndUploadWithMobile(opts: {
+  file: File;
+  bucket: string;
+  folder: string;
+  oldDesktopUrl?: string;
+  oldMobileUrl?: string;
+  onProgress?: (pct: number) => void;
+}): Promise<{ desktopUrl: string; mobileUrl: string }> {
+  const { file, bucket, folder, oldDesktopUrl, oldMobileUrl, onProgress } = opts;
+
+  onProgress?.(5);
+
+  // Generate desktop version (1400px, 80% quality)
+  let desktopFile: File;
+  try {
+    const compressed = await imageCompression(file, {
+      maxSizeMB: 0.8,
+      maxWidthOrHeight: 1400,
+      fileType: 'image/webp',
+      useWebWorker: true,
+      initialQuality: 0.8,
+    });
+    desktopFile = new File(
+      [compressed],
+      file.name.replace(/\.[^.]+$/, '.webp'),
+      { type: 'image/webp' }
+    );
+  } catch {
+    desktopFile = file;
+  }
+
+  onProgress?.(20);
+
+  // Generate mobile version (800px, 70% quality)
+  let mobileFile: File;
+  try {
+    const compressed = await imageCompression(file, {
+      maxSizeMB: 0.4,
+      maxWidthOrHeight: 800,
+      fileType: 'image/webp',
+      useWebWorker: true,
+      initialQuality: 0.7,
+    });
+    mobileFile = new File(
+      [compressed],
+      file.name.replace(/\.[^.]+$/, '-mobile.webp'),
+      { type: 'image/webp' }
+    );
+  } catch {
+    mobileFile = desktopFile;
+  }
+
+  onProgress?.(40);
+
+  // Upload desktop
+  const desktopPath = createSafeStoragePath({ folder, file: desktopFile });
+  await uploadToStorageWithProgress({
+    bucket,
+    path: desktopPath,
+    file: desktopFile,
+    upsert: false,
+    onProgress: (pct) => onProgress?.(40 + pct * 0.25),
+  });
+
+  onProgress?.(65);
+
+  // Upload mobile
+  const mobilePath = createSafeStoragePath({ folder: `${folder}/mobile`, file: mobileFile });
+  await uploadToStorageWithProgress({
+    bucket,
+    path: mobilePath,
+    file: mobileFile,
+    upsert: false,
+    onProgress: (pct) => onProgress?.(65 + pct * 0.25),
+  });
+
+  onProgress?.(92);
+
+  // Get public URLs
+  const { data: { publicUrl: desktopUrl } } = supabase.storage.from(bucket).getPublicUrl(desktopPath);
+  const { data: { publicUrl: mobileUrl } } = supabase.storage.from(bucket).getPublicUrl(mobilePath);
+
+  // Auto-delete old files (fire-and-forget)
+  const toDelete: string[] = [];
+  if (oldDesktopUrl) toDelete.push(oldDesktopUrl);
+  if (oldMobileUrl) toDelete.push(oldMobileUrl);
+  if (toDelete.length) removeStorageFiles(toDelete).catch(() => {});
+
+  onProgress?.(100);
+  return { desktopUrl, mobileUrl };
+}

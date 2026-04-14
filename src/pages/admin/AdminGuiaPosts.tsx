@@ -14,6 +14,7 @@ export interface GuiaPost {
   resumo: string | null;
   conteudo: string | null;
   imagem_destaque: string | null;
+  imagem_destaque_mobile: string | null;
   categoria_id: string | null;
   tags: string[];
   autor: string | null;

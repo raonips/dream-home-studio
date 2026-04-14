@@ -186,6 +186,7 @@ export type Database = {
           icone: string | null
           id: string
           imagem: string | null
+          imagem_mobile: string | null
           nome: string
           ordem: number | null
           slug: string
@@ -197,6 +198,7 @@ export type Database = {
           icone?: string | null
           id?: string
           imagem?: string | null
+          imagem_mobile?: string | null
           nome: string
           ordem?: number | null
           slug: string
@@ -208,6 +210,7 @@ export type Database = {
           icone?: string | null
           id?: string
           imagem?: string | null
+          imagem_mobile?: string | null
           nome?: string
           ordem?: number | null
           slug?: string
@@ -223,6 +226,7 @@ export type Database = {
           created_at: string
           id: string
           imagem_destaque: string | null
+          imagem_destaque_mobile: string | null
           published_at: string | null
           resumo: string | null
           seo_description: string | null
@@ -241,6 +245,7 @@ export type Database = {
           created_at?: string
           id?: string
           imagem_destaque?: string | null
+          imagem_destaque_mobile?: string | null
           published_at?: string | null
           resumo?: string | null
           seo_description?: string | null
@@ -259,6 +264,7 @@ export type Database = {
           created_at?: string
           id?: string
           imagem_destaque?: string | null
+          imagem_destaque_mobile?: string | null
           published_at?: string | null
           resumo?: string | null
           seo_description?: string | null
@@ -460,6 +466,7 @@ export type Database = {
           horario_funcionamento: string | null
           id: string
           imagem_destaque: string | null
+          imagem_destaque_mobile: string | null
           imagens: string[] | null
           latitude: number | null
           logo_url: string | null
@@ -488,6 +495,7 @@ export type Database = {
           horario_funcionamento?: string | null
           id?: string
           imagem_destaque?: string | null
+          imagem_destaque_mobile?: string | null
           imagens?: string[] | null
           latitude?: number | null
           logo_url?: string | null
@@ -516,6 +524,7 @@ export type Database = {
           horario_funcionamento?: string | null
           id?: string
           imagem_destaque?: string | null
+          imagem_destaque_mobile?: string | null
           imagens?: string[] | null
           latitude?: number | null
           logo_url?: string | null

@@ -44,6 +44,7 @@ export interface LocalRow {
   logo_url?: string | null;
   cupom_desconto?: string | null;
   valor_desconto?: string | null;
+  imagem_destaque_mobile?: string | null;
 }
 
 const CATEGORIAS = [
@@ -270,6 +271,7 @@ const LocalFormDialog = ({ open, onOpenChange, editing, onSuccess }: Props) => {
       whatsapp: form.whatsapp.trim() || null,
       google_maps_link: form.google_maps_link.trim() || null,
       imagem_destaque: coverUrl,
+      imagem_destaque_mobile: (form as any).imagem_destaque_mobile?.trim() || null,
       imagens: images,
       endereco: form.endereco.trim() || null,
       horario_funcionamento: form.horario_funcionamento.trim() || null,

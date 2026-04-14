@@ -6,6 +6,7 @@ import { Loader2, ArrowRight, MapPin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import SmartSearch from "@/components/SmartSearch";
 import SafeImage from "@/components/SafeImage";
+import ResponsiveImage from "@/components/ResponsiveImage";
 import { type PropertyData } from "@/components/PropertyCard";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 
@@ -15,6 +16,7 @@ interface GuiaPost {
   slug: string;
   resumo: string | null;
   imagem_destaque: string | null;
+  imagem_destaque_mobile: string | null;
   published_at: string | null;
   categoria_id: string | null;
   tags: string[];
@@ -27,6 +29,7 @@ interface GuiaCategoria {
   descricao: string | null;
   icone: string | null;
   imagem: string | null;
+  imagem_mobile: string | null;
 }
 
 /* ── Category style map: icon + gradient color ── */
@@ -71,7 +74,7 @@ const GuiaHome = () => {
       const [postsRes, catRes] = await Promise.all([
         supabase
           .from("guia_posts")
-          .select("id, titulo, slug, resumo, imagem_destaque, published_at, categoria_id, tags")
+          .select("id, titulo, slug, resumo, imagem_destaque, imagem_destaque_mobile, published_at, categoria_id, tags")
           .eq("status", "publicado")
           .order("published_at", { ascending: false })
           .limit(6),
@@ -181,8 +184,9 @@ const GuiaHome = () => {
                   to={`/guia/categoria/${cat.slug}`}
                   className="group relative overflow-hidden rounded-2xl col-span-2 md:col-span-2 aspect-[16/7]"
                 >
-                  <img
+                  <ResponsiveImage
                     src={cat.imagem || getFallbackImage(cat.slug)}
+                    mobileSrc={cat.imagem_mobile}
                     alt={cat.nome}
                     className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                     loading="lazy"
@@ -208,8 +212,9 @@ const GuiaHome = () => {
                   to={`/guia/categoria/${cat.slug}`}
                   className="group relative overflow-hidden rounded-2xl aspect-[4/3]"
                 >
-                  <img
+                  <ResponsiveImage
                     src={cat.imagem || getFallbackImage(cat.slug)}
+                    mobileSrc={cat.imagem_mobile}
                     alt={cat.nome}
                     className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                     loading="lazy"
@@ -249,8 +254,9 @@ const GuiaHome = () => {
                   <div className="overflow-hidden h-full bg-card rounded-xl border border-border/50 shadow-sm hover:shadow-card-hover transition-shadow">
                     {post.imagem_destaque && (
                       <div className="aspect-video overflow-hidden rounded-t-xl">
-                        <SafeImage
+                        <ResponsiveImage
                           src={post.imagem_destaque}
+                          mobileSrc={post.imagem_destaque_mobile}
                           alt={post.titulo}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         />

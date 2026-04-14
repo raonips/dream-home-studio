@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { MapPin, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import SafeImage from "@/components/SafeImage";
+import ResponsiveImage from "@/components/ResponsiveImage";
 import PropertyCard, { type PropertyData } from "@/components/PropertyCard";
 
 interface Local {
@@ -14,6 +15,7 @@ interface Local {
   descricao: string | null;
   categoria: string;
   imagem_destaque: string | null;
+  imagem_destaque_mobile: string | null;
   endereco: string | null;
 }
 
@@ -57,7 +59,7 @@ const LocaisListagem = () => {
     const fetchData = async () => {
       setLoading(true);
 
-      let query = supabase.from("locais").select("id,nome,slug,descricao,categoria,imagem_destaque,endereco").eq("ativo", true).order("ordem").order("nome");
+      let query = supabase.from("locais").select("id,nome,slug,descricao,categoria,imagem_destaque,imagem_destaque_mobile,endereco").eq("ativo", true).order("ordem").order("nome");
       if (dbCategorias.length === 1) {
         query = query.eq("categoria", dbCategorias[0]);
       } else if (dbCategorias.length > 1) {
@@ -113,8 +115,9 @@ const LocaisListagem = () => {
                     <Link key={local.id} to={`/locais/${local.slug}`} className="group">
                       <div className="overflow-hidden rounded-2xl bg-card border border-border/50 shadow-sm hover:shadow-[var(--shadow-card-hover)] transition-all">
                         <div className="aspect-[16/10] overflow-hidden">
-                          <SafeImage
+                          <ResponsiveImage
                             src={local.imagem_destaque || "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&q=80"}
+                            mobileSrc={local.imagem_destaque_mobile}
                             alt={local.nome}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                           />
