@@ -99,6 +99,7 @@ const App = () => (
            <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, '') || '/'}>
             <ScrollToTop />
             <SiteHelmet />
+            <SeoHead />
             <HeadScripts />
             <Routes>
               {/* Auth */}
@@ -138,7 +139,6 @@ const App = () => (
                     <main className="flex-1">
                       <ErrorBoundary fallbackTitle="Erro ao carregar a página">
                       <Suspense fallback={<RouteLoading />}>
-                      <SeoHead />
                       <Routes>
                         {/* Guia Local — root */}
                         <Route path="/" element={<GuiaHome />} />
