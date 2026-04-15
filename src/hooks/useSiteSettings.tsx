@@ -154,17 +154,16 @@ export const SiteHelmet = () => {
   const settings = useSiteSettings();
 
   return (
-    <>
-      <Helmet defaultTitle={settings.site_title} titleTemplate={`%s | ${settings.site_title}`}>
-        <meta name="description" content={settings.site_description} />
-        <meta name="keywords" content={settings.site_keywords} />
-        {settings.og_image_url && <meta property="og:image" content={settings.og_image_url} />}
-        <meta property="og:title" content={settings.site_title} />
-        <meta property="og:description" content={settings.site_description} />
-        <meta property="og:type" content="website" />
-        {settings.favicon_url && <link rel="icon" href={settings.favicon_url} />}
-      </Helmet>
-    </>
+    <Helmet>
+      <title>{settings.site_title}</title>
+      <meta name="description" content={settings.site_description} />
+      <meta name="keywords" content={settings.site_keywords} />
+      {settings.og_image_url && <meta property="og:image" content={settings.og_image_url} />}
+      <meta property="og:title" content={settings.site_title} />
+      <meta property="og:description" content={settings.site_description} />
+      <meta property="og:type" content="website" />
+      {settings.favicon_url && <link rel="icon" href={settings.favicon_url} />}
+    </Helmet>
   );
 };
 
