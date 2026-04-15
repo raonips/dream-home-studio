@@ -1,4 +1,4 @@
-import { LayoutDashboard, Building2, Home, Users, LogOut, LayoutGrid, Globe, Settings, Kanban, Tag, BookOpen, FolderOpen, Briefcase, Newspaper, MapPinned, Megaphone, QrCode, FileSearch } from 'lucide-react';
+import { LayoutDashboard, Building2, Home, Users, LogOut, LayoutGrid, Globe, Settings, Kanban, Tag, BookOpen, FolderOpen, Briefcase, Newspaper, MapPinned, Megaphone, QrCode, FileSearch, SearchCheck } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -271,6 +271,14 @@ const AdminSidebar = () => {
                     <NavLink to="/admin/sitemap" className="hover:bg-muted/50" activeClassName="bg-muted text-primary font-medium">
                       <FileSearch className="mr-2 h-4 w-4" />
                       {!collapsed && <span>Sitemap e Indexação</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink to="/admin/seo-pro" className="hover:bg-muted/50" activeClassName="bg-muted text-primary font-medium">
+                      <SearchCheck className="mr-2 h-4 w-4" />
+                      {!collapsed && <span>SEO PRO</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

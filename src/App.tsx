@@ -9,6 +9,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import SiteHeader from "@/components/SiteHeader";
 import ScrollToTop from "@/components/ScrollToTop";
+import SeoHead from "@/components/SeoHead";
 import { SiteSettingsProvider, HeadScripts, SiteHelmet } from "./hooks/useSiteSettings";
 
 // Critical: Index loads eagerly for fastest FCP/LCP
@@ -55,6 +56,7 @@ const AdminLocais = lazy(() => import("./pages/admin/AdminLocais"));
 const AdminAdTemplates = lazy(() => import("./pages/admin/AdminAdTemplates"));
 const AdminPlacas = lazy(() => import("./pages/admin/AdminPlacas"));
 const AdminSitemap = lazy(() => import("./pages/admin/AdminSitemap"));
+const AdminSeoPro = lazy(() => import("./pages/admin/AdminSeoPro"));
 const MapaGeral = lazy(() => import("./pages/MapaGeral"));
 const QrRedirect = lazy(() => import("./pages/QrRedirect"));
 
@@ -124,6 +126,7 @@ const App = () => (
                 <Route path="guia-seo" element={<Suspense fallback={<RouteLoading />}><AdminGuiaSeoSettings /></Suspense>} />
                 <Route path="locais" element={<Suspense fallback={<RouteLoading />}><AdminLocais /></Suspense>} />
                 <Route path="sitemap" element={<Suspense fallback={<RouteLoading />}><AdminSitemap /></Suspense>} />
+                <Route path="seo-pro" element={<Suspense fallback={<RouteLoading />}><AdminSeoPro /></Suspense>} />
               </Route>
 
               {/* Public routes */}
@@ -135,6 +138,7 @@ const App = () => (
                     <main className="flex-1">
                       <ErrorBoundary fallbackTitle="Erro ao carregar a página">
                       <Suspense fallback={<RouteLoading />}>
+                      <SeoHead />
                       <Routes>
                         {/* Guia Local — root */}
                         <Route path="/" element={<GuiaHome />} />

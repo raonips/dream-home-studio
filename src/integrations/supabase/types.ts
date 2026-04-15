@@ -700,6 +700,33 @@ export type Database = {
           },
         ]
       }
+      seo_overrides: {
+        Row: {
+          created_at: string
+          id: string
+          page_path: string
+          seo_description: string | null
+          seo_title: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          page_path: string
+          seo_description?: string | null
+          seo_title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          page_path?: string
+          seo_description?: string | null
+          seo_title?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       site_settings: {
         Row: {
           address: string | null
