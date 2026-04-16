@@ -1,17 +1,19 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Loader2, Save, Search, CheckCircle2, AlertCircle, FileSearch } from 'lucide-react';
+import { Loader2, Save, Search, CheckCircle2, AlertCircle, FileSearch, ExternalLink, Copy, RefreshCw, Home, MapPinned, Newspaper, Building2, FolderOpen, FileText, SearchCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
+// ── SEO Overrides types ──
 interface PageEntry {
   path: string;
   label: string;
@@ -37,6 +39,148 @@ const FIXED_PAGES: { path: string; label: string; source: string }[] = [
   { path: '/busca', label: 'Busca', source: 'Fixa' },
 ];
 
+// ── Sitemap types ──
+interface SitemapStats {
+  total: number;
+  properties_venda: number;
+  properties_temporada: number;
+  locais: number;
+  guia_posts: number;
+  guia_categorias: number;
+  condominios: number;
+  static_pages: number;
+}
+
+const SITEMAP_EDGE_URL = `https://nfzkreaylakmvlrbbjci.supabase.co/functions/v1/sitemap`;
+const SITEMAP_PROD_URL = `https://barradojacuipe.com.br/sitemap.xml`;
+
+// ── Sitemap Tab ──
+const SitemapTab = () => {
+  const { toast } = useToast();
+  const [stats, setStats] = useState<SitemapStats | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const fetchStats = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${SITEMAP_EDGE_URL}?format=json`);
+      if (!res.ok) throw new Error("Erro ao carregar stats");
+      const data = await res.json();
+      setStats(data);
+    } catch (e: any) {
+      toast({ title: "Erro", description: e.message, variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchStats(); }, []);
+
+  const handleCopy = (url: string, label: string) => {
+    navigator.clipboard.writeText(url);
+    toast({ title: "Link copiado!", description: `${label} copiado para a área de transferência.` });
+  };
+
+  const statCards = stats ? [
+    { label: "Imóveis Venda", count: stats.properties_venda, icon: Home, color: "text-blue-600" },
+    { label: "Imóveis Temporada", count: stats.properties_temporada, icon: Home, color: "text-purple-600" },
+    { label: "Condomínios", count: stats.condominios, icon: Building2, color: "text-emerald-600" },
+    { label: "Locais (Guia)", count: stats.locais, icon: MapPinned, color: "text-orange-600" },
+    { label: "Posts do Guia", count: stats.guia_posts, icon: Newspaper, color: "text-rose-600" },
+    { label: "Categorias Guia", count: stats.guia_categorias, icon: FolderOpen, color: "text-amber-600" },
+    { label: "Páginas Fixas", count: stats.static_pages, icon: FileText, color: "text-slate-600" },
+  ] : [];
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">
+          O sitemap é gerado dinamicamente. Envie a URL oficial ao Google Search Console.
+        </p>
+        <Button variant="outline" size="sm" onClick={fetchStats} disabled={loading}>
+          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
+          Atualizar
+        </Button>
+      </div>
+
+      {stats && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="py-4 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Total de URLs no Sitemap</p>
+              <p className="text-3xl font-bold text-primary">{stats.total}</p>
+            </div>
+            <Badge variant="secondary" className="text-sm px-3 py-1">
+              Prontas para o Google
+            </Badge>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {statCards.map((s) => (
+          <Card key={s.label}>
+            <CardContent className="py-4 flex items-center gap-3">
+              <s.icon className={`h-8 w-8 ${s.color}`} />
+              <div>
+                <p className="text-2xl font-bold">{s.count}</p>
+                <p className="text-xs text-muted-foreground">{s.label}</p>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Acesso ao Sitemap</CardTitle>
+          <CardDescription>
+            Envie a URL oficial ao Google Search Console. Use a URL de backup para acessar os dados diretamente.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <div>
+            <p className="text-sm font-semibold mb-1.5 flex items-center gap-2">
+              <Badge className="bg-green-600 hover:bg-green-700">Produção</Badge>
+              URL Oficial — envie esta ao Google
+            </p>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 p-3 rounded-md bg-muted font-mono text-sm break-all">
+                {SITEMAP_PROD_URL}
+              </div>
+              <Button size="icon" variant="outline" onClick={() => handleCopy(SITEMAP_PROD_URL, "URL Oficial")}>
+                <Copy className="h-4 w-4" />
+              </Button>
+              <Button size="icon" variant="outline" onClick={() => window.open(SITEMAP_PROD_URL, "_blank")}>
+                <ExternalLink className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          <div>
+            <p className="text-sm font-semibold mb-1.5 flex items-center gap-2">
+              <Badge variant="secondary">Backup</Badge>
+              URL da Edge Function (fonte dos dados)
+            </p>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 p-3 rounded-md bg-muted font-mono text-sm break-all">
+                {SITEMAP_EDGE_URL}
+              </div>
+              <Button size="icon" variant="outline" onClick={() => handleCopy(SITEMAP_EDGE_URL, "URL Backup")}>
+                <Copy className="h-4 w-4" />
+              </Button>
+              <Button size="icon" variant="outline" onClick={() => window.open(SITEMAP_EDGE_URL, "_blank")}>
+                <ExternalLink className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+// ── Main Component ──
 const AdminSeoPro = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
@@ -48,12 +192,7 @@ const AdminSeoPro = () => {
     setLoading(true);
 
     const [
-      overridesRes,
-      propertiesRes,
-      condominiosRes,
-      locaisRes,
-      postsRes,
-      categoriasRes,
+      overridesRes, propertiesRes, condominiosRes, locaisRes, postsRes, categoriasRes,
     ] = await Promise.all([
       supabase.from('seo_overrides').select('page_path, seo_title, seo_description'),
       supabase.from('properties').select('slug, title, seo_title, seo_description, transaction_type').eq('status', 'active'),
@@ -67,56 +206,25 @@ const AdminSeoPro = () => {
     (overridesRes.data || []).forEach((o: any) => overrides.set(o.page_path, o));
 
     const entries: PageEntry[] = [];
-
     const addEntry = (path: string, label: string, source: string, defTitle: string, defDesc: string) => {
       const ov = overrides.get(path);
       entries.push({
-        path,
-        label,
-        source,
-        defaultTitle: defTitle || '',
-        defaultDescription: defDesc || '',
-        customTitle: ov?.seo_title || '',
-        customDescription: ov?.seo_description || '',
-        hasOverride: !!ov,
-        dirty: false,
-        saving: false,
+        path, label, source,
+        defaultTitle: defTitle || '', defaultDescription: defDesc || '',
+        customTitle: ov?.seo_title || '', customDescription: ov?.seo_description || '',
+        hasOverride: !!ov, dirty: false, saving: false,
       });
     };
 
-    // Fixed pages
     FIXED_PAGES.forEach((p) => addEntry(p.path, p.label, p.source, '', ''));
-
-    // Properties
     (propertiesRes.data || []).forEach((p: any) => {
       const prefix = p.transaction_type === 'venda' ? 'venda' : 'temporada';
-      const path = `/imoveis/${prefix}/${p.slug}`;
-      addEntry(path, p.title || p.slug, 'Imóvel', p.seo_title || p.title || '', p.seo_description || '');
+      addEntry(`/imoveis/${prefix}/${p.slug}`, p.title || p.slug, 'Imóvel', p.seo_title || p.title || '', p.seo_description || '');
     });
-
-    // Condominios
-    (condominiosRes.data || []).forEach((c: any) => {
-      const path = `/imoveis/condominio/${c.slug}`;
-      addEntry(path, c.name || c.slug, 'Condomínio', c.seo_title || c.name || '', c.seo_description || '');
-    });
-
-    // Locais
-    (locaisRes.data || []).forEach((l: any) => {
-      const path = `/locais/${l.slug}`;
-      addEntry(path, l.nome || l.slug, 'Local', l.seo_title || l.nome || '', l.seo_description || '');
-    });
-
-    // Guia Posts
-    (postsRes.data || []).forEach((p: any) => {
-      const path = `/${p.slug}`;
-      addEntry(path, p.titulo || p.slug, 'Post', p.seo_title || p.titulo || '', p.seo_description || '');
-    });
-
-    // Categorias
-    (categoriasRes.data || []).forEach((c: any) => {
-      const path = `/guia/categoria/${c.slug}`;
-      addEntry(path, c.nome || c.slug, 'Categoria', c.nome || '', c.descricao || '');
-    });
+    (condominiosRes.data || []).forEach((c: any) => addEntry(`/imoveis/condominio/${c.slug}`, c.name || c.slug, 'Condomínio', c.seo_title || c.name || '', c.seo_description || ''));
+    (locaisRes.data || []).forEach((l: any) => addEntry(`/locais/${l.slug}`, l.nome || l.slug, 'Local', l.seo_title || l.nome || '', l.seo_description || ''));
+    (postsRes.data || []).forEach((p: any) => addEntry(`/${p.slug}`, p.titulo || p.slug, 'Post', p.seo_title || p.titulo || '', p.seo_description || ''));
+    (categoriasRes.data || []).forEach((c: any) => addEntry(`/guia/categoria/${c.slug}`, c.nome || c.slug, 'Categoria', c.nome || '', c.descricao || ''));
 
     setPages(entries);
     setLoading(false);
@@ -137,33 +245,21 @@ const AdminSeoPro = () => {
       seo_title: entry.customTitle.trim() || null,
       seo_description: entry.customDescription.trim() || null,
     };
-
     const hasContent = payload.seo_title || payload.seo_description;
-
     let error: any = null;
 
     if (entry.hasOverride && !hasContent) {
-      // Remove override
       const res = await supabase.from('seo_overrides').delete().eq('page_path', entry.path);
       error = res.error;
     } else if (entry.hasOverride) {
-      const res = await supabase.from('seo_overrides').update({
-        seo_title: payload.seo_title,
-        seo_description: payload.seo_description,
-      }).eq('page_path', entry.path);
+      const res = await supabase.from('seo_overrides').update({ seo_title: payload.seo_title, seo_description: payload.seo_description }).eq('page_path', entry.path);
       error = res.error;
     } else if (hasContent) {
       const res = await supabase.from('seo_overrides').insert(payload);
       error = res.error;
     }
 
-    setPages((prev) =>
-      prev.map((p, i) =>
-        i === index
-          ? { ...p, saving: false, dirty: false, hasOverride: !!hasContent }
-          : p
-      )
-    );
+    setPages((prev) => prev.map((p, i) => i === index ? { ...p, saving: false, dirty: false, hasOverride: !!hasContent } : p));
 
     if (error) {
       toast({ variant: 'destructive', title: 'Erro ao salvar', description: error.message });
@@ -173,27 +269,14 @@ const AdminSeoPro = () => {
   };
 
   const sources = ['all', ...new Set(pages.map((p) => p.source))];
-
   const filtered = pages.filter((p) => {
     if (sourceFilter !== 'all' && p.source !== sourceFilter) return false;
     if (filter) {
       const q = filter.toLowerCase();
-      return (
-        p.path.toLowerCase().includes(q) ||
-        p.label.toLowerCase().includes(q) ||
-        p.customTitle.toLowerCase().includes(q)
-      );
+      return p.path.toLowerCase().includes(q) || p.label.toLowerCase().includes(q) || p.customTitle.toLowerCase().includes(q);
     }
     return true;
   });
-
-  if (loading) {
-    return (
-      <div className="flex justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
 
   const totalOverrides = pages.filter((p) => p.hasOverride).length;
 
@@ -203,149 +286,134 @@ const AdminSeoPro = () => {
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold font-display text-foreground flex items-center gap-2">
-            <FileSearch className="h-6 w-6" />
+            <SearchCheck className="h-6 w-6" />
             SEO PRO
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Gerencie o título e descrição SEO de todas as páginas do site. Campos preenchidos aqui têm prioridade sobre os dados padrão.
+            Central de SEO: metadados, sitemap e indexação do site.
           </p>
         </div>
 
-        {/* Stats */}
-        <div className="flex gap-4 flex-wrap">
-          <Card className="flex-1 min-w-[200px]">
-            <CardContent className="pt-4 pb-3 px-4">
-              <div className="text-2xl font-bold text-foreground">{pages.length}</div>
-              <p className="text-xs text-muted-foreground">Páginas encontradas</p>
-            </CardContent>
-          </Card>
-          <Card className="flex-1 min-w-[200px]">
-            <CardContent className="pt-4 pb-3 px-4">
-              <div className="text-2xl font-bold text-green-600">{totalOverrides}</div>
-              <p className="text-xs text-muted-foreground">Com SEO customizado</p>
-            </CardContent>
-          </Card>
-          <Card className="flex-1 min-w-[200px]">
-            <CardContent className="pt-4 pb-3 px-4">
-              <div className="text-2xl font-bold text-amber-600">{pages.length - totalOverrides}</div>
-              <p className="text-xs text-muted-foreground">Usando padrão do sistema</p>
-            </CardContent>
-          </Card>
-        </div>
+        <Tabs defaultValue="metadados" className="w-full">
+          <TabsList>
+            <TabsTrigger value="metadados" className="gap-1.5">
+              <FileSearch className="h-4 w-4" />
+              Metadados e URLs
+            </TabsTrigger>
+            <TabsTrigger value="sitemap" className="gap-1.5">
+              <FileText className="h-4 w-4" />
+              Sitemap e Indexação
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Filters */}
-        <div className="flex gap-3 flex-wrap items-center">
-          <div className="relative flex-1 min-w-[200px] max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Filtrar por URL, nome ou título..."
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-          <div className="flex gap-1.5 flex-wrap">
-            {sources.map((s) => (
-              <Badge
-                key={s}
-                variant={sourceFilter === s ? 'default' : 'outline'}
-                className="cursor-pointer"
-                onClick={() => setSourceFilter(s)}
-              >
-                {s === 'all' ? 'Todos' : s}
-              </Badge>
-            ))}
-          </div>
-        </div>
+          {/* ── Aba Metadados ── */}
+          <TabsContent value="metadados">
+            {loading ? (
+              <div className="flex justify-center py-20">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : (
+              <div className="space-y-6 mt-4">
+                {/* Stats */}
+                <div className="flex gap-4 flex-wrap">
+                  <Card className="flex-1 min-w-[200px]">
+                    <CardContent className="pt-4 pb-3 px-4">
+                      <div className="text-2xl font-bold text-foreground">{pages.length}</div>
+                      <p className="text-xs text-muted-foreground">Páginas encontradas</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="flex-1 min-w-[200px]">
+                    <CardContent className="pt-4 pb-3 px-4">
+                      <div className="text-2xl font-bold text-green-600">{totalOverrides}</div>
+                      <p className="text-xs text-muted-foreground">Com SEO customizado</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="flex-1 min-w-[200px]">
+                    <CardContent className="pt-4 pb-3 px-4">
+                      <div className="text-2xl font-bold text-amber-600">{pages.length - totalOverrides}</div>
+                      <p className="text-xs text-muted-foreground">Usando padrão do sistema</p>
+                    </CardContent>
+                  </Card>
+                </div>
 
-        {/* Table */}
-        <Card>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[40px]">Status</TableHead>
-                  <TableHead className="w-[100px]">Tipo</TableHead>
-                  <TableHead className="min-w-[200px]">Página / URL</TableHead>
-                  <TableHead className="min-w-[250px]">Título SEO</TableHead>
-                  <TableHead className="min-w-[300px]">Descrição SEO</TableHead>
-                  <TableHead className="w-[80px]">Ação</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.map((entry, idx) => {
-                  const realIdx = pages.indexOf(entry);
-                  return (
-                    <TableRow key={entry.path} className={entry.dirty ? 'bg-amber-50/50 dark:bg-amber-950/20' : ''}>
-                      <TableCell>
-                        {entry.hasOverride ? (
-                          <CheckCircle2 className="h-4 w-4 text-green-600" />
-                        ) : (
-                          <AlertCircle className="h-4 w-4 text-muted-foreground/40" />
+                {/* Filters */}
+                <div className="flex gap-3 flex-wrap items-center">
+                  <div className="relative flex-1 min-w-[200px] max-w-md">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input placeholder="Filtrar por URL, nome ou título..." value={filter} onChange={(e) => setFilter(e.target.value)} className="pl-9" />
+                  </div>
+                  <div className="flex gap-1.5 flex-wrap">
+                    {sources.map((s) => (
+                      <Badge key={s} variant={sourceFilter === s ? 'default' : 'outline'} className="cursor-pointer" onClick={() => setSourceFilter(s)}>
+                        {s === 'all' ? 'Todos' : s}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Table */}
+                <Card>
+                  <CardContent className="p-0">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[40px]">Status</TableHead>
+                          <TableHead className="w-[100px]">Tipo</TableHead>
+                          <TableHead className="min-w-[200px]">Página / URL</TableHead>
+                          <TableHead className="min-w-[250px]">Título SEO</TableHead>
+                          <TableHead className="min-w-[300px]">Descrição SEO</TableHead>
+                          <TableHead className="w-[80px]">Ação</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filtered.map((entry) => {
+                          const realIdx = pages.indexOf(entry);
+                          return (
+                            <TableRow key={entry.path} className={entry.dirty ? 'bg-amber-50/50 dark:bg-amber-950/20' : ''}>
+                              <TableCell>
+                                {entry.hasOverride ? <CheckCircle2 className="h-4 w-4 text-green-600" /> : <AlertCircle className="h-4 w-4 text-muted-foreground/40" />}
+                              </TableCell>
+                              <TableCell><Badge variant="secondary" className="text-xs font-normal">{entry.source}</Badge></TableCell>
+                              <TableCell>
+                                <div className="font-medium text-sm truncate max-w-[250px]" title={entry.label}>{entry.label}</div>
+                                <div className="text-xs text-muted-foreground truncate max-w-[250px]" title={entry.path}>{entry.path}</div>
+                              </TableCell>
+                              <TableCell>
+                                <Input value={entry.customTitle} onChange={(e) => updateField(realIdx, 'customTitle', e.target.value)} placeholder={entry.defaultTitle || 'Título SEO...'} className="text-sm h-8" maxLength={70} />
+                                <span className="text-[10px] text-muted-foreground">{entry.customTitle.length}/70</span>
+                              </TableCell>
+                              <TableCell>
+                                <Textarea value={entry.customDescription} onChange={(e) => updateField(realIdx, 'customDescription', e.target.value)} placeholder={entry.defaultDescription || 'Descrição SEO...'} className="text-sm min-h-[36px] h-[36px] resize-y" maxLength={160} />
+                                <span className="text-[10px] text-muted-foreground">{entry.customDescription.length}/160</span>
+                              </TableCell>
+                              <TableCell>
+                                <Button size="sm" variant={entry.dirty ? 'default' : 'ghost'} disabled={!entry.dirty || entry.saving} onClick={() => handleSave(realIdx)} className="h-8">
+                                  {entry.saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                        {filtered.length === 0 && (
+                          <TableRow>
+                            <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">Nenhuma página encontrada com esse filtro.</TableCell>
+                          </TableRow>
                         )}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className="text-xs font-normal">
-                          {entry.source}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="font-medium text-sm truncate max-w-[250px]" title={entry.label}>
-                          {entry.label}
-                        </div>
-                        <div className="text-xs text-muted-foreground truncate max-w-[250px]" title={entry.path}>
-                          {entry.path}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          value={entry.customTitle}
-                          onChange={(e) => updateField(realIdx, 'customTitle', e.target.value)}
-                          placeholder={entry.defaultTitle || 'Título SEO...'}
-                          className="text-sm h-8"
-                          maxLength={70}
-                        />
-                        <span className="text-[10px] text-muted-foreground">{entry.customTitle.length}/70</span>
-                      </TableCell>
-                      <TableCell>
-                        <Textarea
-                          value={entry.customDescription}
-                          onChange={(e) => updateField(realIdx, 'customDescription', e.target.value)}
-                          placeholder={entry.defaultDescription || 'Descrição SEO...'}
-                          className="text-sm min-h-[36px] h-[36px] resize-y"
-                          maxLength={160}
-                        />
-                        <span className="text-[10px] text-muted-foreground">{entry.customDescription.length}/160</span>
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          size="sm"
-                          variant={entry.dirty ? 'default' : 'ghost'}
-                          disabled={!entry.dirty || entry.saving}
-                          onClick={() => handleSave(realIdx)}
-                          className="h-8"
-                        >
-                          {entry.saving ? (
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          ) : (
-                            <Save className="h-3.5 w-3.5" />
-                          )}
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-                {filtered.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
-                      Nenhuma página encontrada com esse filtro.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+          </TabsContent>
+
+          {/* ── Aba Sitemap ── */}
+          <TabsContent value="sitemap">
+            <div className="mt-4">
+              <SitemapTab />
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </>
   );

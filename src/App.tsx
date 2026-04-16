@@ -55,7 +55,7 @@ const AdminGuiaSeoSettings = lazy(() => import("./pages/admin/AdminGuiaSeoSettin
 const AdminLocais = lazy(() => import("./pages/admin/AdminLocais"));
 const AdminAdTemplates = lazy(() => import("./pages/admin/AdminAdTemplates"));
 const AdminPlacas = lazy(() => import("./pages/admin/AdminPlacas"));
-const AdminSitemap = lazy(() => import("./pages/admin/AdminSitemap"));
+
 const AdminSeoPro = lazy(() => import("./pages/admin/AdminSeoPro"));
 const MapaGeral = lazy(() => import("./pages/MapaGeral"));
 const QrRedirect = lazy(() => import("./pages/QrRedirect"));
