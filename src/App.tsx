@@ -55,7 +55,7 @@ const AdminGuiaSeoSettings = lazy(() => import("./pages/admin/AdminGuiaSeoSettin
 const AdminLocais = lazy(() => import("./pages/admin/AdminLocais"));
 const AdminAdTemplates = lazy(() => import("./pages/admin/AdminAdTemplates"));
 const AdminPlacas = lazy(() => import("./pages/admin/AdminPlacas"));
-const AdminSitemap = lazy(() => import("./pages/admin/AdminSitemap"));
+
 const AdminSeoPro = lazy(() => import("./pages/admin/AdminSeoPro"));
 const MapaGeral = lazy(() => import("./pages/MapaGeral"));
 const QrRedirect = lazy(() => import("./pages/QrRedirect"));
@@ -126,7 +126,7 @@ const App = () => (
                 <Route path="guia-config" element={<Suspense fallback={<RouteLoading />}><AdminGuiaSiteConfig /></Suspense>} />
                 <Route path="guia-seo" element={<Suspense fallback={<RouteLoading />}><AdminGuiaSeoSettings /></Suspense>} />
                 <Route path="locais" element={<Suspense fallback={<RouteLoading />}><AdminLocais /></Suspense>} />
-                <Route path="sitemap" element={<Suspense fallback={<RouteLoading />}><AdminSitemap /></Suspense>} />
+                
                 <Route path="seo-pro" element={<Suspense fallback={<RouteLoading />}><AdminSeoPro /></Suspense>} />
               </Route>
 
