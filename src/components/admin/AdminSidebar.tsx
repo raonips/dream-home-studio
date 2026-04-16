@@ -1,4 +1,4 @@
-import { LayoutDashboard, Building2, Home, Users, LogOut, LayoutGrid, Globe, Settings, Kanban, Tag, BookOpen, FolderOpen, Briefcase, Newspaper, MapPinned, Megaphone, QrCode, FileSearch, SearchCheck } from 'lucide-react';
+import { LayoutDashboard, Building2, Home, Users, LogOut, LayoutGrid, Globe, Settings, Kanban, Tag, BookOpen, FolderOpen, Briefcase, Newspaper, MapPinned, Megaphone, QrCode, SearchCheck } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useLocation } from 'react-router-dom';
