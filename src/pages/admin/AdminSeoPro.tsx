@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Loader2, Save, Search, CheckCircle2, AlertCircle, FileSearch, ExternalLink, Copy, RefreshCw, Home, MapPinned, Newspaper, Building2, FolderOpen, FileText, SearchCheck } from 'lucide-react';
+import { Loader2, Save, Search, CheckCircle2, AlertCircle, FileSearch, ExternalLink, Copy, RefreshCw, Home, MapPinned, Newspaper, Building2, FolderOpen, FileText, SearchCheck, Eye, EyeOff } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -22,6 +23,7 @@ interface PageEntry {
   defaultDescription: string;
   customTitle: string;
   customDescription: string;
+  isIndexed: boolean;
   hasOverride: boolean;
   dirty: boolean;
   saving: boolean;
@@ -194,7 +196,7 @@ const AdminSeoPro = () => {
     const [
       overridesRes, propertiesRes, condominiosRes, locaisRes, postsRes, categoriasRes,
     ] = await Promise.all([
-      supabase.from('seo_overrides').select('page_path, seo_title, seo_description'),
+      supabase.from('seo_overrides').select('page_path, seo_title, seo_description, is_indexed'),
       supabase.from('properties').select('slug, title, seo_title, seo_description, transaction_type').eq('status', 'active'),
       supabase.from('condominios').select('slug, name, seo_title, seo_description'),
       supabase.from('locais').select('slug, nome, seo_title, seo_description').eq('ativo', true),
@@ -202,8 +204,8 @@ const AdminSeoPro = () => {
       supabase.from('guia_categorias').select('slug, nome, descricao'),
     ]);
 
-    const overrides = new Map<string, { seo_title: string | null; seo_description: string | null }>();
-    (overridesRes.data || []).forEach((o: any) => overrides.set(o.page_path, o));
+    const overrides = new Map<string, { seo_title: string | null; seo_description: string | null; is_indexed: boolean }>();
+    (overridesRes.data || []).forEach((o: any) => overrides.set(o.page_path, { ...o, is_indexed: o.is_indexed ?? true }));
 
     const entries: PageEntry[] = [];
     const addEntry = (path: string, label: string, source: string, defTitle: string, defDesc: string) => {
@@ -212,6 +214,7 @@ const AdminSeoPro = () => {
         path, label, source,
         defaultTitle: defTitle || '', defaultDescription: defDesc || '',
         customTitle: ov?.seo_title || '', customDescription: ov?.seo_description || '',
+        isIndexed: ov?.is_indexed ?? true,
         hasOverride: !!ov, dirty: false, saving: false,
       });
     };
@@ -236,6 +239,10 @@ const AdminSeoPro = () => {
     setPages((prev) => prev.map((p, i) => i === index ? { ...p, [field]: value, dirty: true } : p));
   };
 
+  const toggleIndexed = (index: number) => {
+    setPages((prev) => prev.map((p, i) => i === index ? { ...p, isIndexed: !p.isIndexed, dirty: true } : p));
+  };
+
   const handleSave = async (index: number) => {
     const entry = pages[index];
     setPages((prev) => prev.map((p, i) => i === index ? { ...p, saving: true } : p));
@@ -244,15 +251,16 @@ const AdminSeoPro = () => {
       page_path: entry.path,
       seo_title: entry.customTitle.trim() || null,
       seo_description: entry.customDescription.trim() || null,
+      is_indexed: entry.isIndexed,
     };
-    const hasContent = payload.seo_title || payload.seo_description;
+    const hasContent = payload.seo_title || payload.seo_description || !payload.is_indexed;
     let error: any = null;
 
     if (entry.hasOverride && !hasContent) {
       const res = await supabase.from('seo_overrides').delete().eq('page_path', entry.path);
       error = res.error;
     } else if (entry.hasOverride) {
-      const res = await supabase.from('seo_overrides').update({ seo_title: payload.seo_title, seo_description: payload.seo_description }).eq('page_path', entry.path);
+      const res = await supabase.from('seo_overrides').update({ seo_title: payload.seo_title, seo_description: payload.seo_description, is_indexed: payload.is_indexed }).eq('page_path', entry.path);
       error = res.error;
     } else if (hasContent) {
       const res = await supabase.from('seo_overrides').insert(payload);
@@ -362,6 +370,7 @@ const AdminSeoPro = () => {
                           <TableHead className="min-w-[200px]">Página / URL</TableHead>
                           <TableHead className="min-w-[250px]">Título SEO</TableHead>
                           <TableHead className="min-w-[300px]">Descrição SEO</TableHead>
+                          <TableHead className="w-[80px] text-center">Indexar</TableHead>
                           <TableHead className="w-[80px]">Ação</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -386,6 +395,12 @@ const AdminSeoPro = () => {
                                 <Textarea value={entry.customDescription} onChange={(e) => updateField(realIdx, 'customDescription', e.target.value)} placeholder={entry.defaultDescription || 'Descrição SEO...'} className="text-sm min-h-[36px] h-[36px] resize-y" maxLength={160} />
                                 <span className="text-[10px] text-muted-foreground">{entry.customDescription.length}/160</span>
                               </TableCell>
+                              <TableCell className="text-center">
+                                <div className="flex items-center justify-center gap-1.5">
+                                  <Switch checked={entry.isIndexed} onCheckedChange={() => toggleIndexed(realIdx)} />
+                                  {entry.isIndexed ? <Eye className="h-3.5 w-3.5 text-green-600" /> : <EyeOff className="h-3.5 w-3.5 text-destructive" />}
+                                </div>
+                              </TableCell>
                               <TableCell>
                                 <Button size="sm" variant={entry.dirty ? 'default' : 'ghost'} disabled={!entry.dirty || entry.saving} onClick={() => handleSave(realIdx)} className="h-8">
                                   {entry.saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
@@ -396,7 +411,7 @@ const AdminSeoPro = () => {
                         })}
                         {filtered.length === 0 && (
                           <TableRow>
-                            <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">Nenhuma página encontrada com esse filtro.</TableCell>
+                            <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">Nenhuma página encontrada com esse filtro.</TableCell>
                           </TableRow>
                         )}
                       </TableBody>

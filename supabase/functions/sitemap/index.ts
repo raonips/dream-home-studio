@@ -8,7 +8,6 @@ const corsHeaders = {
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-// Change this to your production domain when published
 const BASE_URL = "https://barradojacuipe.com.br";
 
 function escapeXml(s: string): string {
@@ -35,13 +34,14 @@ Deno.serve(async (req) => {
   try {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Fetch all data in parallel
-    const [propertiesRes, locaisRes, guiaPostsRes, guiaCatsRes, condominiosRes] = await Promise.all([
+    // Fetch all data in parallel, including noindex overrides
+    const [propertiesRes, locaisRes, guiaPostsRes, guiaCatsRes, condominiosRes, noindexRes] = await Promise.all([
       supabase.from("properties").select("slug, transaction_type, updated_at").eq("status", "active").not("slug", "is", null),
       supabase.from("locais").select("slug, updated_at").eq("ativo", true),
       supabase.from("guia_posts").select("slug, updated_at").eq("status", "publicado"),
       supabase.from("guia_categorias").select("slug, updated_at"),
       supabase.from("condominios").select("slug, updated_at").not("slug", "is", null),
+      supabase.from("seo_overrides").select("page_path").eq("is_indexed", false),
     ]);
 
     const properties = propertiesRes.data || [];
@@ -49,6 +49,16 @@ Deno.serve(async (req) => {
     const guiaPosts = guiaPostsRes.data || [];
     const guiaCats = guiaCatsRes.data || [];
     const condominios = condominiosRes.data || [];
+
+    // Build set of noindex paths
+    const noindexPaths = new Set((noindexRes.data || []).map((r: any) => r.page_path));
+
+    // Helper: only add if not noindex
+    const addIfIndexed = (entries: string[], path: string, lastmod?: string, priority = "0.5", changefreq = "weekly") => {
+      if (!noindexPaths.has(path)) {
+        entries.push(urlEntry(`${BASE_URL}${path}`, lastmod, priority, changefreq));
+      }
+    };
 
     // JSON stats format for admin panel
     if (format === "json") {
@@ -61,6 +71,7 @@ Deno.serve(async (req) => {
         guia_categorias: guiaCats.length,
         condominios: condominios.length,
         static_pages: 6,
+        noindex: noindexPaths.size,
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -70,37 +81,37 @@ Deno.serve(async (req) => {
     const entries: string[] = [];
 
     // Static pages
-    entries.push(urlEntry(`${BASE_URL}/`, undefined, "1.0", "daily"));
-    entries.push(urlEntry(`${BASE_URL}/imoveis`, undefined, "0.9", "daily"));
-    entries.push(urlEntry(`${BASE_URL}/imoveis/vendas`, undefined, "0.8", "daily"));
-    entries.push(urlEntry(`${BASE_URL}/imoveis/temporada`, undefined, "0.8", "daily"));
-    entries.push(urlEntry(`${BASE_URL}/imoveis/condominios`, undefined, "0.7", "weekly"));
-    entries.push(urlEntry(`${BASE_URL}/mapa`, undefined, "0.6", "weekly"));
+    addIfIndexed(entries, "/", undefined, "1.0", "daily");
+    addIfIndexed(entries, "/imoveis", undefined, "0.9", "daily");
+    addIfIndexed(entries, "/imoveis/vendas", undefined, "0.8", "daily");
+    addIfIndexed(entries, "/imoveis/temporada", undefined, "0.8", "daily");
+    addIfIndexed(entries, "/imoveis/condominios", undefined, "0.7", "weekly");
+    addIfIndexed(entries, "/mapa", undefined, "0.6", "weekly");
 
     // Properties
     for (const p of properties) {
       const prefix = p.transaction_type === "temporada" ? "temporada" : "venda";
-      entries.push(urlEntry(`${BASE_URL}/imoveis/${prefix}/${p.slug}`, p.updated_at, "0.7", "weekly"));
+      addIfIndexed(entries, `/imoveis/${prefix}/${p.slug}`, p.updated_at, "0.7", "weekly");
     }
 
     // Condominios
     for (const c of condominios) {
-      entries.push(urlEntry(`${BASE_URL}/imoveis/condominio/${c.slug}`, c.updated_at, "0.6", "weekly"));
+      addIfIndexed(entries, `/imoveis/condominio/${c.slug}`, c.updated_at, "0.6", "weekly");
     }
 
     // Locais
     for (const l of locais) {
-      entries.push(urlEntry(`${BASE_URL}/locais/${l.slug}`, l.updated_at, "0.6", "weekly"));
+      addIfIndexed(entries, `/locais/${l.slug}`, l.updated_at, "0.6", "weekly");
     }
 
     // Guia categories
     for (const cat of guiaCats) {
-      entries.push(urlEntry(`${BASE_URL}/guia/categoria/${cat.slug}`, cat.updated_at, "0.6", "weekly"));
+      addIfIndexed(entries, `/guia/categoria/${cat.slug}`, cat.updated_at, "0.6", "weekly");
     }
 
     // Guia posts
     for (const post of guiaPosts) {
-      entries.push(urlEntry(`${BASE_URL}/${post.slug}`, post.updated_at, "0.7", "weekly"));
+      addIfIndexed(entries, `/${post.slug}`, post.updated_at, "0.7", "weekly");
     }
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
