@@ -1,0 +1,1 @@
+ALTER TABLE public.seo_overrides ADD COLUMN is_indexed boolean NOT NULL DEFAULT true;
