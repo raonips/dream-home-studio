@@ -126,7 +126,7 @@ const App = () => (
                 <Route path="guia-config" element={<Suspense fallback={<RouteLoading />}><AdminGuiaSiteConfig /></Suspense>} />
                 <Route path="guia-seo" element={<Suspense fallback={<RouteLoading />}><AdminGuiaSeoSettings /></Suspense>} />
                 <Route path="locais" element={<Suspense fallback={<RouteLoading />}><AdminLocais /></Suspense>} />
-                <Route path="sitemap" element={<Suspense fallback={<RouteLoading />}><AdminSitemap /></Suspense>} />
+                
                 <Route path="seo-pro" element={<Suspense fallback={<RouteLoading />}><AdminSeoPro /></Suspense>} />
               </Route>
 
