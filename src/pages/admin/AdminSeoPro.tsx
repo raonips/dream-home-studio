@@ -65,7 +65,17 @@ const SitemapTab = () => {
   const fetchStats = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${SITEMAP_EDGE_URL}?format=json`);
+      const url = new URL(SITEMAP_EDGE_URL);
+      url.searchParams.set('format', 'json');
+      url.searchParams.set('_', `${Date.now()}`);
+
+      const res = await fetch(url.toString(), {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+        },
+      });
+
       if (!res.ok) throw new Error("Erro ao carregar stats");
       const data = await res.json();
       setStats(data);
@@ -171,7 +181,7 @@ const SitemapTab = () => {
               <Button size="icon" variant="outline" onClick={() => handleCopy(SITEMAP_EDGE_URL, "URL Backup")}>
                 <Copy className="h-4 w-4" />
               </Button>
-              <Button size="icon" variant="outline" onClick={() => window.open(SITEMAP_EDGE_URL, "_blank")}>
+              <Button size="icon" variant="outline" onClick={() => window.open(`${SITEMAP_EDGE_URL}?_=${Date.now()}`, "_blank")}>
                 <ExternalLink className="h-4 w-4" />
               </Button>
             </div>

@@ -10,32 +10,61 @@ interface SeoOverride {
 
 const cache = new Map<string, SeoOverride | null>();
 
+const normalizePath = (input: string) => {
+  let path = input.trim() || '/';
+  path = path.split('#')[0]?.split('?')[0] || '/';
+
+  if (!path.startsWith('/')) {
+    path = `/${path}`;
+  }
+
+  if (path.length > 1) {
+    path = path.replace(/\/+$/, '');
+  }
+
+  return path || '/';
+};
+
 export const useSeoOverride = () => {
   const location = useLocation();
-  const pathname = location.pathname;
+  const rawPathname = location.pathname || '/';
+  const pathname = normalizePath(rawPathname);
   const [override, setOverride] = useState<SeoOverride | null>(cache.get(pathname) ?? null);
 
   useEffect(() => {
     if (cache.has(pathname)) {
       setOverride(cache.get(pathname) ?? null);
-      return;
     }
 
     let cancelled = false;
+    const candidatePaths = Array.from(new Set([
+      rawPathname,
+      pathname,
+      pathname === '/' ? pathname : `${pathname}/`,
+    ]));
+
     supabase
       .from('seo_overrides')
-      .select('seo_title, seo_description, is_indexed')
-      .eq('page_path', pathname)
-      .maybeSingle()
+      .select('page_path, seo_title, seo_description, is_indexed')
+      .in('page_path', candidatePaths)
       .then(({ data }) => {
         if (cancelled) return;
-        const result = data && (data.seo_title || data.seo_description || data.is_indexed === false) ? { ...data, is_indexed: data.is_indexed ?? true } : null;
+
+        const match = (data || []).find((item) => normalizePath(item.page_path) === pathname) || null;
+        const result = match && (match.seo_title || match.seo_description || match.is_indexed === false)
+          ? {
+              seo_title: match.seo_title,
+              seo_description: match.seo_description,
+              is_indexed: match.is_indexed ?? true,
+            }
+          : null;
+
         cache.set(pathname, result);
         setOverride(result);
       });
 
     return () => { cancelled = true; };
-  }, [pathname]);
+  }, [pathname, rawPathname]);
 
   return override;
 };

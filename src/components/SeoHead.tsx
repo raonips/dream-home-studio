@@ -11,16 +11,15 @@ import { useSeoOverride } from '@/hooks/useSeoOverride';
  */
 const SeoHead = () => {
   const override = useSeoOverride();
-
-  if (!override) return null;
+  const robotsContent = override?.is_indexed === false ? 'noindex, nofollow' : 'index, follow';
 
   return (
-    <Helmet>
+    <Helmet defer={false}>
+      <meta name="robots" content={robotsContent} />
       {override.seo_title && <title>{override.seo_title}</title>}
       {override.seo_title && <meta property="og:title" content={override.seo_title} />}
       {override.seo_description && <meta name="description" content={override.seo_description} />}
       {override.seo_description && <meta property="og:description" content={override.seo_description} />}
-      {override.is_indexed === false && <meta name="robots" content="noindex, nofollow" />}
     </Helmet>
   );
 };
