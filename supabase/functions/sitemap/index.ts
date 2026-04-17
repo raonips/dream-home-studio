@@ -182,7 +182,7 @@ ${entries.join("\n")}
       headers: {
         ...corsHeaders,
         "Content-Type": "application/xml; charset=utf-8",
-        "Cache-Control": "public, max-age=3600",
+        "Cache-Control": "no-store, max-age=0",
       },
     });
   } catch (error) {
