@@ -10,6 +10,35 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const BASE_URL = "https://barradojacuipe.com.br";
 
+function normalizePath(input: string): string {
+  const trimmed = input.trim();
+  if (!trimmed) return "/";
+
+  let pathname = trimmed;
+
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+    try {
+      pathname = new URL(trimmed).pathname;
+    } catch {
+      pathname = trimmed;
+    }
+  }
+
+  pathname = pathname.split("#")[0]?.split("?")[0] || "/";
+
+  if (!pathname.startsWith("/")) {
+    pathname = `/${pathname}`;
+  }
+
+  pathname = pathname.replace(/\/{2,}/g, "/");
+
+  if (pathname.length > 1) {
+    pathname = pathname.replace(/\/+$/, "");
+  }
+
+  return pathname || "/";
+}
+
 function escapeXml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
 }
@@ -51,67 +80,97 @@ Deno.serve(async (req) => {
     const condominios = condominiosRes.data || [];
 
     // Build set of noindex paths
-    const noindexPaths = new Set((noindexRes.data || []).map((r: any) => r.page_path));
+    const noindexPaths = new Set((noindexRes.data || []).map((r: any) => normalizePath(r.page_path)));
 
     // Helper: only add if not noindex
     const addIfIndexed = (entries: string[], path: string, lastmod?: string, priority = "0.5", changefreq = "weekly") => {
-      if (!noindexPaths.has(path)) {
-        entries.push(urlEntry(`${BASE_URL}${path}`, lastmod, priority, changefreq));
-      }
+      const normalizedPath = normalizePath(path);
+      if (noindexPaths.has(normalizedPath)) return false;
+      entries.push(urlEntry(`${BASE_URL}${normalizedPath}`, lastmod, priority, changefreq));
+      return true;
     };
-
-    // JSON stats format for admin panel
-    if (format === "json") {
-      return new Response(JSON.stringify({
-        total: properties.length + locais.length + guiaPosts.length + guiaCats.length + condominios.length + 6,
-        properties_venda: properties.filter(p => p.transaction_type !== "temporada").length,
-        properties_temporada: properties.filter(p => p.transaction_type === "temporada").length,
-        locais: locais.length,
-        guia_posts: guiaPosts.length,
-        guia_categorias: guiaCats.length,
-        condominios: condominios.length,
-        static_pages: 6,
-        noindex: noindexPaths.size,
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
 
     // Build XML sitemap
     const entries: string[] = [];
+    const stats = {
+      properties_venda: 0,
+      properties_temporada: 0,
+      locais: 0,
+      guia_posts: 0,
+      guia_categorias: 0,
+      condominios: 0,
+      static_pages: 0,
+    };
 
     // Static pages
-    addIfIndexed(entries, "/", undefined, "1.0", "daily");
-    addIfIndexed(entries, "/imoveis", undefined, "0.9", "daily");
-    addIfIndexed(entries, "/imoveis/vendas", undefined, "0.8", "daily");
-    addIfIndexed(entries, "/imoveis/temporada", undefined, "0.8", "daily");
-    addIfIndexed(entries, "/imoveis/condominios", undefined, "0.7", "weekly");
-    addIfIndexed(entries, "/mapa", undefined, "0.6", "weekly");
+    if (addIfIndexed(entries, "/", undefined, "1.0", "daily")) stats.static_pages += 1;
+    if (addIfIndexed(entries, "/imoveis", undefined, "0.9", "daily")) stats.static_pages += 1;
+    if (addIfIndexed(entries, "/imoveis/vendas", undefined, "0.8", "daily")) stats.static_pages += 1;
+    if (addIfIndexed(entries, "/imoveis/temporada", undefined, "0.8", "daily")) stats.static_pages += 1;
+    if (addIfIndexed(entries, "/imoveis/condominios", undefined, "0.7", "weekly")) stats.static_pages += 1;
+    if (addIfIndexed(entries, "/mapa", undefined, "0.6", "weekly")) stats.static_pages += 1;
 
     // Properties
     for (const p of properties) {
       const prefix = p.transaction_type === "temporada" ? "temporada" : "venda";
-      addIfIndexed(entries, `/imoveis/${prefix}/${p.slug}`, p.updated_at, "0.7", "weekly");
+      if (addIfIndexed(entries, `/imoveis/${prefix}/${p.slug}`, p.updated_at, "0.7", "weekly")) {
+        if (p.transaction_type === "temporada") {
+          stats.properties_temporada += 1;
+        } else {
+          stats.properties_venda += 1;
+        }
+      }
     }
 
     // Condominios
     for (const c of condominios) {
-      addIfIndexed(entries, `/imoveis/condominio/${c.slug}`, c.updated_at, "0.6", "weekly");
+      if (addIfIndexed(entries, `/imoveis/condominio/${c.slug}`, c.updated_at, "0.6", "weekly")) {
+        stats.condominios += 1;
+      }
     }
 
     // Locais
     for (const l of locais) {
-      addIfIndexed(entries, `/locais/${l.slug}`, l.updated_at, "0.6", "weekly");
+      if (addIfIndexed(entries, `/locais/${l.slug}`, l.updated_at, "0.6", "weekly")) {
+        stats.locais += 1;
+      }
     }
 
     // Guia categories
     for (const cat of guiaCats) {
-      addIfIndexed(entries, `/guia/categoria/${cat.slug}`, cat.updated_at, "0.6", "weekly");
+      if (addIfIndexed(entries, `/guia/categoria/${cat.slug}`, cat.updated_at, "0.6", "weekly")) {
+        stats.guia_categorias += 1;
+      }
     }
 
     // Guia posts
     for (const post of guiaPosts) {
-      addIfIndexed(entries, `/${post.slug}`, post.updated_at, "0.7", "weekly");
+      if (addIfIndexed(entries, `/${post.slug}`, post.updated_at, "0.7", "weekly")) {
+        stats.guia_posts += 1;
+      }
+    }
+
+    const total = stats.properties_venda
+      + stats.properties_temporada
+      + stats.locais
+      + stats.guia_posts
+      + stats.guia_categorias
+      + stats.condominios
+      + stats.static_pages;
+
+    // JSON stats format for admin panel
+    if (format === "json") {
+      return new Response(JSON.stringify({
+        total,
+        ...stats,
+        noindex: noindexPaths.size,
+      }), {
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json",
+          "Cache-Control": "no-store, max-age=0",
+        },
+      });
     }
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -123,11 +182,12 @@ ${entries.join("\n")}
       headers: {
         ...corsHeaders,
         "Content-Type": "application/xml; charset=utf-8",
-        "Cache-Control": "public, max-age=3600",
+        "Cache-Control": "no-store, max-age=0",
       },
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return new Response(JSON.stringify({ error: message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

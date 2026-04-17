@@ -99,7 +99,6 @@ const App = () => (
            <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, '') || '/'}>
             <ScrollToTop />
             <SiteHelmet />
-            <SeoHead />
             <HeadScripts />
             <Routes>
               {/* Auth */}
@@ -193,6 +192,7 @@ const App = () => (
                 }
               />
             </Routes>
+            <SeoHead />
           </BrowserRouter>
           </SiteSettingsProvider>
         </AuthProvider>
