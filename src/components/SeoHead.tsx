@@ -16,10 +16,10 @@ const SeoHead = () => {
   return (
     <Helmet defer={false}>
       <meta name="robots" content={robotsContent} />
-      {override.seo_title && <title>{override.seo_title}</title>}
-      {override.seo_title && <meta property="og:title" content={override.seo_title} />}
-      {override.seo_description && <meta name="description" content={override.seo_description} />}
-      {override.seo_description && <meta property="og:description" content={override.seo_description} />}
+      {override?.seo_title && <title>{override.seo_title}</title>}
+      {override?.seo_title && <meta property="og:title" content={override.seo_title} />}
+      {override?.seo_description && <meta name="description" content={override.seo_description} />}
+      {override?.seo_description && <meta property="og:description" content={override.seo_description} />}
     </Helmet>
   );
 };
