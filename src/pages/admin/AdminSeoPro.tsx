@@ -65,22 +65,20 @@ const SitemapTab = () => {
   const fetchStats = async () => {
     setLoading(true);
     try {
-      const url = new URL(SITEMAP_EDGE_URL);
-      url.searchParams.set('format', 'json');
-      url.searchParams.set('_', `${Date.now()}`);
-
-      const res = await fetch(url.toString(), {
-        cache: 'no-store',
-        headers: {
-          'Cache-Control': 'no-cache',
-        },
+      const { data, error } = await supabase.functions.invoke('sitemap', {
+        method: 'GET',
+        headers: { 'Cache-Control': 'no-cache' },
       });
-
-      if (!res.ok) throw new Error("Erro ao carregar stats");
-      const data = await res.json();
-      setStats(data);
+      if (error) throw error;
+      // supabase.functions.invoke may return text for non-json; ensure object
+      const parsed = typeof data === 'string' ? JSON.parse(data) : data;
+      if (!parsed || typeof parsed.total !== 'number') {
+        throw new Error('Resposta inválida da função sitemap');
+      }
+      setStats(parsed as SitemapStats);
     } catch (e: any) {
-      toast({ title: "Erro", description: e.message, variant: "destructive" });
+      toast({ title: "Erro ao carregar sitemap", description: e?.message || 'Falha desconhecida', variant: "destructive" });
+      setStats(null);
     } finally {
       setLoading(false);
     }
