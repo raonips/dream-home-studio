@@ -705,6 +705,7 @@ export type Database = {
           created_at: string
           id: string
           is_indexed: boolean
+          og_image: string | null
           page_path: string
           seo_description: string | null
           seo_title: string | null
@@ -714,6 +715,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_indexed?: boolean
+          og_image?: string | null
           page_path: string
           seo_description?: string | null
           seo_title?: string | null
@@ -723,6 +725,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_indexed?: boolean
+          og_image?: string | null
           page_path?: string
           seo_description?: string | null
           seo_title?: string | null
