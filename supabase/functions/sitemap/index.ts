@@ -2,7 +2,9 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, accept, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  "Access-Control-Allow-Methods": "GET, OPTIONS",
+  "Access-Control-Max-Age": "86400",
 };
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -54,11 +56,13 @@ function urlEntry(loc: string, lastmod?: string, priority = "0.5", changefreq = 
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response("ok", { headers: corsHeaders });
   }
 
   const url = new URL(req.url);
-  const format = url.searchParams.get("format") || "xml";
+  const requestedFormat = url.searchParams.get("format");
+  const acceptHeader = req.headers.get("accept") || "";
+  const format = requestedFormat || (acceptHeader.includes("application/json") ? "json" : "xml");
 
   try {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
