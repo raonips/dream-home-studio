@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 interface SeoOverride {
   seo_title: string | null;
   seo_description: string | null;
+  og_image: string | null;
   is_indexed: boolean;
 }
 
@@ -45,17 +46,19 @@ export const useSeoOverride = () => {
 
     supabase
       .from('seo_overrides')
-      .select('page_path, seo_title, seo_description, is_indexed')
+      .select('page_path, seo_title, seo_description, og_image, is_indexed')
       .in('page_path', candidatePaths)
       .then(({ data }) => {
         if (cancelled) return;
 
-        const match = (data || []).find((item) => normalizePath(item.page_path) === pathname) || null;
-        const result = match && (match.seo_title || match.seo_description || match.is_indexed === false)
+        const match = (data || []).find((item: any) => normalizePath(item.page_path) === pathname) || null;
+        const m: any = match;
+        const result = m && (m.seo_title || m.seo_description || m.og_image || m.is_indexed === false)
           ? {
-              seo_title: match.seo_title,
-              seo_description: match.seo_description,
-              is_indexed: match.is_indexed ?? true,
+              seo_title: m.seo_title,
+              seo_description: m.seo_description,
+              og_image: m.og_image ?? null,
+              is_indexed: m.is_indexed ?? true,
             }
           : null;
 
