@@ -417,12 +417,14 @@ const AdminSeoPro = () => {
                           <TableHead className="min-w-[250px]">Título SEO</TableHead>
                           <TableHead className="min-w-[300px]">Descrição SEO</TableHead>
                           <TableHead className="w-[80px] text-center">Indexar</TableHead>
-                          <TableHead className="w-[80px]">Ação</TableHead>
+                          <TableHead className="w-[110px] text-center">OG / Avançado</TableHead>
+                          <TableHead className="w-[80px]">Salvar</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {filtered.map((entry) => {
                           const realIdx = pages.indexOf(entry);
+                          const hasCustomOg = !!entry.ogImage;
                           return (
                             <TableRow key={entry.path} className={entry.dirty ? 'bg-amber-50/50 dark:bg-amber-950/20' : ''}>
                               <TableCell>
@@ -448,6 +450,21 @@ const AdminSeoPro = () => {
                                 </div>
                               </TableCell>
                               <TableCell>
+                                <div className="flex items-center justify-center gap-1">
+                                  <ImageIcon
+                                    className={`h-4 w-4 ${hasCustomOg ? 'text-emerald-600' : 'text-muted-foreground/40'}`}
+                                    aria-label={hasCustomOg ? 'OG image customizada' : 'Usando fallback global'}
+                                  />
+                                  <Button
+                                    size="icon" variant="ghost" className="h-8 w-8"
+                                    onClick={() => setAdvancedIdx(realIdx)}
+                                    title="SEO Avançado"
+                                  >
+                                    <Settings2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                              <TableCell>
                                 <Button size="sm" variant={entry.dirty ? 'default' : 'ghost'} disabled={!entry.dirty || entry.saving} onClick={() => handleSave(realIdx)} className="h-8">
                                   {entry.saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
                                 </Button>
@@ -457,7 +474,7 @@ const AdminSeoPro = () => {
                         })}
                         {filtered.length === 0 && (
                           <TableRow>
-                            <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">Nenhuma página encontrada com esse filtro.</TableCell>
+                            <TableCell colSpan={9} className="text-center py-10 text-muted-foreground">Nenhuma página encontrada com esse filtro.</TableCell>
                           </TableRow>
                         )}
                       </TableBody>
