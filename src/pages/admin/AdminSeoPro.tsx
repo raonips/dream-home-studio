@@ -493,6 +493,25 @@ const AdminSeoPro = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {advancedIdx !== null && pages[advancedIdx] && (
+        <SeoAdvancedDialog
+          open={advancedIdx !== null}
+          onOpenChange={(o) => { if (!o) setAdvancedIdx(null); }}
+          path={pages[advancedIdx].path}
+          label={pages[advancedIdx].label}
+          defaultTitle={pages[advancedIdx].defaultTitle}
+          defaultDescription={pages[advancedIdx].defaultDescription}
+          fallbackOgImage={fallbackForPath(pages[advancedIdx].path)}
+          initial={{
+            customTitle: pages[advancedIdx].customTitle,
+            customDescription: pages[advancedIdx].customDescription,
+            ogImage: pages[advancedIdx].ogImage,
+            isIndexed: pages[advancedIdx].isIndexed,
+          }}
+          onSave={(values) => handleAdvancedSave(advancedIdx, values)}
+        />
+      )}
     </>
   );
 };
