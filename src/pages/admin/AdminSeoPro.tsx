@@ -24,6 +24,7 @@ interface PageEntry {
   defaultDescription: string;
   customTitle: string;
   customDescription: string;
+  ogImage: string;
   isIndexed: boolean;
   hasOverride: boolean;
   dirty: boolean;
