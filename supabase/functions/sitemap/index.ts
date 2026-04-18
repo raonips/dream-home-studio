@@ -62,7 +62,9 @@ Deno.serve(async (req) => {
   const url = new URL(req.url);
   const requestedFormat = url.searchParams.get("format");
   const acceptHeader = req.headers.get("accept") || "";
-  const format = requestedFormat || (acceptHeader.includes("application/json") ? "json" : "xml");
+  const clientInfo = req.headers.get("x-client-info") || "";
+  const isSupabaseClientRequest = clientInfo.includes("supabase-js");
+  const format = requestedFormat || (acceptHeader.includes("application/json") || isSupabaseClientRequest ? "json" : "xml");
 
   try {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
