@@ -1,7 +1,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Loader2, Save, Search, CheckCircle2, AlertCircle, FileSearch, ExternalLink, Copy, RefreshCw, Home, MapPinned, Newspaper, Building2, FolderOpen, FileText, SearchCheck, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Save, Search, CheckCircle2, AlertCircle, FileSearch, ExternalLink, Copy, RefreshCw, Home, MapPinned, Newspaper, Building2, FolderOpen, FileText, SearchCheck, Eye, EyeOff, Settings2, ImageIcon } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
+import SeoAdvancedDialog, { type SeoAdvancedValues } from '@/components/admin/SeoAdvancedDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -23,6 +24,7 @@ interface PageEntry {
   defaultDescription: string;
   customTitle: string;
   customDescription: string;
+  ogImage: string;
   isIndexed: boolean;
   hasOverride: boolean;
   dirty: boolean;
@@ -197,23 +199,33 @@ const AdminSeoPro = () => {
   const [pages, setPages] = useState<PageEntry[]>([]);
   const [filter, setFilter] = useState('');
   const [sourceFilter, setSourceFilter] = useState<string>('all');
+  const [advancedIdx, setAdvancedIdx] = useState<number | null>(null);
+  const [globalOg, setGlobalOg] = useState({ imoveis: '', guia: '' });
 
   const loadAll = useCallback(async () => {
     setLoading(true);
 
     const [
       overridesRes, propertiesRes, condominiosRes, locaisRes, postsRes, categoriasRes,
+      siteSettingsRes, guiaSettingsRes,
     ] = await Promise.all([
-      supabase.from('seo_overrides').select('page_path, seo_title, seo_description, is_indexed'),
+      supabase.from('seo_overrides').select('page_path, seo_title, seo_description, og_image, is_indexed'),
       supabase.from('properties').select('slug, title, seo_title, seo_description, transaction_type').eq('status', 'active'),
       supabase.from('condominios').select('slug, name, seo_title, seo_description'),
       supabase.from('locais').select('slug, nome, seo_title, seo_description').eq('ativo', true),
       supabase.from('guia_posts').select('slug, titulo, seo_title, seo_description').eq('status', 'publicado'),
       supabase.from('guia_categorias').select('slug, nome, descricao'),
+      supabase.from('site_settings').select('og_image_url').limit(1).maybeSingle(),
+      supabase.from('guia_site_settings').select('og_image_url').limit(1).maybeSingle(),
     ]);
 
-    const overrides = new Map<string, { seo_title: string | null; seo_description: string | null; is_indexed: boolean }>();
-    (overridesRes.data || []).forEach((o: any) => overrides.set(o.page_path, { ...o, is_indexed: o.is_indexed ?? true }));
+    setGlobalOg({
+      imoveis: (siteSettingsRes.data as any)?.og_image_url || '',
+      guia: (guiaSettingsRes.data as any)?.og_image_url || '',
+    });
+
+    const overrides = new Map<string, { seo_title: string | null; seo_description: string | null; og_image: string | null; is_indexed: boolean }>();
+    (overridesRes.data || []).forEach((o: any) => overrides.set(o.page_path, { ...o, is_indexed: o.is_indexed ?? true, og_image: o.og_image ?? null }));
 
     const entries: PageEntry[] = [];
     const addEntry = (path: string, label: string, source: string, defTitle: string, defDesc: string) => {
@@ -222,6 +234,7 @@ const AdminSeoPro = () => {
         path, label, source,
         defaultTitle: defTitle || '', defaultDescription: defDesc || '',
         customTitle: ov?.seo_title || '', customDescription: ov?.seo_description || '',
+        ogImage: ov?.og_image || '',
         isIndexed: ov?.is_indexed ?? true,
         hasOverride: !!ov, dirty: false, saving: false,
       });
@@ -251,38 +264,63 @@ const AdminSeoPro = () => {
     setPages((prev) => prev.map((p, i) => i === index ? { ...p, isIndexed: !p.isIndexed, dirty: true } : p));
   };
 
-  const handleSave = async (index: number) => {
-    const entry = pages[index];
-    setPages((prev) => prev.map((p, i) => i === index ? { ...p, saving: true } : p));
-
+  // Save by index using the up-to-date page state (avoids stale closure when called from dialog).
+  const persist = async (entry: PageEntry, index: number) => {
     const payload = {
       page_path: entry.path,
       seo_title: entry.customTitle.trim() || null,
       seo_description: entry.customDescription.trim() || null,
+      og_image: entry.ogImage.trim() || null,
       is_indexed: entry.isIndexed,
     };
-    const hasContent = payload.seo_title || payload.seo_description || !payload.is_indexed;
+    const hasContent = !!(payload.seo_title || payload.seo_description || payload.og_image || !payload.is_indexed);
     let error: any = null;
 
     if (entry.hasOverride && !hasContent) {
       const res = await supabase.from('seo_overrides').delete().eq('page_path', entry.path);
       error = res.error;
     } else if (entry.hasOverride) {
-      const res = await supabase.from('seo_overrides').update({ seo_title: payload.seo_title, seo_description: payload.seo_description, is_indexed: payload.is_indexed }).eq('page_path', entry.path);
+      const res = await supabase.from('seo_overrides').update({
+        seo_title: payload.seo_title,
+        seo_description: payload.seo_description,
+        og_image: payload.og_image,
+        is_indexed: payload.is_indexed,
+      } as any).eq('page_path', entry.path);
       error = res.error;
     } else if (hasContent) {
-      const res = await supabase.from('seo_overrides').insert(payload);
+      const res = await supabase.from('seo_overrides').insert(payload as any);
       error = res.error;
     }
 
-    setPages((prev) => prev.map((p, i) => i === index ? { ...p, saving: false, dirty: false, hasOverride: !!hasContent } : p));
+    setPages((prev) => prev.map((p, i) => i === index ? { ...p, saving: false, dirty: false, hasOverride: hasContent } : p));
 
     if (error) {
       toast({ variant: 'destructive', title: 'Erro ao salvar', description: error.message });
-    } else {
-      toast({ title: 'SEO atualizado!' });
+      throw error;
     }
+    toast({ title: 'SEO atualizado!' });
   };
+
+  const handleSave = async (index: number) => {
+    setPages((prev) => prev.map((p, i) => i === index ? { ...p, saving: true } : p));
+    try { await persist(pages[index], index); } catch {}
+  };
+
+  const handleAdvancedSave = async (index: number, values: SeoAdvancedValues) => {
+    const updated: PageEntry = {
+      ...pages[index],
+      customTitle: values.customTitle,
+      customDescription: values.customDescription,
+      ogImage: values.ogImage,
+      isIndexed: values.isIndexed,
+      saving: true,
+    };
+    setPages((prev) => prev.map((p, i) => i === index ? updated : p));
+    await persist(updated, index);
+  };
+
+  const fallbackForPath = (path: string) =>
+    path.startsWith('/imoveis') ? globalOg.imoveis : globalOg.guia;
 
   const sources = ['all', ...new Set(pages.map((p) => p.source))];
   const filtered = pages.filter((p) => {
@@ -379,12 +417,14 @@ const AdminSeoPro = () => {
                           <TableHead className="min-w-[250px]">Título SEO</TableHead>
                           <TableHead className="min-w-[300px]">Descrição SEO</TableHead>
                           <TableHead className="w-[80px] text-center">Indexar</TableHead>
-                          <TableHead className="w-[80px]">Ação</TableHead>
+                          <TableHead className="w-[110px] text-center">OG / Avançado</TableHead>
+                          <TableHead className="w-[80px]">Salvar</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {filtered.map((entry) => {
                           const realIdx = pages.indexOf(entry);
+                          const hasCustomOg = !!entry.ogImage;
                           return (
                             <TableRow key={entry.path} className={entry.dirty ? 'bg-amber-50/50 dark:bg-amber-950/20' : ''}>
                               <TableCell>
@@ -410,6 +450,21 @@ const AdminSeoPro = () => {
                                 </div>
                               </TableCell>
                               <TableCell>
+                                <div className="flex items-center justify-center gap-1">
+                                  <ImageIcon
+                                    className={`h-4 w-4 ${hasCustomOg ? 'text-emerald-600' : 'text-muted-foreground/40'}`}
+                                    aria-label={hasCustomOg ? 'OG image customizada' : 'Usando fallback global'}
+                                  />
+                                  <Button
+                                    size="icon" variant="ghost" className="h-8 w-8"
+                                    onClick={() => setAdvancedIdx(realIdx)}
+                                    title="SEO Avançado"
+                                  >
+                                    <Settings2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                              <TableCell>
                                 <Button size="sm" variant={entry.dirty ? 'default' : 'ghost'} disabled={!entry.dirty || entry.saving} onClick={() => handleSave(realIdx)} className="h-8">
                                   {entry.saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
                                 </Button>
@@ -419,7 +474,7 @@ const AdminSeoPro = () => {
                         })}
                         {filtered.length === 0 && (
                           <TableRow>
-                            <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">Nenhuma página encontrada com esse filtro.</TableCell>
+                            <TableCell colSpan={9} className="text-center py-10 text-muted-foreground">Nenhuma página encontrada com esse filtro.</TableCell>
                           </TableRow>
                         )}
                       </TableBody>
@@ -438,6 +493,25 @@ const AdminSeoPro = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {advancedIdx !== null && pages[advancedIdx] && (
+        <SeoAdvancedDialog
+          open={advancedIdx !== null}
+          onOpenChange={(o) => { if (!o) setAdvancedIdx(null); }}
+          path={pages[advancedIdx].path}
+          label={pages[advancedIdx].label}
+          defaultTitle={pages[advancedIdx].defaultTitle}
+          defaultDescription={pages[advancedIdx].defaultDescription}
+          fallbackOgImage={fallbackForPath(pages[advancedIdx].path)}
+          initial={{
+            customTitle: pages[advancedIdx].customTitle,
+            customDescription: pages[advancedIdx].customDescription,
+            ogImage: pages[advancedIdx].ogImage,
+            isIndexed: pages[advancedIdx].isIndexed,
+          }}
+          onSave={(values) => handleAdvancedSave(advancedIdx, values)}
+        />
+      )}
     </>
   );
 };

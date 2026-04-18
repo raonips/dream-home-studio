@@ -2,12 +2,15 @@ import { Helmet } from 'react-helmet-async';
 import { useSeoOverride } from '@/hooks/useSeoOverride';
 
 /**
- * Global SEO component — placed once in the router.
- * If seo_overrides has data for the current pathname, it takes priority
- * over any page-level Helmet. Individual pages can still set their own
- * Helmet; react-helmet-async merges by priority (last wins for same tags).
- * Because this component renders conditionally, page-level Helmets
- * serve as the fallback automatically.
+ * Global SEO component — placed once in the router (last child).
+ *
+ * Hierarchy applied:
+ * - title / description: page Helmet → seo_overrides (last wins)
+ * - og:image: 1) seo_overrides.og_image  2) entity Helmet  3) global fallback (SiteHelmet)
+ *   Because Helmet uses "last child wins", we only emit og:image here when the
+ *   override defines it. Otherwise we let the page-level Helmet (entity image)
+ *   or the SiteHelmet (global fallback) prevail.
+ * - robots: always emitted; noindex when override.is_indexed === false.
  */
 const SeoHead = () => {
   const override = useSeoOverride();
@@ -20,6 +23,9 @@ const SeoHead = () => {
       {override?.seo_title && <meta property="og:title" content={override.seo_title} />}
       {override?.seo_description && <meta name="description" content={override.seo_description} />}
       {override?.seo_description && <meta property="og:description" content={override.seo_description} />}
+      {override?.og_image && <meta property="og:image" content={override.og_image} />}
+      {override?.og_image && <meta name="twitter:image" content={override.og_image} />}
+      {override?.og_image && <meta name="twitter:card" content="summary_large_image" />}
     </Helmet>
   );
 };
