@@ -470,9 +470,10 @@ const AdminSeoPro = () => {
                               </TableCell>
                               <TableCell>
                                 <div className="flex items-center justify-center gap-1">
-                                  <ImageIcon
-                                    className={`h-4 w-4 ${hasCustomOg ? 'text-emerald-600' : 'text-muted-foreground/40'}`}
-                                    aria-label={hasCustomOg ? 'OG image customizada' : 'Usando fallback global'}
+                                  <OgImageStatusIcon
+                                    path={entry.path}
+                                    hasCustomOg={hasCustomOg}
+                                    isStaticOnly={entry.source === 'Fixa'}
                                   />
                                   <Button
                                     size="icon" variant="ghost" className="h-8 w-8"
