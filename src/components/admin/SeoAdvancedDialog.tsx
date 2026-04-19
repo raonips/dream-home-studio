@@ -12,6 +12,7 @@ import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/
 import { useToast } from '@/hooks/use-toast';
 import { processAndUploadGuiaImage } from '@/lib/guiaImageUpload';
 import { supabase } from '@/integrations/supabase/client';
+import { useEntityOgImage } from '@/hooks/useEntityOgImage';
 
 export interface Sitelink {
   title: string;
