@@ -53,7 +53,11 @@ const SeoAdvancedDialog = ({
   const [aiLoading, setAiLoading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { if (open) setValues({ ...initial, sitelinks: initial.sitelinks || [] }); }, [open, initial]);
+  // Only re-seed local state when the dialog OPENS (or the target route changes).
+  // Avoid depending on `initial` reference — parent re-renders create new object literals,
+  // which would otherwise wipe out user edits / AI suggestions / uploaded URLs immediately.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (open) setValues({ ...initial, sitelinks: initial.sitelinks || [] }); }, [open, path]);
 
   const previewImage = values.ogImage || fallbackOgImage || '';
   const previewTitle = values.customTitle.trim() || defaultTitle || label;
