@@ -384,7 +384,7 @@ const SeoAdvancedDialog = ({
                   </div>
 
                   <div className="mt-3 text-[11px] text-muted-foreground space-y-1">
-                    <p><strong>Imagem:</strong> {values.ogImage ? 'customizada desta rota' : fallbackOgImage ? 'fallback global' : 'nenhuma — entidade poderá injetar a sua'}</p>
+                    <p><strong>Imagem:</strong> {values.ogImage ? 'customizada desta rota' : entityImage ? 'imagem da entidade (capa)' : fallbackOgImage ? 'fallback global' : 'nenhuma'}</p>
                   </div>
                 </AccordionContent>
               </AccordionItem>
