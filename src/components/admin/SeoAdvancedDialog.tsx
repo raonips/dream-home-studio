@@ -148,9 +148,11 @@ const SeoAdvancedDialog = ({
 
   const ogSource = values.ogImage
     ? { label: 'Customizada (esta rota)', color: 'bg-emerald-500' }
-    : fallbackOgImage
-      ? { label: 'Fallback global', color: 'bg-amber-500' }
-      : { label: 'Sem imagem', color: 'bg-muted-foreground' };
+    : entityImage
+      ? { label: 'Imagem da entidade', color: 'bg-sky-500' }
+      : fallbackOgImage
+        ? { label: 'Fallback global', color: 'bg-amber-500' }
+        : { label: 'Sem imagem', color: 'bg-muted-foreground' };
 
   // Build display URL like Google
   const displayUrl = `${host}${path === '/' ? '' : path}`.replace(/^https?:\/\//, '');
