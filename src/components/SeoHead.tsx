@@ -4,17 +4,28 @@ import { useSeoOverride } from '@/hooks/useSeoOverride';
 /**
  * Global SEO component — placed once in the router (last child).
  *
- * Hierarchy applied:
+ * Hierarchy:
  * - title / description: page Helmet → seo_overrides (last wins)
- * - og:image: 1) seo_overrides.og_image  2) entity Helmet  3) global fallback (SiteHelmet)
- *   Because Helmet uses "last child wins", we only emit og:image here when the
- *   override defines it. Otherwise we let the page-level Helmet (entity image)
- *   or the SiteHelmet (global fallback) prevail.
- * - robots: always emitted; noindex when override.is_indexed === false.
+ * - og:image: 1) override.og_image  2) entity Helmet  3) global SiteHelmet
+ * - robots: noindex when override.is_indexed === false
+ * - sitelinks: injected as JSON-LD SiteNavigationElement when present
  */
 const SeoHead = () => {
   const override = useSeoOverride();
   const robotsContent = override?.is_indexed === false ? 'noindex, nofollow' : 'index, follow';
+
+  const sitelinks = override?.sitelinks || [];
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  const ldJson = sitelinks.length > 0
+    ? JSON.stringify(
+        sitelinks.map((s) => ({
+          '@context': 'https://schema.org',
+          '@type': 'SiteNavigationElement',
+          name: s.title,
+          url: s.url.startsWith('http') ? s.url : `${origin}${s.url.startsWith('/') ? '' : '/'}${s.url}`,
+        })),
+      )
+    : null;
 
   return (
     <Helmet defer={false}>
@@ -26,6 +37,9 @@ const SeoHead = () => {
       {override?.og_image && <meta property="og:image" content={override.og_image} />}
       {override?.og_image && <meta name="twitter:image" content={override.og_image} />}
       {override?.og_image && <meta name="twitter:card" content="summary_large_image" />}
+      {ldJson && (
+        <script type="application/ld+json">{ldJson}</script>
+      )}
     </Helmet>
   );
 };

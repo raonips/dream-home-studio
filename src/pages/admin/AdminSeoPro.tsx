@@ -26,6 +26,7 @@ interface PageEntry {
   customDescription: string;
   ogImage: string;
   isIndexed: boolean;
+  sitelinks: { title: string; url: string }[];
   hasOverride: boolean;
   dirty: boolean;
   saving: boolean;
@@ -209,7 +210,7 @@ const AdminSeoPro = () => {
       overridesRes, propertiesRes, condominiosRes, locaisRes, postsRes, categoriasRes,
       siteSettingsRes, guiaSettingsRes,
     ] = await Promise.all([
-      supabase.from('seo_overrides').select('page_path, seo_title, seo_description, og_image, is_indexed'),
+      supabase.from('seo_overrides').select('page_path, seo_title, seo_description, og_image, is_indexed, sitelinks'),
       supabase.from('properties').select('slug, title, seo_title, seo_description, transaction_type').eq('status', 'active'),
       supabase.from('condominios').select('slug, name, seo_title, seo_description'),
       supabase.from('locais').select('slug, nome, seo_title, seo_description').eq('ativo', true),
@@ -224,8 +225,17 @@ const AdminSeoPro = () => {
       guia: (guiaSettingsRes.data as any)?.og_image_url || '',
     });
 
-    const overrides = new Map<string, { seo_title: string | null; seo_description: string | null; og_image: string | null; is_indexed: boolean }>();
-    (overridesRes.data || []).forEach((o: any) => overrides.set(o.page_path, { ...o, is_indexed: o.is_indexed ?? true, og_image: o.og_image ?? null }));
+    const overrides = new Map<string, { seo_title: string | null; seo_description: string | null; og_image: string | null; is_indexed: boolean; sitelinks: { title: string; url: string }[] }>();
+    (overridesRes.data || []).forEach((o: any) => {
+      const sl = Array.isArray(o.sitelinks)
+        ? o.sitelinks
+            .filter((s: any) => s && typeof s === 'object')
+            .map((s: any) => ({ title: String(s.title || ''), url: String(s.url || '') }))
+            .filter((s: any) => s.title.trim() && s.url.trim())
+            .slice(0, 4)
+        : [];
+      overrides.set(o.page_path, { ...o, is_indexed: o.is_indexed ?? true, og_image: o.og_image ?? null, sitelinks: sl });
+    });
 
     const entries: PageEntry[] = [];
     const addEntry = (path: string, label: string, source: string, defTitle: string, defDesc: string) => {
@@ -236,6 +246,7 @@ const AdminSeoPro = () => {
         customTitle: ov?.seo_title || '', customDescription: ov?.seo_description || '',
         ogImage: ov?.og_image || '',
         isIndexed: ov?.is_indexed ?? true,
+        sitelinks: ov?.sitelinks || [],
         hasOverride: !!ov, dirty: false, saving: false,
       });
     };
@@ -266,14 +277,19 @@ const AdminSeoPro = () => {
 
   // Save by index using the up-to-date page state (avoids stale closure when called from dialog).
   const persist = async (entry: PageEntry, index: number) => {
+    const cleanedSitelinks = (entry.sitelinks || [])
+      .map((s) => ({ title: (s.title || '').trim(), url: (s.url || '').trim() }))
+      .filter((s) => s.title && s.url)
+      .slice(0, 4);
     const payload = {
       page_path: entry.path,
       seo_title: entry.customTitle.trim() || null,
       seo_description: entry.customDescription.trim() || null,
       og_image: entry.ogImage.trim() || null,
       is_indexed: entry.isIndexed,
+      sitelinks: cleanedSitelinks,
     };
-    const hasContent = !!(payload.seo_title || payload.seo_description || payload.og_image || !payload.is_indexed);
+    const hasContent = !!(payload.seo_title || payload.seo_description || payload.og_image || !payload.is_indexed || cleanedSitelinks.length > 0);
     let error: any = null;
 
     if (entry.hasOverride && !hasContent) {
@@ -285,6 +301,7 @@ const AdminSeoPro = () => {
         seo_description: payload.seo_description,
         og_image: payload.og_image,
         is_indexed: payload.is_indexed,
+        sitelinks: cleanedSitelinks as any,
       } as any).eq('page_path', entry.path);
       error = res.error;
     } else if (hasContent) {
@@ -313,6 +330,7 @@ const AdminSeoPro = () => {
       customDescription: values.customDescription,
       ogImage: values.ogImage,
       isIndexed: values.isIndexed,
+      sitelinks: values.sitelinks || [],
       saving: true,
     };
     setPages((prev) => prev.map((p, i) => i === index ? updated : p));
@@ -508,6 +526,7 @@ const AdminSeoPro = () => {
             customDescription: pages[advancedIdx].customDescription,
             ogImage: pages[advancedIdx].ogImage,
             isIndexed: pages[advancedIdx].isIndexed,
+            sitelinks: pages[advancedIdx].sitelinks || [],
           }}
           onSave={(values) => handleAdvancedSave(advancedIdx, values)}
         />

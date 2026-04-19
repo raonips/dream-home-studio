@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Loader2, Save, Upload, X, Image as ImageIcon, Link as LinkIcon, Globe } from 'lucide-react';
+import { Loader2, Save, Upload, X, Image as ImageIcon, Link as LinkIcon, Globe, Sparkles, Plus, Trash2, Search } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,14 +8,22 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
 import { useToast } from '@/hooks/use-toast';
 import { processAndUploadGuiaImage } from '@/lib/guiaImageUpload';
+import { supabase } from '@/integrations/supabase/client';
+
+export interface Sitelink {
+  title: string;
+  url: string;
+}
 
 export interface SeoAdvancedValues {
   customTitle: string;
   customDescription: string;
   ogImage: string;
   isIndexed: boolean;
+  sitelinks: Sitelink[];
 }
 
 interface Props {
@@ -25,10 +33,12 @@ interface Props {
   label: string;
   defaultTitle: string;
   defaultDescription: string;
-  fallbackOgImage: string; // global fallback (SEO Geral / Guia)
+  fallbackOgImage: string;
   initial: SeoAdvancedValues;
   onSave: (values: SeoAdvancedValues) => Promise<void>;
 }
+
+const MAX_SITELINKS = 4;
 
 const SeoAdvancedDialog = ({
   open, onOpenChange, path, label,
@@ -40,13 +50,15 @@ const SeoAdvancedDialog = ({
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [aiLoading, setAiLoading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { if (open) setValues(initial); }, [open, initial]);
+  useEffect(() => { if (open) setValues({ ...initial, sitelinks: initial.sitelinks || [] }); }, [open, initial]);
 
   const previewImage = values.ogImage || fallbackOgImage || '';
   const previewTitle = values.customTitle.trim() || defaultTitle || label;
   const previewDesc = values.customDescription.trim() || defaultDescription || '';
+  const host = typeof window !== 'undefined' ? window.location.host : 'site.com';
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -79,10 +91,49 @@ const SeoAdvancedDialog = ({
   const handleSave = async () => {
     setSaving(true);
     try {
-      await onSave(values);
+      const cleaned = (values.sitelinks || [])
+        .map((s) => ({ title: (s.title || '').trim(), url: (s.url || '').trim() }))
+        .filter((s) => s.title && s.url)
+        .slice(0, MAX_SITELINKS);
+      await onSave({ ...values, sitelinks: cleaned });
       onOpenChange(false);
     } finally {
       setSaving(false);
+    }
+  };
+
+  // ── Sitelinks management ──
+  const addSitelink = () => {
+    setValues((v) => v.sitelinks.length >= MAX_SITELINKS ? v : ({ ...v, sitelinks: [...v.sitelinks, { title: '', url: '' }] }));
+  };
+  const updateSitelink = (i: number, field: 'title' | 'url', val: string) => {
+    setValues((v) => ({ ...v, sitelinks: v.sitelinks.map((s, idx) => idx === i ? { ...s, [field]: val } : s) }));
+  };
+  const removeSitelink = (i: number) => {
+    setValues((v) => ({ ...v, sitelinks: v.sitelinks.filter((_, idx) => idx !== i) }));
+  };
+
+  const handleAiSuggest = async () => {
+    setAiLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('suggest-sitelinks', {
+        body: {
+          path,
+          title: values.customTitle || defaultTitle,
+          description: values.customDescription || defaultDescription,
+          label,
+        },
+      });
+      if (error) throw error;
+      const parsed = typeof data === 'string' ? JSON.parse(data) : data;
+      const list: Sitelink[] = (parsed?.sitelinks || []).slice(0, MAX_SITELINKS);
+      if (!list.length) throw new Error('IA não retornou sugestões');
+      setValues((v) => ({ ...v, sitelinks: list }));
+      toast({ title: 'Sugestões geradas pela IA', description: `${list.length} sitelinks aplicados.` });
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: 'Erro ao sugerir', description: err?.message || 'Falha desconhecida' });
+    } finally {
+      setAiLoading(false);
     }
   };
 
@@ -91,6 +142,9 @@ const SeoAdvancedDialog = ({
     : fallbackOgImage
       ? { label: 'Fallback global', color: 'bg-amber-500' }
       : { label: 'Sem imagem', color: 'bg-muted-foreground' };
+
+  // Build display URL like Google
+  const displayUrl = `${host}${path === '/' ? '' : path}`.replace(/^https?:\/\//, '');
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -105,8 +159,8 @@ const SeoAdvancedDialog = ({
 
         <Tabs defaultValue="metadata" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="metadata">Metadados</TabsTrigger>
-            <TabsTrigger value="preview">Preview Social</TabsTrigger>
+            <TabsTrigger value="metadata">Metadados & Sitelinks</TabsTrigger>
+            <TabsTrigger value="preview">Previews</TabsTrigger>
           </TabsList>
 
           <TabsContent value="metadata" className="space-y-4 mt-4">
@@ -148,6 +202,62 @@ const SeoAdvancedDialog = ({
               </p>
             </div>
 
+            {/* ── Sitelinks ── */}
+            <div className="space-y-3 rounded-lg border border-border p-3">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div>
+                  <Label className="flex items-center gap-2">
+                    <LinkIcon className="h-4 w-4" />
+                    Sitelinks Sugeridos (Schema)
+                  </Label>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    Até {MAX_SITELINKS} sub-links. Injetados como JSON-LD <code className="font-mono">SiteNavigationElement</code>.
+                  </p>
+                </div>
+                <Button
+                  type="button" size="sm" variant="outline"
+                  onClick={handleAiSuggest} disabled={aiLoading}
+                  className="gap-1.5"
+                >
+                  {aiLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5 text-primary" />}
+                  Sugerir com IA
+                </Button>
+              </div>
+
+              <div className="space-y-2">
+                {values.sitelinks.length === 0 && (
+                  <p className="text-xs text-muted-foreground italic px-1">Nenhum sitelink. Adicione manualmente ou use a IA.</p>
+                )}
+                {values.sitelinks.map((s, i) => (
+                  <div key={i} className="flex gap-2 items-start">
+                    <Input
+                      value={s.title}
+                      onChange={(e) => updateSitelink(i, 'title', e.target.value)}
+                      placeholder="Título (ex: Vendas)"
+                      className="flex-1 h-8 text-sm"
+                      maxLength={40}
+                    />
+                    <Input
+                      value={s.url}
+                      onChange={(e) => updateSitelink(i, 'url', e.target.value)}
+                      placeholder="/url-relativa"
+                      className="flex-1 h-8 text-sm font-mono text-xs"
+                    />
+                    <Button type="button" size="icon" variant="ghost" className="h-8 w-8 shrink-0" onClick={() => removeSitelink(i)}>
+                      <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+
+              {values.sitelinks.length < MAX_SITELINKS && (
+                <Button type="button" size="sm" variant="ghost" onClick={addSitelink} className="gap-1.5">
+                  <Plus className="h-3.5 w-3.5" /> Adicionar sitelink ({values.sitelinks.length}/{MAX_SITELINKS})
+                </Button>
+              )}
+            </div>
+
+            {/* ── OG Image ── */}
             <div className="space-y-3 rounded-lg border border-border p-3">
               <div className="flex items-center justify-between">
                 <Label className="flex items-center gap-2">
@@ -202,35 +312,72 @@ const SeoAdvancedDialog = ({
               </div>
 
               <p className="text-[11px] text-muted-foreground leading-relaxed">
-                <strong>Hierarquia:</strong> 1º imagem desta rota → 2º imagem da entidade (capa do imóvel/local/post) → 3º fallback global (SEO Geral/Guia).
+                <strong>Hierarquia:</strong> 1º imagem desta rota → 2º imagem da entidade → 3º fallback global.
               </p>
             </div>
           </TabsContent>
 
-          <TabsContent value="preview" className="mt-4">
-            <p className="text-xs text-muted-foreground mb-3">
-              Prévia aproximada de como o link aparecerá ao ser compartilhado no WhatsApp / Facebook.
+          <TabsContent value="preview" className="mt-4 space-y-3">
+            <p className="text-xs text-muted-foreground">
+              Previews dos resultados em buscadores e redes sociais.
             </p>
 
-            <div className="max-w-md mx-auto rounded-lg overflow-hidden border border-border bg-card shadow-sm">
-              {previewImage ? (
-                <img src={previewImage} alt="OG preview" className="w-full aspect-[1200/630] object-cover bg-muted" />
-              ) : (
-                <div className="w-full aspect-[1200/630] bg-muted flex items-center justify-center text-muted-foreground">
-                  <ImageIcon className="h-10 w-10" />
-                </div>
-              )}
-              <div className="p-3 space-y-1 bg-muted/30">
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wide truncate">{(typeof window !== 'undefined' ? window.location.host : 'site.com')}{path}</p>
-                <p className="text-sm font-semibold leading-tight line-clamp-2">{previewTitle}</p>
-                {previewDesc && <p className="text-xs text-muted-foreground leading-snug line-clamp-2">{previewDesc}</p>}
-              </div>
-            </div>
+            <Accordion type="single" collapsible defaultValue="google" className="w-full">
+              {/* ── Google Preview ── */}
+              <AccordionItem value="google">
+                <AccordionTrigger className="text-sm">
+                  <span className="flex items-center gap-2"><Search className="h-4 w-4 text-blue-600" /> Preview do Google {values.sitelinks.length > 0 && <span className="text-[10px] bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded">com {values.sitelinks.length} sitelinks</span>}</span>
+                </AccordionTrigger>
+                <AccordionContent>
+                  <div className="max-w-2xl rounded-lg border border-border bg-background p-4 space-y-1 font-sans">
+                    <p className="text-[12px] text-muted-foreground truncate">{displayUrl}</p>
+                    <p className="text-[20px] leading-tight text-blue-700 dark:text-blue-400 hover:underline cursor-pointer line-clamp-1">
+                      {previewTitle}
+                    </p>
+                    {previewDesc && (
+                      <p className="text-[13px] text-foreground/80 leading-snug line-clamp-2">{previewDesc}</p>
+                    )}
+                    {values.sitelinks.length > 0 && (
+                      <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 mt-3 pt-2">
+                        {values.sitelinks.map((s, i) => (
+                          <div key={i} className="space-y-0.5 min-w-0">
+                            <p className="text-[14px] text-blue-700 dark:text-blue-400 hover:underline cursor-pointer truncate">{s.title || '—'}</p>
+                            <p className="text-[11px] text-muted-foreground truncate">{host}{s.url}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
 
-            <div className="mt-4 text-[11px] text-muted-foreground space-y-1">
-              <p><strong>Imagem usada:</strong> {values.ogImage ? 'customizada desta rota' : fallbackOgImage ? 'fallback global' : 'nenhuma — entidade poderá injetar a sua'}</p>
-              <p className="text-muted-foreground/70">A imagem real exibida ao usuário pode ser substituída pela imagem de destaque da entidade (imóvel/post/local) caso esta rota não tenha customização.</p>
-            </div>
+              {/* ── Social Preview ── */}
+              <AccordionItem value="social">
+                <AccordionTrigger className="text-sm">
+                  <span className="flex items-center gap-2"><ImageIcon className="h-4 w-4 text-emerald-600" /> Preview Social (WhatsApp / Facebook)</span>
+                </AccordionTrigger>
+                <AccordionContent>
+                  <div className="max-w-md rounded-lg overflow-hidden border border-border bg-card shadow-sm">
+                    {previewImage ? (
+                      <img src={previewImage} alt="OG preview" className="w-full aspect-[1200/630] object-cover bg-muted" />
+                    ) : (
+                      <div className="w-full aspect-[1200/630] bg-muted flex items-center justify-center text-muted-foreground">
+                        <ImageIcon className="h-10 w-10" />
+                      </div>
+                    )}
+                    <div className="p-3 space-y-1 bg-muted/30">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide truncate">{displayUrl}</p>
+                      <p className="text-sm font-semibold leading-tight line-clamp-2">{previewTitle}</p>
+                      {previewDesc && <p className="text-xs text-muted-foreground leading-snug line-clamp-2">{previewDesc}</p>}
+                    </div>
+                  </div>
+
+                  <div className="mt-3 text-[11px] text-muted-foreground space-y-1">
+                    <p><strong>Imagem:</strong> {values.ogImage ? 'customizada desta rota' : fallbackOgImage ? 'fallback global' : 'nenhuma — entidade poderá injetar a sua'}</p>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
           </TabsContent>
         </Tabs>
 

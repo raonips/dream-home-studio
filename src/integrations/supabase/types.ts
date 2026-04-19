@@ -709,6 +709,7 @@ export type Database = {
           page_path: string
           seo_description: string | null
           seo_title: string | null
+          sitelinks: Json
           updated_at: string
         }
         Insert: {
@@ -719,6 +720,7 @@ export type Database = {
           page_path: string
           seo_description?: string | null
           seo_title?: string | null
+          sitelinks?: Json
           updated_at?: string
         }
         Update: {
@@ -729,6 +731,7 @@ export type Database = {
           page_path?: string
           seo_description?: string | null
           seo_title?: string | null
+          sitelinks?: Json
           updated_at?: string
         }
         Relationships: []
