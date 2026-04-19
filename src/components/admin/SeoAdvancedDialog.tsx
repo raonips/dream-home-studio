@@ -60,7 +60,11 @@ const SeoAdvancedDialog = ({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (open) setValues({ ...initial, sitelinks: initial.sitelinks || [] }); }, [open, path]);
 
-  const previewImage = values.ogImage || fallbackOgImage || '';
+  // Level-2 fallback: cover image of the dynamic entity (property/local/post/etc.)
+  const entityImage = useEntityOgImage(path);
+
+  // Hierarchy: 1 override → 2 entity image → 3 global fallback
+  const previewImage = values.ogImage || entityImage || fallbackOgImage || '';
   const previewTitle = values.customTitle.trim() || defaultTitle || label;
   const previewDesc = values.customDescription.trim() || defaultDescription || '';
   const host = typeof window !== 'undefined' ? window.location.host : 'site.com';
