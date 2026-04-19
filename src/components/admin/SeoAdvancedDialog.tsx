@@ -12,6 +12,7 @@ import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/
 import { useToast } from '@/hooks/use-toast';
 import { processAndUploadGuiaImage } from '@/lib/guiaImageUpload';
 import { supabase } from '@/integrations/supabase/client';
+import { useEntityOgImage } from '@/hooks/useEntityOgImage';
 
 export interface Sitelink {
   title: string;
@@ -53,9 +54,17 @@ const SeoAdvancedDialog = ({
   const [aiLoading, setAiLoading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { if (open) setValues({ ...initial, sitelinks: initial.sitelinks || [] }); }, [open, initial]);
+  // Only re-seed local state when the dialog OPENS (or the target route changes).
+  // Avoid depending on `initial` reference — parent re-renders create new object literals,
+  // which would otherwise wipe out user edits / AI suggestions / uploaded URLs immediately.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (open) setValues({ ...initial, sitelinks: initial.sitelinks || [] }); }, [open, path]);
 
-  const previewImage = values.ogImage || fallbackOgImage || '';
+  // Level-2 fallback: cover image of the dynamic entity (property/local/post/etc.)
+  const entityImage = useEntityOgImage(path);
+
+  // Hierarchy: 1 override → 2 entity image → 3 global fallback
+  const previewImage = values.ogImage || entityImage || fallbackOgImage || '';
   const previewTitle = values.customTitle.trim() || defaultTitle || label;
   const previewDesc = values.customDescription.trim() || defaultDescription || '';
   const host = typeof window !== 'undefined' ? window.location.host : 'site.com';
@@ -139,9 +148,11 @@ const SeoAdvancedDialog = ({
 
   const ogSource = values.ogImage
     ? { label: 'Customizada (esta rota)', color: 'bg-emerald-500' }
-    : fallbackOgImage
-      ? { label: 'Fallback global', color: 'bg-amber-500' }
-      : { label: 'Sem imagem', color: 'bg-muted-foreground' };
+    : entityImage
+      ? { label: 'Imagem da entidade', color: 'bg-sky-500' }
+      : fallbackOgImage
+        ? { label: 'Fallback global', color: 'bg-amber-500' }
+        : { label: 'Sem imagem', color: 'bg-muted-foreground' };
 
   // Build display URL like Google
   const displayUrl = `${host}${path === '/' ? '' : path}`.replace(/^https?:\/\//, '');
@@ -373,7 +384,7 @@ const SeoAdvancedDialog = ({
                   </div>
 
                   <div className="mt-3 text-[11px] text-muted-foreground space-y-1">
-                    <p><strong>Imagem:</strong> {values.ogImage ? 'customizada desta rota' : fallbackOgImage ? 'fallback global' : 'nenhuma — entidade poderá injetar a sua'}</p>
+                    <p><strong>Imagem:</strong> {values.ogImage ? 'customizada desta rota' : entityImage ? 'imagem da entidade (capa)' : fallbackOgImage ? 'fallback global' : 'nenhuma'}</p>
                   </div>
                 </AccordionContent>
               </AccordionItem>
