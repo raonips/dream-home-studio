@@ -136,7 +136,11 @@ const OgImageStatusIcon = ({ path, hasCustomOg, isStaticOnly }: Props) => {
     label = 'Imagem da entidade (hierarquia 2)';
   }
 
-  return <ImageIcon className={`h-4 w-4 ${color}`} aria-label={label} title={label} />;
+  return (
+    <span title={label} aria-label={label} className="inline-flex">
+      <ImageIcon className={`h-4 w-4 ${color}`} />
+    </span>
+  );
 };
 
 export default OgImageStatusIcon;
