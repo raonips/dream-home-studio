@@ -43,6 +43,9 @@
     --nature-light: 155 45% 95%;
     --sand: 38 35% 95%;
     --warm-gray: 210 10% 97%;
+    --ocean-deep: 215 70% 22%;
+    --coral: 12 85% 60%;
+    --foam: 195 60% 92%;
 
     --shadow-card: 0 4px 24px -4px hsl(215 50% 15% / 0.08);
     --shadow-card-hover: 0 12px 40px -8px hsl(195 85% 42% / 0.15);
@@ -132,6 +135,29 @@
   }
   .bg-warm-gray {
     background-color: hsl(var(--warm-gray));
+  }
+  .text-ocean-deep {
+    color: hsl(var(--ocean-deep));
+  }
+  .bg-ocean-deep {
+    background-color: hsl(var(--ocean-deep));
+  }
+  .from-ocean-deep {
+    --tw-gradient-from: hsl(var(--ocean-deep)) var(--tw-gradient-from-position);
+    --tw-gradient-to: hsl(var(--ocean-deep) / 0) var(--tw-gradient-to-position);
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+  }
+  .to-ocean {
+    --tw-gradient-to: hsl(var(--ocean)) var(--tw-gradient-to-position);
+  }
+  .text-coral {
+    color: hsl(var(--coral));
+  }
+  .bg-coral {
+    background-color: hsl(var(--coral));
+  }
+  .fill-ocean-deep {
+    fill: hsl(var(--ocean-deep));
   }
   .shadow-card {
     box-shadow: var(--shadow-card);
@@ -263,4 +289,12 @@
 .animate-pulse-whatsapp {
   animation: pulse-whatsapp 2s ease-in-out infinite;
   will-change: transform, opacity;
+}
+
+@keyframes tide-rise {
+  0% { opacity: 0; transform: translateY(12px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.animate-tide-rise {
+  animation: tide-rise 0.6s ease-out both;
 }

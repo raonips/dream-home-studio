@@ -59,6 +59,7 @@ const AdminPlacas = lazy(() => import("./pages/admin/AdminPlacas"));
 const AdminSeoPro = lazy(() => import("./pages/admin/AdminSeoPro"));
 const MapaGeral = lazy(() => import("./pages/MapaGeral"));
 const QrRedirect = lazy(() => import("./pages/QrRedirect"));
+const TabuaDeMares = lazy(() => import("./pages/TabuaDeMares"));
 
 // Lazy-loaded layout pieces below the fold
 const SiteFooter = lazy(() => import("@/components/SiteFooter"));
@@ -144,6 +145,7 @@ const App = () => (
                         <Route path="/guia/categoria/:slug" element={<GuiaCategoriaPage />} />
                         <Route path="/busca" element={<BuscaPage />} />
                         <Route path="/mapa" element={<MapaGeral />} />
+                        <Route path="/tabua-de-mares" element={<TabuaDeMares />} />
 
                         {/* Imóveis — moved under /imoveis */}
                         <Route path="/imoveis" element={<Index />} />
