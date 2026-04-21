@@ -39,11 +39,29 @@ interface Local {
   endereco: string | null;
 }
 
+// Mapeia o slug da categoria do Guia → categorias reais usadas na tabela `locais`
 const CATEGORIA_MAPPING: Record<string, string[]> = {
   gastronomia: ["restaurante", "padaria"],
   hospedagem: ["hospedagem"],
+  pousada: ["hospedagem"],
+  pousadas: ["hospedagem"],
   utilidades: ["utilidade", "gas", "limpeza", "farmacia", "saude", "mercado"],
   condominios: ["condominio"],
+  mercados: ["mercado"],
+  padarias: ["padaria"],
+  restaurantes: ["restaurante"],
+  farmacias: ["farmacia"],
+  saude: ["saude"],
+  gas: ["gas"],
+  limpeza: ["limpeza"],
+  "produtos-para-piscina": ["limpeza", "utilidade"],
+};
+
+// Heurística genérica: se o slug termina em "s", tenta o singular também.
+const resolveLocalCategorias = (slug: string): string[] => {
+  if (CATEGORIA_MAPPING[slug]) return CATEGORIA_MAPPING[slug];
+  if (slug.endsWith("s")) return [slug, slug.slice(0, -1)];
+  return [slug];
 };
 
 const LOCAL_MARKER_REGEX = /\[LOCAL_CARD:\s*([a-f0-9-]{36})\]/gi;
@@ -67,7 +85,7 @@ const GuiaCategoriaPage = () => {
       if (cat) {
         setCategoria(cat);
 
-        const dbCategorias = CATEGORIA_MAPPING[slug] || [slug];
+        const dbCategorias = resolveLocalCategorias(slug);
         let locaisQuery = supabase
           .from("locais")
           .select("id,nome,slug,categoria,imagem_destaque,imagem_destaque_mobile,endereco")
