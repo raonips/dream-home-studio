@@ -1,11 +1,12 @@
 import { useParams, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, ArrowRight } from "lucide-react";
+import { Loader2, ArrowRight, MapPin } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import SafeImage from "@/components/SafeImage";
+import { Badge } from "@/components/ui/badge";
 import ResponsiveImage from "@/components/ResponsiveImage";
+import PostContentRenderer from "@/components/PostContentRenderer";
 import {
   Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList,
   BreadcrumbPage, BreadcrumbSeparator
@@ -28,10 +29,30 @@ interface GuiaCategoria {
   descricao: string | null;
 }
 
+interface Local {
+  id: string;
+  nome: string;
+  slug: string;
+  categoria: string;
+  imagem_destaque: string | null;
+  imagem_destaque_mobile: string | null;
+  endereco: string | null;
+}
+
+const CATEGORIA_MAPPING: Record<string, string[]> = {
+  gastronomia: ["restaurante", "padaria"],
+  hospedagem: ["hospedagem"],
+  utilidades: ["utilidade", "gas", "limpeza", "farmacia", "saude", "mercado"],
+  condominios: ["condominio"],
+};
+
+const LOCAL_MARKER_REGEX = /\[LOCAL_CARD:\s*([a-f0-9-]{36})\]/gi;
+
 const GuiaCategoriaPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const [categoria, setCategoria] = useState<GuiaCategoria | null>(null);
   const [posts, setPosts] = useState<GuiaPost[]>([]);
+  const [locais, setLocais] = useState<Local[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -45,18 +66,49 @@ const GuiaCategoriaPage = () => {
 
       if (cat) {
         setCategoria(cat);
-        const { data: p } = await supabase
-          .from("guia_posts")
-          .select("id, titulo, slug, resumo, imagem_destaque, imagem_destaque_mobile, published_at")
-          .eq("categoria_id", cat.id)
-          .eq("status", "publicado")
-          .order("published_at", { ascending: false });
-        setPosts(p ?? []);
+
+        const dbCategorias = CATEGORIA_MAPPING[slug] || [slug];
+        let locaisQuery = supabase
+          .from("locais")
+          .select("id,nome,slug,categoria,imagem_destaque,imagem_destaque_mobile,endereco")
+          .eq("ativo", true)
+          .order("ordem")
+          .order("nome");
+        if (dbCategorias.length === 1) locaisQuery = locaisQuery.eq("categoria", dbCategorias[0]);
+        else locaisQuery = locaisQuery.in("categoria", dbCategorias);
+
+        const [postsRes, locaisRes] = await Promise.all([
+          supabase
+            .from("guia_posts")
+            .select("id, titulo, slug, resumo, imagem_destaque, imagem_destaque_mobile, published_at")
+            .eq("categoria_id", cat.id)
+            .eq("status", "publicado")
+            .order("published_at", { ascending: false }),
+          locaisQuery,
+        ]);
+
+        setPosts(postsRes.data ?? []);
+        setLocais((locaisRes.data as Local[]) ?? []);
       }
       setLoading(false);
     };
     fetch();
   }, [slug]);
+
+  // IDs de locais já mencionados manualmente no rich text — para não duplicar abaixo.
+  const featuredIds = useMemo(() => {
+    const ids = new Set<string>();
+    if (categoria?.descricao) {
+      const matches = categoria.descricao.matchAll(LOCAL_MARKER_REGEX);
+      for (const m of matches) ids.add(m[1]);
+    }
+    return ids;
+  }, [categoria?.descricao]);
+
+  const locaisAutomaticos = useMemo(
+    () => locais.filter((l) => !featuredIds.has(l.id)),
+    [locais, featuredIds]
+  );
 
   if (loading) {
     return (
@@ -75,11 +127,18 @@ const GuiaCategoriaPage = () => {
     );
   }
 
+  const hasRichDescription = !!categoria.descricao && categoria.descricao.trim().length > 0;
+
   return (
     <>
       <Helmet>
         <title>{categoria.nome} — Guia Local Barra do Jacuípe</title>
-        {categoria.descricao && <meta name="description" content={categoria.descricao} />}
+        {categoria.descricao && (
+          <meta
+            name="description"
+            content={categoria.descricao.replace(/<[^>]+>/g, "").replace(LOCAL_MARKER_REGEX, "").slice(0, 160)}
+          />
+        )}
       </Helmet>
 
       <div className="pt-24 pb-16">
@@ -96,45 +155,89 @@ const GuiaCategoriaPage = () => {
             </BreadcrumbList>
           </Breadcrumb>
 
-          <h1 className="text-3xl font-bold mb-2">{categoria.nome}</h1>
-          {categoria.descricao && (
-            <p className="text-muted-foreground mb-8">{categoria.descricao}</p>
+          <h1 className="text-3xl font-bold mb-4">{categoria.nome}</h1>
+
+          {hasRichDescription && (
+            <div className="mb-10">
+              <PostContentRenderer html={categoria.descricao} />
+            </div>
           )}
 
-          {posts.length === 0 ? (
-            <p className="text-muted-foreground py-12 text-center">
-              Nenhum artigo nesta categoria ainda.
-            </p>
-          ) : (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {posts.map((post) => (
-                <Link key={post.id} to={`/${post.slug}`} className="group">
-                  <Card className="overflow-hidden h-full hover:shadow-lg transition-shadow">
-                    {post.imagem_destaque && (
-                      <div className="aspect-video overflow-hidden">
+          {posts.length > 0 && (
+            <section className="mb-12">
+              <h2 className="text-2xl font-semibold mb-4">Artigos do Guia</h2>
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {posts.map((post) => (
+                  <Link key={post.id} to={`/${post.slug}`} className="group">
+                    <Card className="overflow-hidden h-full hover:shadow-lg transition-shadow">
+                      {post.imagem_destaque && (
+                        <div className="aspect-video overflow-hidden">
+                          <ResponsiveImage
+                            src={post.imagem_destaque}
+                            mobileSrc={post.imagem_destaque_mobile}
+                            alt={post.titulo}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        </div>
+                      )}
+                      <CardContent className="p-4">
+                        <h3 className="text-lg font-semibold group-hover:text-primary transition-colors line-clamp-2">
+                          {post.titulo}
+                        </h3>
+                        {post.resumo && (
+                          <p className="text-sm text-muted-foreground mt-2 line-clamp-3">{post.resumo}</p>
+                        )}
+                        <span className="inline-flex items-center gap-1 text-sm text-primary mt-3 font-medium">
+                          Ler mais <ArrowRight className="h-3.5 w-3.5" />
+                        </span>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {locaisAutomaticos.length > 0 && (
+            <section>
+              <div className="flex items-center gap-3 mb-6 pt-6 border-t">
+                <h2 className="text-2xl font-semibold">
+                  Todas as opções em {categoria.nome}
+                </h2>
+                <Badge variant="secondary">{locaisAutomaticos.length}</Badge>
+              </div>
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {locaisAutomaticos.map((local) => (
+                  <Link key={local.id} to={`/locais/${local.slug}`} className="group">
+                    <div className="overflow-hidden rounded-2xl bg-card border border-border/50 shadow-sm hover:shadow-[var(--shadow-card-hover)] transition-all h-full">
+                      <div className="aspect-[16/10] overflow-hidden">
                         <ResponsiveImage
-                          src={post.imagem_destaque}
-                          mobileSrc={post.imagem_destaque_mobile}
-                          alt={post.titulo}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          src={local.imagem_destaque || "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&q=80"}
+                          mobileSrc={local.imagem_destaque_mobile}
+                          alt={local.nome}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         />
                       </div>
-                    )}
-                    <CardContent className="p-4">
-                      <h2 className="text-lg font-semibold group-hover:text-primary transition-colors line-clamp-2">
-                        {post.titulo}
-                      </h2>
-                      {post.resumo && (
-                        <p className="text-sm text-muted-foreground mt-2 line-clamp-3">{post.resumo}</p>
-                      )}
-                      <span className="inline-flex items-center gap-1 text-sm text-primary mt-3 font-medium">
-                        Ler mais <ArrowRight className="h-3.5 w-3.5" />
-                      </span>
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))}
-            </div>
+                      <div className="p-5">
+                        <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2">{local.nome}</h3>
+                        {local.endereco && (
+                          <p className="flex items-center gap-1 text-sm text-muted-foreground mt-1.5">
+                            <MapPin className="h-3.5 w-3.5 shrink-0" />
+                            <span className="line-clamp-1">{local.endereco}</span>
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {posts.length === 0 && locaisAutomaticos.length === 0 && !hasRichDescription && (
+            <p className="text-muted-foreground py-12 text-center">
+              Nenhum conteúdo nesta categoria ainda.
+            </p>
           )}
         </div>
       </div>
