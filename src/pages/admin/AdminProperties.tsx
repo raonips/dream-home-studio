@@ -161,8 +161,8 @@ const AdminProperties = () => {
                         </Button>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={p.status === 'active' ? 'default' : 'secondary'}>
-                          {p.status === 'active' ? 'Ativo' : 'Inativo'}
+                        <Badge variant={p.status === 'active' ? 'default' : p.status === 'sold' || p.status === 'rented' ? 'destructive' : 'secondary'}>
+                          {p.status === 'active' ? 'Disponível' : p.status === 'sold' ? 'Vendido' : p.status === 'rented' ? 'Alugado' : 'Inativo'}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
