@@ -32,6 +32,7 @@ import BookingCalculator from "@/components/BookingCalculator";
 import SmartMap from "@/components/SmartMap";
 import { detailImage, cardImage } from "@/lib/imageTransform";
 import SafeHtmlContent from "@/components/SafeHtmlContent";
+import SimilarProperties from "@/components/SimilarProperties";
 
 interface CondominioData {
   id: string;
@@ -230,7 +231,10 @@ const ImovelDetalhe = () => {
   const shareWhatsAppUrl = `https://wa.me/?text=${encodeURIComponent(`${property.title} - Veja este imóvel: ${currentUrl}`)}`;
 
   const isTemporadaProperty = property.transaction_type === 'temporada' || property.transaction_type === 'ambos';
-  const hasVideo = !!(property.video_url && property.video_url.trim());
+  const isUnavailable = property.status === 'sold' || property.status === 'rented';
+  const unavailableLabel = property.status === 'sold' ? 'Imóvel Vendido' : 'Imóvel Alugado';
+  const galleryImageClass = isUnavailable ? 'grayscale' : '';
+  const hasVideo = !!(property.video_url && property.video_url.trim()) && !isUnavailable;
   const videoEmbedUrl = hasVideo ? getYouTubeEmbedUrl(property.video_url!.trim()) : null;
 
   const GRID_VISIBLE = 4;
@@ -406,11 +410,18 @@ const ImovelDetalhe = () => {
                         className="aspect-[4/3] rounded-xl overflow-hidden relative cursor-pointer"
                         onClick={() => openLightbox(i)}
                       >
-                        <img src={img} alt={`${property.title} - foto ${i + 1}`} className="w-full h-full object-cover" loading={i === 0 ? "eager" : "lazy"} {...(i === 0 ? { fetchPriority: "high" as const } : {})} />
+                        <img src={img} alt={`${property.title} - foto ${i + 1}`} className={`w-full h-full object-cover ${galleryImageClass}`} loading={i === 0 ? "eager" : "lazy"} {...(i === 0 ? { fetchPriority: "high" as const } : {})} />
                         {i >= propertyImages.length && condo && (
                           <Badge className="absolute top-2 left-2 bg-primary/80 text-primary-foreground text-[10px]">
                             {condo.name}
                           </Badge>
+                        )}
+                        {i === 0 && isUnavailable && (
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <div className="bg-destructive/90 text-destructive-foreground font-display text-2xl font-bold px-8 py-3 rounded-lg shadow-2xl rotate-[-8deg] border-4 border-destructive-foreground/20 uppercase tracking-wider">
+                              {unavailableLabel}
+                            </div>
+                          </div>
                         )}
                       </div>
                     </CarouselItem>
@@ -426,10 +437,17 @@ const ImovelDetalhe = () => {
           ) : (
             <div className="grid grid-cols-4 grid-rows-2 gap-3 h-[480px]">
               <div
-                className="col-span-2 row-span-2 rounded-xl overflow-hidden cursor-pointer"
+                className="col-span-2 row-span-2 rounded-xl overflow-hidden cursor-pointer relative"
                 onClick={() => openLightbox(0)}
               >
-                <img src={allImages[0]} alt={property.title} className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="eager" fetchPriority="high" />
+                <img src={allImages[0]} alt={property.title} className={`w-full h-full object-cover hover:scale-105 transition-transform duration-500 ${galleryImageClass}`} loading="eager" fetchPriority="high" />
+                {isUnavailable && (
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="bg-destructive/90 text-destructive-foreground font-display text-3xl md:text-4xl font-bold px-10 py-4 rounded-lg shadow-2xl rotate-[-8deg] border-4 border-destructive-foreground/20 uppercase tracking-wider">
+                      {unavailableLabel}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {gridImages.slice(1, 3).map((img, i) => (
@@ -438,7 +456,7 @@ const ImovelDetalhe = () => {
                   className="rounded-xl overflow-hidden relative cursor-pointer"
                   onClick={() => openLightbox(i + 1)}
                 >
-                  <img src={img} alt={`${property.title} - foto ${i + 2}`} className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy" />
+                  <img src={img} alt={`${property.title} - foto ${i + 2}`} className={`w-full h-full object-cover hover:scale-105 transition-transform duration-500 ${galleryImageClass}`} loading="lazy" />
                   {(i + 1) >= propertyImages.length && condo && (
                     <Badge className="absolute top-2 left-2 bg-primary/80 text-primary-foreground text-[10px]">
                       {condo.name}
@@ -462,7 +480,7 @@ const ImovelDetalhe = () => {
                   className="rounded-xl overflow-hidden relative cursor-pointer"
                   onClick={() => openLightbox(3)}
                 >
-                  <img src={gridImages[3]} alt={`${property.title} - foto 4`} className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" loading="lazy" />
+                  <img src={gridImages[3]} alt={`${property.title} - foto 4`} className={`w-full h-full object-cover hover:scale-105 transition-transform duration-500 ${galleryImageClass}`} loading="lazy" />
                   {3 >= propertyImages.length && condo && (
                     <Badge className="absolute top-2 left-2 bg-primary/80 text-primary-foreground text-[10px]">
                       {condo.name}
@@ -552,11 +570,20 @@ const ImovelDetalhe = () => {
             </div>
 
             {/* Mobile Lead Form */}
-            <Card className="shadow-card border-border">
-              <CardContent className="p-6">
-                {leadFormContent}
-              </CardContent>
-            </Card>
+            {!isUnavailable ? (
+              <Card className="shadow-card border-border">
+                <CardContent className="p-6">
+                  {leadFormContent}
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="shadow-card border-destructive/40 bg-destructive/5">
+                <CardContent className="p-6 text-center space-y-3">
+                  <h3 className="font-display text-xl font-bold text-destructive">{unavailableLabel}</h3>
+                  <p className="text-sm text-muted-foreground">Este imóvel não está mais disponível. Confira outras opções similares abaixo.</p>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Mobile Share Bar */}
             <div className="flex items-center justify-center gap-6 bg-muted rounded-xl p-3">
@@ -736,11 +763,20 @@ const ImovelDetalhe = () => {
             {!isMobile && (
               <div className="w-full lg:w-[380px] flex-shrink-0">
                 <div className="sticky top-24 space-y-3">
-                  <Card className="shadow-card border-border">
-                    <CardContent className="p-6">
-                      {leadFormContent}
-                    </CardContent>
-                  </Card>
+                  {!isUnavailable ? (
+                    <Card className="shadow-card border-border">
+                      <CardContent className="p-6">
+                        {leadFormContent}
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <Card className="shadow-card border-destructive/40 bg-destructive/5">
+                      <CardContent className="p-6 text-center space-y-3">
+                        <h3 className="font-display text-xl font-bold text-destructive">{unavailableLabel}</h3>
+                        <p className="text-sm text-muted-foreground">Este imóvel não está mais disponível. Confira outras opções similares abaixo.</p>
+                      </CardContent>
+                    </Card>
+                  )}
 
                   {/* Share Action Bar */}
                   <div className="flex items-center justify-center gap-4 bg-muted rounded-xl p-3">
@@ -776,6 +812,14 @@ const ImovelDetalhe = () => {
             )}
           </div>
         </div>
+
+        <SimilarProperties
+          currentId={property.id}
+          condominioSlug={property.condominio_slug}
+          location={property.location}
+          propertyType={property.property_type}
+          price={property.price}
+        />
 
         <GlobalBlocks pageSlug="imovel_detail" />
       </div>

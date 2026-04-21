@@ -323,7 +323,9 @@ const PropertyFormDialog = ({ open, onOpenChange, editing, onSuccess }: Props) =
                   <Select value={form.status} onValueChange={(v) => setForm((f) => ({ ...f, status: v }))}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="active">Ativo</SelectItem>
+                      <SelectItem value="active">Disponível</SelectItem>
+                      <SelectItem value="sold">Vendido</SelectItem>
+                      <SelectItem value="rented">Alugado</SelectItem>
                       <SelectItem value="inactive">Inativo</SelectItem>
                     </SelectContent>
                   </Select>
