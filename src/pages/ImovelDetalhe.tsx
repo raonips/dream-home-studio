@@ -32,6 +32,7 @@ import BookingCalculator from "@/components/BookingCalculator";
 import SmartMap from "@/components/SmartMap";
 import { detailImage, cardImage } from "@/lib/imageTransform";
 import SafeHtmlContent from "@/components/SafeHtmlContent";
+import SimilarProperties from "@/components/SimilarProperties";
 
 interface CondominioData {
   id: string;
@@ -230,7 +231,10 @@ const ImovelDetalhe = () => {
   const shareWhatsAppUrl = `https://wa.me/?text=${encodeURIComponent(`${property.title} - Veja este imóvel: ${currentUrl}`)}`;
 
   const isTemporadaProperty = property.transaction_type === 'temporada' || property.transaction_type === 'ambos';
-  const hasVideo = !!(property.video_url && property.video_url.trim());
+  const isUnavailable = property.status === 'sold' || property.status === 'rented';
+  const unavailableLabel = property.status === 'sold' ? 'Imóvel Vendido' : 'Imóvel Alugado';
+  const galleryImageClass = isUnavailable ? 'grayscale' : '';
+  const hasVideo = !!(property.video_url && property.video_url.trim()) && !isUnavailable;
   const videoEmbedUrl = hasVideo ? getYouTubeEmbedUrl(property.video_url!.trim()) : null;
 
   const GRID_VISIBLE = 4;
