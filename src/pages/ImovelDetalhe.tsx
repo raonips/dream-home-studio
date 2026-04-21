@@ -570,11 +570,20 @@ const ImovelDetalhe = () => {
             </div>
 
             {/* Mobile Lead Form */}
-            <Card className="shadow-card border-border">
-              <CardContent className="p-6">
-                {leadFormContent}
-              </CardContent>
-            </Card>
+            {!isUnavailable ? (
+              <Card className="shadow-card border-border">
+                <CardContent className="p-6">
+                  {leadFormContent}
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="shadow-card border-destructive/40 bg-destructive/5">
+                <CardContent className="p-6 text-center space-y-3">
+                  <h3 className="font-display text-xl font-bold text-destructive">{unavailableLabel}</h3>
+                  <p className="text-sm text-muted-foreground">Este imóvel não está mais disponível. Confira outras opções similares abaixo.</p>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Mobile Share Bar */}
             <div className="flex items-center justify-center gap-6 bg-muted rounded-xl p-3">
@@ -754,11 +763,20 @@ const ImovelDetalhe = () => {
             {!isMobile && (
               <div className="w-full lg:w-[380px] flex-shrink-0">
                 <div className="sticky top-24 space-y-3">
-                  <Card className="shadow-card border-border">
-                    <CardContent className="p-6">
-                      {leadFormContent}
-                    </CardContent>
-                  </Card>
+                  {!isUnavailable ? (
+                    <Card className="shadow-card border-border">
+                      <CardContent className="p-6">
+                        {leadFormContent}
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <Card className="shadow-card border-destructive/40 bg-destructive/5">
+                      <CardContent className="p-6 text-center space-y-3">
+                        <h3 className="font-display text-xl font-bold text-destructive">{unavailableLabel}</h3>
+                        <p className="text-sm text-muted-foreground">Este imóvel não está mais disponível. Confira outras opções similares abaixo.</p>
+                      </CardContent>
+                    </Card>
+                  )}
 
                   {/* Share Action Bar */}
                   <div className="flex items-center justify-center gap-4 bg-muted rounded-xl p-3">
@@ -794,6 +812,14 @@ const ImovelDetalhe = () => {
             )}
           </div>
         </div>
+
+        <SimilarProperties
+          currentId={property.id}
+          condominioSlug={property.condominio_slug}
+          location={property.location}
+          propertyType={property.property_type}
+          price={property.price}
+        />
 
         <GlobalBlocks pageSlug="imovel_detail" />
       </div>
