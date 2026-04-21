@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { removeStorageFiles } from "@/lib/storageCleanup";
 import GuiaFeaturedImageUpload from "@/components/admin/GuiaFeaturedImageUpload";
+import RichTextEditorWithLocais from "@/components/admin/RichTextEditorWithLocais";
 
 interface GuiaCategoria {
   id: string;
@@ -141,7 +142,14 @@ const AdminGuiaCategorias = () => {
           <div className="space-y-4">
             <div><Label>Nome</Label><Input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value, slug: slugify(e.target.value) })} /></div>
             <div><Label>Slug</Label><Input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} /></div>
-            <div><Label>Descrição</Label><Input value={form.descricao} onChange={(e) => setForm({ ...form, descricao: e.target.value })} /></div>
+            <div>
+              <Label>Descrição (editor rico — pode inserir cards de locais)</Label>
+              <RichTextEditorWithLocais
+                value={form.descricao}
+                onChange={(v) => setForm({ ...form, descricao: v })}
+                placeholder="Escreva uma introdução editorial e insira cards de locais em destaque..."
+              />
+            </div>
             <GuiaFeaturedImageUpload
               label="Imagem da Categoria"
               value={form.imagem}
