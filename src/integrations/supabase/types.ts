@@ -877,6 +877,33 @@ export type Database = {
         }
         Relationships: []
       }
+      url_redirects: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          new_path: string
+          old_path: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          new_path: string
+          old_path: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          new_path?: string
+          old_path?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
