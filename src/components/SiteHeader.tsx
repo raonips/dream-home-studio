@@ -33,7 +33,7 @@ const guiaNavItems: NavItem[] = [
   { label: "Condomínios", href: "/locais/condominios" },
   { label: "Tábua de Marés", href: "/tabua-de-mares" },
   { label: "Imóveis", href: "/imoveis" },
-  { label: "Blog", href: "/guia" },
+  // { label: "Blog", href: "/guia" }, // temporariamente oculto
 ];
 
 const imoveisNavItems: NavItem[] = [
