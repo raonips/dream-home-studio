@@ -30,7 +30,7 @@ const SiteFooter = () => {
           {isGuia ? (
             <>
               <div>
-                <h2 className="font-display text-base font-semibold mb-4">Explore o Guia</h2>
+                <h2 className="font-display text-base font-semibold mb-4 !text-primary-foreground">Explore o Guia</h2>
                 <ul className="space-y-2 text-sm text-primary-foreground/70">
                   <li><Link to="/guia/categoria/praias" className="hover:text-primary transition-colors">Praias</Link></li>
                   <li><Link to="/guia/categoria/pousadas" className="hover:text-primary transition-colors">Pousadas</Link></li>
@@ -40,7 +40,7 @@ const SiteFooter = () => {
               </div>
 
               <div>
-                <h2 className="font-display text-base font-semibold mb-4">Utilidades & Dicas</h2>
+                <h2 className="font-display text-base font-semibold mb-4 !text-primary-foreground">Utilidades & Dicas</h2>
                 <ul className="space-y-2 text-sm text-primary-foreground/70">
                   <li><Link to="/tabua-de-mares" className="hover:text-primary transition-colors">Tábua de Marés</Link></li>
                   <li><Link to="/guia" className="hover:text-primary transition-colors">Dicas e Novidades</Link></li>
@@ -52,7 +52,7 @@ const SiteFooter = () => {
           ) : (
             <>
               <div>
-                <h2 className="font-display text-base font-semibold mb-4">Principais Buscas</h2>
+                <h2 className="font-display text-base font-semibold mb-4 !text-primary-foreground">Principais Buscas</h2>
                 <ul className="space-y-2 text-sm text-primary-foreground/70">
                   <li><Link to="/vendas?minPrice=800000" className="hover:text-primary transition-colors">Imóveis de Alto Padrão</Link></li>
                   <li><Link to="/condominios" className="hover:text-primary transition-colors">Condomínio em Barra do Jacuípe</Link></li>
@@ -62,7 +62,7 @@ const SiteFooter = () => {
               </div>
 
               <div>
-                <h2 className="font-display text-base font-semibold mb-4">Condomínios em Destaque</h2>
+                <h2 className="font-display text-base font-semibold mb-4 !text-primary-foreground">Condomínios em Destaque</h2>
                 <ul className="space-y-2 text-sm text-primary-foreground/70">
                   <li><Link to="/condominio/condominio-canto-do-sol" className="hover:text-primary transition-colors">Condomínio Canto do Sol</Link></li>
                   <li><Link to="/condominio/condominio-parque-do-jacuipe" className="hover:text-primary transition-colors">Condomínio Parque do Jacuípe</Link></li>
@@ -74,7 +74,7 @@ const SiteFooter = () => {
           )}
 
           <div>
-            <h2 className="font-display text-base font-semibold mb-4">Contato</h2>
+            <h2 className="font-display text-base font-semibold mb-4 !text-primary-foreground">Contato</h2>
             <ul className="space-y-3 text-sm text-primary-foreground/70">
               <li className="flex items-center gap-2">
                 <Phone className="h-4 w-4 text-primary" />
