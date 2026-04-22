@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Loader2, Save, Search, CheckCircle2, AlertCircle, FileSearch, ExternalLink, Copy, RefreshCw, Home, MapPinned, Newspaper, Building2, FolderOpen, FileText, SearchCheck, Eye, EyeOff, Settings2 } from 'lucide-react';
+import { Loader2, Save, Search, CheckCircle2, AlertCircle, FileSearch, ExternalLink, Copy, RefreshCw, Home, MapPinned, Newspaper, Building2, FolderOpen, FileText, SearchCheck, Eye, EyeOff, Settings2, ArrowRightLeft } from 'lucide-react';
+import RedirectsManager from '@/components/admin/RedirectsManager';
 import { Switch } from '@/components/ui/switch';
 import SeoAdvancedDialog, { type SeoAdvancedValues } from '@/components/admin/SeoAdvancedDialog';
 import OgImageStatusIcon from '@/components/admin/OgImageStatusIcon';
@@ -377,6 +378,10 @@ const AdminSeoPro = () => {
               <FileText className="h-4 w-4" />
               Sitemap e Indexação
             </TabsTrigger>
+            <TabsTrigger value="redirects" className="gap-1.5">
+              <ArrowRightLeft className="h-4 w-4" />
+              Redirecionamentos
+            </TabsTrigger>
           </TabsList>
 
           {/* ── Aba Metadados ── */}
@@ -509,6 +514,13 @@ const AdminSeoPro = () => {
           <TabsContent value="sitemap">
             <div className="mt-4">
               <SitemapTab />
+            </div>
+          </TabsContent>
+
+          {/* ── Aba Redirecionamentos ── */}
+          <TabsContent value="redirects">
+            <div className="mt-4">
+              <RedirectsManager />
             </div>
           </TabsContent>
         </Tabs>
