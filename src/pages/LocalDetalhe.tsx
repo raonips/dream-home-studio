@@ -14,6 +14,7 @@ import SmartMap from "@/components/SmartMap";
 import Lightbox from "@/components/Lightbox";
 import ctaBgImage from "@/assets/cta-condominio-bg.jpg";
 import SafeHtmlContent from "@/components/SafeHtmlContent";
+import NotFound from "@/pages/NotFound";
 import {
   Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList,
   BreadcrumbPage, BreadcrumbSeparator
@@ -191,12 +192,7 @@ const LocalDetalhe = () => {
   }
 
   if (!local) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
-        <h1 className="font-display text-3xl font-bold text-foreground">Local não encontrado</h1>
-        <Link to="/" className="text-primary hover:underline">Voltar ao início</Link>
-      </div>
-    );
+    return <NotFound />;
   }
 
   const galleryImages = local.imagens?.filter(Boolean) || [];

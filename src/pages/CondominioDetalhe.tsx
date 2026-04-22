@@ -11,6 +11,7 @@ import SmartMap from "@/components/SmartMap";
 import { heroImage as optimizeHero, cardImage } from "@/lib/imageTransform";
 import { RenderIcon } from "@/components/admin/IconPicker";
 import SafeHtmlContent from "@/components/SafeHtmlContent";
+import NotFound from "@/pages/NotFound";
 import {
   Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList,
   BreadcrumbPage, BreadcrumbSeparator
@@ -129,12 +130,7 @@ const CondominioDetalhe = () => {
   }
 
   if (!condo) {
-    return (
-      <div className="pt-24 pb-16 text-center min-h-screen bg-background">
-        <h1 className="font-display text-3xl font-bold text-foreground mb-4">Condomínio não encontrado</h1>
-        <Link to="/condominios" className="text-primary hover:underline">← Voltar para Condomínios</Link>
-      </div>
-    );
+    return <NotFound />;
   }
 
   const isCasasSoltas = condo.slug.includes('casas-soltas');

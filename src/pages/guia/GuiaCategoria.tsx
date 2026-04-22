@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import ResponsiveImage from "@/components/ResponsiveImage";
 import PostContentRenderer from "@/components/PostContentRenderer";
+import NotFound from "@/pages/NotFound";
 import {
   Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList,
   BreadcrumbPage, BreadcrumbSeparator
@@ -137,12 +138,7 @@ const GuiaCategoriaPage = () => {
   }
 
   if (!categoria) {
-    return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
-        <h1 className="text-2xl font-bold">Categoria não encontrada</h1>
-        <Link to="/" className="text-primary hover:underline">Voltar ao Guia</Link>
-      </div>
-    );
+    return <NotFound />;
   }
 
   const hasRichDescription = !!categoria.descricao && categoria.descricao.trim().length > 0;

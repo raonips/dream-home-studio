@@ -28,6 +28,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { PropertyData } from "@/components/PropertyCard";
 import GlobalBlocks from "@/components/GlobalBlocks";
 import Lightbox from "@/components/Lightbox";
+import NotFound from "@/pages/NotFound";
 import BookingCalculator from "@/components/BookingCalculator";
 import SmartMap from "@/components/SmartMap";
 import { detailImage, cardImage } from "@/lib/imageTransform";
@@ -207,15 +208,7 @@ const ImovelDetalhe = () => {
   }
 
   if (!property) {
-    return (
-      <div className="container pt-32 pb-20 text-center">
-        <h1 className="font-display text-3xl font-bold text-foreground mb-4">Imóvel não encontrado</h1>
-        <p className="text-muted-foreground mb-6">O imóvel que você procura não está disponível.</p>
-        <Link to="/imoveis">
-          <Button>Ver todos os imóveis</Button>
-        </Link>
-      </div>
-    );
+    return <NotFound />;
   }
 
   const currentUrl = typeof window !== 'undefined' ? window.location.href : '';
