@@ -11,6 +11,7 @@ import {
 import SafeImage from "@/components/SafeImage";
 import ResponsiveImage from "@/components/ResponsiveImage";
 import PostContentRenderer from "@/components/PostContentRenderer";
+import NotFound from "@/pages/NotFound";
 
 interface GuiaPost {
   id: string;
@@ -76,14 +77,7 @@ const GuiaPostDetalhe = () => {
   }
 
   if (!post) {
-    return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
-        <h1 className="text-2xl font-bold">Artigo não encontrado</h1>
-        <Link to="/" className="text-primary hover:underline flex items-center gap-1">
-          <ArrowLeft className="h-4 w-4" /> Voltar ao Guia
-        </Link>
-      </div>
-    );
+    return <NotFound />;
   }
 
   const pageTitle = post.seo_title || post.titulo;
