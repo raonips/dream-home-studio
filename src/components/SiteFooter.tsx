@@ -8,7 +8,7 @@ const SiteFooter = () => {
   const phone = whatsapp_number || '5571991089039';
   const phoneFormatted = phone.replace(/^55(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3');
   const location = useLocation();
-  const isGuia = location.pathname === '/guia' || location.pathname.startsWith('/guia/');
+  const isGuia = location.pathname === '/' || location.pathname === '/guia' || location.pathname.startsWith('/guia/');
 
   const description = isGuia
     ? 'Seu guia completo de turismo, gastronomia e serviços em Barra do Jacuípe e Litoral Norte da Bahia.'
