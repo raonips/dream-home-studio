@@ -196,6 +196,7 @@ const App = () => (
                 }
               />
             </Routes>
+            </RedirectHandler>
             <SeoHead />
           </BrowserRouter>
           </SiteSettingsProvider>
