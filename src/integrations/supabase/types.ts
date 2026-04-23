@@ -187,6 +187,7 @@ export type Database = {
           id: string
           imagem: string | null
           imagem_mobile: string | null
+          is_featured: boolean
           nome: string
           ordem: number | null
           slug: string
@@ -199,6 +200,7 @@ export type Database = {
           id?: string
           imagem?: string | null
           imagem_mobile?: string | null
+          is_featured?: boolean
           nome: string
           ordem?: number | null
           slug: string
@@ -211,6 +213,7 @@ export type Database = {
           id?: string
           imagem?: string | null
           imagem_mobile?: string | null
+          is_featured?: boolean
           nome?: string
           ordem?: number | null
           slug?: string

@@ -1,0 +1,2 @@
+ALTER TABLE public.guia_categorias ADD COLUMN IF NOT EXISTS is_featured boolean NOT NULL DEFAULT false;
+CREATE INDEX IF NOT EXISTS idx_guia_categorias_featured ON public.guia_categorias(is_featured, ordem) WHERE is_featured = true;
