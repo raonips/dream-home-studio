@@ -84,7 +84,10 @@ const GuiaHome = () => {
           .order("ordem", { ascending: true }),
       ]);
       setPosts(postsRes.data ?? []);
-      setCategorias(catRes.data ?? []);
+      const allCats = catRes.data ?? [];
+      // Prioriza categorias marcadas como destaque; fallback: 6 primeiras por ordem
+      const featured = allCats.filter((c: any) => c.is_featured === true);
+      setCategorias((featured.length > 0 ? featured : allCats).slice(0, 6));
       setLoading(false);
     };
     fetchData();
