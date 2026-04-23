@@ -1,6 +1,6 @@
 import { Helmet } from "react-helmet-async";
 import { Waves, Info, Calendar, MapPin } from "lucide-react";
-import { TodayTideCard } from "@/components/tides/TodayTideCard";
+import { RealTideWidget } from "@/components/tides/RealTideWidget";
 
 const TabuaDeMares = () => {
   return (
@@ -46,7 +46,7 @@ const TabuaDeMares = () => {
       {/* Conteúdo principal */}
       <section className="bg-warm-gray py-10 md:py-16">
         <div className="container">
-          <TodayTideCard />
+          <RealTideWidget />
         </div>
       </section>
 
