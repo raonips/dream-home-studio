@@ -100,9 +100,9 @@ const App = () => (
           <Sonner />
            <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, '') || '/'}>
             <ScrollToTop />
-            <RedirectHandler />
             <SiteHelmet />
             <HeadScripts />
+            <RedirectHandler>
             <Routes>
               {/* Auth */}
               <Route path="/login" element={<Suspense fallback={<RouteLoading />}><Login /></Suspense>} />
@@ -196,6 +196,7 @@ const App = () => (
                 }
               />
             </Routes>
+            </RedirectHandler>
             <SeoHead />
           </BrowserRouter>
           </SiteSettingsProvider>

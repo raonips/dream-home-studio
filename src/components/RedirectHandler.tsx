@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -42,27 +42,54 @@ export const invalidateRedirectCache = () => {
   cachePromise = null;
 };
 
-const RedirectHandler = () => {
+interface Props {
+  children: React.ReactNode;
+}
+
+/**
+ * Guarda de trânsito global. Verifica a tabela url_redirects ANTES de renderizar
+ * qualquer rota filha. Garante que redirecionamentos 301 tenham prioridade sobre
+ * o catch-all de 404, evitando que o NotFound seja exibido brevemente.
+ */
+const RedirectHandler = ({ children }: Props) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [ready, setReady] = useState(false);
+  const [ready, setReady] = useState<boolean>(!!cache);
+  const lastCheckedRef = useRef<string>("");
 
+  // Carrega o cache na primeira montagem (bloqueia render até concluir)
   useEffect(() => {
-    loadRedirects().then(() => setReady(true));
+    if (cache) {
+      setReady(true);
+      return;
+    }
+    let cancelled = false;
+    loadRedirects().then(() => {
+      if (!cancelled) setReady(true);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  useEffect(() => {
-    if (!ready) return;
-    loadRedirects().then((map) => {
-      const current = normalize(location.pathname);
-      const target = map.get(current);
-      if (target && target !== location.pathname) {
-        navigate(target + location.search + location.hash, { replace: true });
-      }
-    });
-  }, [location.pathname, location.search, location.hash, ready, navigate]);
+  // Verificação síncrona em cada mudança de rota (cache já carregado)
+  const currentKey = location.pathname + location.search + location.hash;
+  if (ready && cache && lastCheckedRef.current !== currentKey) {
+    lastCheckedRef.current = currentKey;
+    const normalizedCurrent = normalize(location.pathname);
+    const target = cache.get(normalizedCurrent);
+    if (target && normalize(target) !== normalizedCurrent) {
+      // Redireciona imediatamente, antes do React renderizar as rotas filhas
+      navigate(target + location.search + location.hash, { replace: true });
+      return null;
+    }
+  }
 
-  return null;
+  if (!ready) {
+    return null;
+  }
+
+  return <>{children}</>;
 };
 
 export default RedirectHandler;
