@@ -1,16 +1,18 @@
-// Stormglass tide data fetcher with 24h localStorage cache
-// Coordinates: Barra do Jacuípe, BA — lat -12.7031, lng -38.1322
+// Tide data fetcher — calls secure Supabase Edge Function `get-tides`.
+// Applies Marinha do Brasil calibration (+1.34 m → Nível de Redução 2026).
+// Caches results in localStorage for 24h to save API credits.
 
-const STORMGLASS_KEY =
-  "2b2cd5fc-3ebd-11f1-af8e-0242ac120004-2b2cd6ce-3ebd-11f1-af8e-0242ac120004";
-const LAT = -12.7031;
-const LNG = -38.1322;
-const CACHE_KEY = "tide_cache_v1_barra_jacuipe";
+import { supabase } from "@/integrations/supabase/client";
+
+const CACHE_KEY = "tide_cache_v2_barra_jacuipe"; // bumped (calibration applied)
 const CACHE_TTL = 24 * 60 * 60 * 1000; // 24h
+
+// Marinha do Brasil — Nível de Redução offset for Barra do Jacuípe (2026)
+export const MARINHA_OFFSET_M = 1.34;
 
 export interface TideExtreme {
   time: string; // ISO UTC
-  height: number; // meters
+  height: number; // meters (already calibrated to Marinha)
   type: "high" | "low";
 }
 
@@ -20,7 +22,6 @@ export interface TideCache {
 }
 
 export async function fetchTideExtremes(): Promise<TideExtreme[]> {
-  // Check cache first
   if (typeof window !== "undefined") {
     try {
       const raw = localStorage.getItem(CACHE_KEY);
@@ -31,31 +32,23 @@ export async function fetchTideExtremes(): Promise<TideExtreme[]> {
         }
       }
     } catch {
-      // ignore parse errors
+      // ignore
     }
   }
 
-  // Fetch from today through +3 days (covers today + next 2 days fully)
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
-  const end = new Date(start.getTime() + 3 * 24 * 60 * 60 * 1000);
+  const { data: payload, error } = await supabase.functions.invoke("get-tides");
 
-  const url = `https://api.stormglass.io/v2/tide/extremes/point?lat=${LAT}&lng=${LNG}&start=${Math.floor(
-    start.getTime() / 1000,
-  )}&end=${Math.floor(end.getTime() / 1000)}`;
-
-  const res = await fetch(url, {
-    headers: { Authorization: STORMGLASS_KEY },
-  });
-
-  if (!res.ok) {
-    throw new Error(`Stormglass API error: ${res.status}`);
+  if (error) {
+    throw new Error(error.message || "Erro ao chamar get-tides");
+  }
+  if (payload?.error) {
+    throw new Error(payload.error);
   }
 
-  const json = await res.json();
-  const data: TideExtreme[] = (json.data || []).map((d: any) => ({
+  const rawData: any[] = payload?.data || [];
+  const data: TideExtreme[] = rawData.map((d) => ({
     time: d.time,
-    height: d.height,
+    height: +(d.height + MARINHA_OFFSET_M).toFixed(2),
     type: d.type,
   }));
 
