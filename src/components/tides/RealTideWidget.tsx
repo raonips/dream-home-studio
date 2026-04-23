@@ -49,10 +49,12 @@ function formatRelativeDay(iso: string): string {
   return format(d, "EEE, d/MM", { locale: ptBR });
 }
 
-// Build a smooth curve by interpolating sine between extremes
+// Build a smooth curve by interpolating sine between extremes.
+// `key` is unique (includes date) so Recharts ReferenceLine can target a
+// specific point; `label` is the user-visible HH:mm tick.
 function buildCurve(extremes: TideExtreme[]) {
   if (extremes.length < 2) return [];
-  const points: { t: number; label: string; height: number; iso: string }[] = [];
+  const points: { t: number; key: string; label: string; height: number; iso: string }[] = [];
   for (let i = 0; i < extremes.length - 1; i++) {
     const a = extremes[i];
     const b = extremes[i + 1];
@@ -61,18 +63,24 @@ function buildCurve(extremes: TideExtreme[]) {
     const steps = 12;
     for (let s = 0; s < steps; s++) {
       const f = s / steps;
-      // cosine interpolation gives smooth tide-like shape between extremes
       const ease = (1 - Math.cos(f * Math.PI)) / 2;
       const h = a.height + (b.height - a.height) * ease;
       const t = tA + (tB - tA) * f;
       const iso = new Date(t).toISOString();
-      points.push({ t, label: formatHourBrt(iso), height: +h.toFixed(2), iso });
+      points.push({
+        t,
+        key: `${t}`,
+        label: formatHourBrt(iso),
+        height: +h.toFixed(2),
+        iso,
+      });
     }
   }
-  // include final extreme
   const last = extremes[extremes.length - 1];
+  const lt = new Date(last.time).getTime();
   points.push({
-    t: new Date(last.time).getTime(),
+    t: lt,
+    key: `${lt}`,
     label: formatHourBrt(last.time),
     height: +last.height.toFixed(2),
     iso: last.time,
@@ -247,7 +255,8 @@ export function RealTideWidget() {
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.4} />
               <XAxis
-                dataKey="label"
+                dataKey="key"
+                tickFormatter={(_v, i) => curve[i]?.label ?? ""}
                 tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
                 interval={Math.max(1, Math.floor(curve.length / 8))}
               />
@@ -269,13 +278,25 @@ export function RealTideWidget() {
                 }}
                 formatter={(v: number) => [`${v.toFixed(2)} m`, "Altura"]}
               />
-              <ReferenceLine
-                x={curve.find((p) => p.t >= now)?.label}
-                stroke="hsl(var(--coral))"
-                strokeWidth={2}
-                strokeDasharray="4 4"
-                label={{ value: "agora", fill: "hsl(var(--coral))", fontSize: 10, position: "top" }}
-              />
+              {(() => {
+                const nowPoint = curve.find((p) => p.t >= now);
+                if (!nowPoint) return null;
+                return (
+                  <ReferenceLine
+                    x={nowPoint.key}
+                    stroke="hsl(var(--coral))"
+                    strokeWidth={2}
+                    strokeDasharray="4 4"
+                    label={{
+                      value: `Agora · ${nowPoint.label}`,
+                      fill: "hsl(var(--coral))",
+                      fontSize: 11,
+                      fontWeight: 600,
+                      position: "top",
+                    }}
+                  />
+                );
+              })()}
               <Line
                 type="monotone"
                 dataKey="height"
