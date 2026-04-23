@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Pencil, Trash2, Loader2, Save } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Plus, Pencil, Trash2, Loader2, Save, Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { removeStorageFiles } from "@/lib/storageCleanup";
@@ -20,7 +21,10 @@ interface GuiaCategoria {
   ordem: number;
   imagem: string | null;
   imagem_mobile: string | null;
+  is_featured: boolean;
 }
+
+const MAX_FEATURED = 6;
 
 const slugify = (text: string) =>
   text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
@@ -30,33 +34,52 @@ const AdminGuiaCategorias = () => {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<GuiaCategoria | null>(null);
-  const [form, setForm] = useState({ nome: "", slug: "", descricao: "", icone: "", ordem: 0, imagem: "", imagem_mobile: "" });
+  const [form, setForm] = useState({ nome: "", slug: "", descricao: "", icone: "", ordem: 0, imagem: "", imagem_mobile: "", is_featured: false });
   const [saving, setSaving] = useState(false);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
   const { toast } = useToast();
 
   const fetchData = async () => {
     setLoading(true);
     const { data } = await supabase.from("guia_categorias").select("*").order("ordem");
-    setCategorias(data ?? []);
+    setCategorias((data as any) ?? []);
     setLoading(false);
   };
 
   useEffect(() => { fetchData(); }, []);
 
+  const featuredCount = categorias.filter((c) => c.is_featured).length;
+
   const openNew = () => {
     setEditing(null);
-    setForm({ nome: "", slug: "", descricao: "", icone: "", ordem: 0, imagem: "", imagem_mobile: "" });
+    setForm({ nome: "", slug: "", descricao: "", icone: "", ordem: 0, imagem: "", imagem_mobile: "", is_featured: false });
     setDialogOpen(true);
   };
 
   const openEdit = (cat: GuiaCategoria) => {
     setEditing(cat);
-    setForm({ nome: cat.nome, slug: cat.slug, descricao: cat.descricao ?? "", icone: cat.icone ?? "", ordem: cat.ordem, imagem: cat.imagem ?? "", imagem_mobile: cat.imagem_mobile ?? "" });
+    setForm({ nome: cat.nome, slug: cat.slug, descricao: cat.descricao ?? "", icone: cat.icone ?? "", ordem: cat.ordem, imagem: cat.imagem ?? "", imagem_mobile: cat.imagem_mobile ?? "", is_featured: !!cat.is_featured });
     setDialogOpen(true);
   };
 
   const handleSave = async () => {
     if (!form.nome.trim()) return;
+
+    // Enforce featured limit
+    if (form.is_featured) {
+      const currentlyFeaturedExcludingThis = categorias.filter(
+        (c) => c.is_featured && c.id !== editing?.id
+      ).length;
+      if (currentlyFeaturedExcludingThis >= MAX_FEATURED) {
+        toast({
+          title: "Limite atingido",
+          description: `Você só pode destacar no máximo ${MAX_FEATURED} categorias para a página inicial.`,
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     setSaving(true);
     const payload = {
       nome: form.nome.trim(),
@@ -66,6 +89,7 @@ const AdminGuiaCategorias = () => {
       ordem: form.ordem,
       imagem: form.imagem.trim() || null,
       imagem_mobile: form.imagem_mobile.trim() || null,
+      is_featured: form.is_featured,
     };
 
     const { error } = editing
@@ -79,6 +103,30 @@ const AdminGuiaCategorias = () => {
       toast({ title: editing ? "Categoria atualizada" : "Categoria criada" });
       setDialogOpen(false);
       fetchData();
+    }
+  };
+
+  const toggleFeatured = async (cat: GuiaCategoria) => {
+    const next = !cat.is_featured;
+    if (next && featuredCount >= MAX_FEATURED) {
+      toast({
+        title: "Limite atingido",
+        description: `Você só pode destacar no máximo ${MAX_FEATURED} categorias para a página inicial.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    setTogglingId(cat.id);
+    // Optimistic update
+    setCategorias((prev) => prev.map((c) => (c.id === cat.id ? { ...c, is_featured: next } : c)));
+    const { error } = await supabase.from("guia_categorias").update({ is_featured: next }).eq("id", cat.id);
+    setTogglingId(null);
+    if (error) {
+      // revert
+      setCategorias((prev) => prev.map((c) => (c.id === cat.id ? { ...c, is_featured: !next } : c)));
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: next ? "Categoria destacada" : "Destaque removido" });
     }
   };
 
@@ -102,7 +150,12 @@ const AdminGuiaCategorias = () => {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Categorias do Guia</h1>
+        <div>
+          <h1 className="text-2xl font-bold">Categorias do Guia</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Destaques na home: <span className={featuredCount >= MAX_FEATURED ? "text-destructive font-semibold" : "font-semibold"}>{featuredCount}/{MAX_FEATURED}</span>
+          </p>
+        </div>
         <Button onClick={openNew}><Plus className="mr-2 h-4 w-4" /> Nova Categoria</Button>
       </div>
 
@@ -116,6 +169,22 @@ const AdminGuiaCategorias = () => {
             <Card key={cat.id}>
               <CardContent className="flex items-center justify-between p-4">
                 <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => toggleFeatured(cat)}
+                    disabled={togglingId === cat.id}
+                    title={cat.is_featured ? "Remover destaque da home" : "Destacar na home"}
+                    className="flex items-center justify-center h-8 w-8 rounded-md hover:bg-muted transition-colors disabled:opacity-50"
+                    aria-label={cat.is_featured ? "Remover destaque" : "Adicionar destaque"}
+                  >
+                    <Star
+                      className={`h-5 w-5 transition-colors ${
+                        cat.is_featured
+                          ? "fill-yellow-400 text-yellow-400"
+                          : "text-muted-foreground"
+                      }`}
+                    />
+                  </button>
                   {cat.imagem && (
                     <img src={cat.imagem} alt="" className="h-10 w-10 rounded-md object-cover" />
                   )}
@@ -162,6 +231,21 @@ const AdminGuiaCategorias = () => {
             <div className="flex gap-4">
               <div className="flex-1"><Label>Ícone (emoji)</Label><Input value={form.icone} onChange={(e) => setForm({ ...form, icone: e.target.value })} /></div>
               <div className="w-24"><Label>Ordem</Label><Input type="number" value={form.ordem} onChange={(e) => setForm({ ...form, ordem: parseInt(e.target.value) || 0 })} /></div>
+            </div>
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <div className="space-y-0.5">
+                <Label className="flex items-center gap-2">
+                  <Star className={`h-4 w-4 ${form.is_featured ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"}`} />
+                  Destaque na página inicial
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Máximo de {MAX_FEATURED} categorias podem ser destacadas simultaneamente.
+                </p>
+              </div>
+              <Switch
+                checked={form.is_featured}
+                onCheckedChange={(checked) => setForm({ ...form, is_featured: checked })}
+              />
             </div>
             <Button onClick={handleSave} disabled={saving} className="w-full">
               {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
