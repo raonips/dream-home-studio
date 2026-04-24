@@ -311,7 +311,17 @@ export function RealTideWidget() {
       <div className="px-2 pb-2 pt-2 sm:px-6">
         <div className="h-64 w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={curve} margin={{ top: 28, right: 60, left: -10, bottom: 0 }}>
+            <LineChart
+              data={curve}
+              margin={{ top: 28, right: 60, left: -10, bottom: 0 }}
+              onMouseMove={(state: any) => {
+                const p = state?.activePayload?.[0]?.payload;
+                if (p && typeof p.t === "number") {
+                  setHovered({ t: p.t, height: p.height });
+                }
+              }}
+              onMouseLeave={() => setHovered(null)}
+            >
               <defs>
                 <linearGradient id="tideStroke" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="hsl(var(--ocean))" />
@@ -335,14 +345,31 @@ export function RealTideWidget() {
                 domain={["auto", "auto"]}
               />
               <Tooltip
-                contentStyle={{
-                  background: "hsl(var(--card))",
-                  border: "1px solid hsl(var(--border))",
-                  borderRadius: 12,
-                  fontSize: 12,
+                cursor={{ stroke: "hsl(var(--ocean))", strokeOpacity: 0.3 }}
+                content={(props: any) => {
+                  const isHovering = hovered !== null;
+                  const point = isHovering ? hovered : nowPoint;
+                  if (!point) return null;
+                  const showAgora = !isHovering;
+                  return (
+                    <div className="rounded-xl border border-border/60 bg-background px-3 py-2 shadow-lg">
+                      {showAgora && (
+                        <p className="text-[11px] font-semibold uppercase tracking-wider text-coral">
+                          Agora
+                        </p>
+                      )}
+                      <p className="text-xs font-medium text-foreground">
+                        {formatHour(point.t)}
+                      </p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        Altura:{" "}
+                        <span className="font-semibold text-ocean-deep">
+                          {point.height.toFixed(2).replace(".", ",")} m
+                        </span>
+                      </p>
+                    </div>
+                  );
                 }}
-                labelFormatter={(v) => formatHour(v as number)}
-                formatter={(v: number) => [`${v.toFixed(2)} m`, "Altura"]}
               />
               {currentTime >= dayStart && currentTime <= dayEnd && (
                 <ReferenceLine
@@ -350,26 +377,6 @@ export function RealTideWidget() {
                   stroke="hsl(var(--coral))"
                   strokeWidth={2}
                   strokeDasharray="4 4"
-                  label={(props: any) => {
-                    const { viewBox } = props;
-                    if (!viewBox) return null;
-                    const { x, y } = viewBox;
-                    const dayMid = (dayStart + dayEnd) / 2;
-                    const anchor = currentTime > dayMid ? "end" : "start";
-                    const dx = currentTime > dayMid ? -6 : 6;
-                    return (
-                      <text
-                        x={x + dx}
-                        y={y - 8}
-                        fill="hsl(var(--coral))"
-                        fontSize={11}
-                        fontWeight={600}
-                        textAnchor={anchor}
-                      >
-                        {`Agora · ${nowLabel}`}
-                      </text>
-                    );
-                  }}
                 />
               )}
               <Line
