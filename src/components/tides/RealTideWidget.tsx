@@ -332,12 +332,25 @@ export function RealTideWidget() {
                   stroke="hsl(var(--coral))"
                   strokeWidth={2}
                   strokeDasharray="4 4"
-                  label={{
-                    value: `Agora · ${nowLabel}`,
-                    fill: "hsl(var(--coral))",
-                    fontSize: 11,
-                    fontWeight: 600,
-                    position: "top",
+                  label={(props: any) => {
+                    const { viewBox } = props;
+                    if (!viewBox) return null;
+                    const { x, y } = viewBox;
+                    const dayMid = (dayStart + dayEnd) / 2;
+                    const anchor = currentTime > dayMid ? "end" : "start";
+                    const dx = currentTime > dayMid ? -6 : 6;
+                    return (
+                      <text
+                        x={x + dx}
+                        y={y - 8}
+                        fill="hsl(var(--coral))"
+                        fontSize={11}
+                        fontWeight={600}
+                        textAnchor={anchor}
+                      >
+                        {`Agora · ${nowLabel}`}
+                      </text>
+                    );
                   }}
                 />
               )}
