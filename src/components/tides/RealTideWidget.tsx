@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { ArrowDownRight, ArrowUpRight, MapPin, Waves, Loader2 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ArrowDownRight, ArrowUpRight, ChevronLeft, ChevronRight, MapPin, Waves, Loader2 } from "lucide-react";
 import {
   ResponsiveContainer,
   LineChart,
@@ -11,6 +11,7 @@ import {
   ReferenceLine,
 } from "recharts";
 import { fetchTideExtremes, type TideExtreme } from "@/lib/tideApi";
+import { cn } from "@/lib/utils";
 
 // Brasília: GMT-3, no DST since 2019
 const BRT_OFFSET_MS = -3 * 60 * 60 * 1000;
