@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { ArrowDownRight, ArrowUpRight, MapPin, Waves, Loader2 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ArrowDownRight, ArrowUpRight, ChevronLeft, ChevronRight, MapPin, Waves, Loader2 } from "lucide-react";
 import {
   ResponsiveContainer,
   LineChart,
@@ -11,6 +11,7 @@ import {
   ReferenceLine,
 } from "recharts";
 import { fetchTideExtremes, type TideExtreme } from "@/lib/tideApi";
+import { cn } from "@/lib/utils";
 
 // Brasília: GMT-3, no DST since 2019
 const BRT_OFFSET_MS = -3 * 60 * 60 * 1000;
@@ -44,6 +45,15 @@ function brtDayKey(ts: number): string {
   return `${d.getUTCFullYear()}-${d.getUTCMonth()}-${d.getUTCDate()}`;
 }
 
+// YYYY-MM-DD (zero-padded) — used as cache key & API payload
+function brtDateString(ts: number): string {
+  const d = new Date(ts + BRT_OFFSET_MS);
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(d.getUTCDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 function formatRelativeDay(ts: number, nowTs: number): string {
   const k = brtDayKey(ts);
   if (k === brtDayKey(nowTs)) return "Hoje";
@@ -51,12 +61,34 @@ function formatRelativeDay(ts: number, nowTs: number): string {
   return SHORT_DAY_FMT.format(new Date(ts));
 }
 
-// Start of "today" in BRT, expressed as a UTC timestamp (ms).
-function startOfBrtDay(nowTs: number): number {
-  const d = new Date(nowTs + BRT_OFFSET_MS);
+// Start of given day (BRT) expressed as a UTC timestamp (ms).
+function startOfBrtDayFor(ts: number): number {
+  const d = new Date(ts + BRT_OFFSET_MS);
   d.setUTCHours(0, 0, 0, 0);
   return d.getTime() - BRT_OFFSET_MS;
 }
+
+// Year boundaries in BRT (Jan 1 00:00 → Dec 31 00:00 of currentTime's year)
+function brtYearBounds(nowTs: number): { first: number; last: number } {
+  const d = new Date(nowTs + BRT_OFFSET_MS);
+  const year = d.getUTCFullYear();
+  const first = Date.UTC(year, 0, 1, 0, 0, 0) - BRT_OFFSET_MS;
+  const last = Date.UTC(year, 11, 31, 0, 0, 0) - BRT_OFFSET_MS;
+  return { first, last };
+}
+
+const DAY_BTN_FMT_DAY = new Intl.DateTimeFormat("pt-BR", {
+  day: "2-digit",
+  timeZone: TZ,
+});
+const DAY_BTN_FMT_MONTH = new Intl.DateTimeFormat("pt-BR", {
+  month: "short",
+  timeZone: TZ,
+});
+const DAY_BTN_FMT_WEEKDAY = new Intl.DateTimeFormat("pt-BR", {
+  weekday: "short",
+  timeZone: TZ,
+});
 
 // Build a smooth 24h curve for the current BRT day using cosine interpolation
 // between consecutive extremes. To guarantee full coverage from 00:00 → 23:59,
@@ -129,37 +161,64 @@ function buildDayCurve(
 export function RealTideWidget() {
   const [extremes, setExtremes] = useState<TideExtreme[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState<number>(() => Date.now());
+  // Selected date (BRT day start, as UTC ms). Default = today.
+  const [selectedDate, setSelectedDate] = useState<number>(() =>
+    startOfBrtDayFor(Date.now()),
+  );
 
+  // Live clock — only ticks the "Agora" line, doesn't refetch
   useEffect(() => {
-    let mounted = true;
-    fetchTideExtremes()
-      .then((d) => mounted && setExtremes(d))
-      .catch((e) => mounted && setError(e.message || "Erro ao carregar marés"));
     const t = setInterval(() => setCurrentTime(Date.now()), 60_000);
-    return () => {
-      mounted = false;
-      clearInterval(t);
-    };
+    return () => clearInterval(t);
   }, []);
 
-  const dayStart = useMemo(() => startOfBrtDay(currentTime), [currentTime]);
+  // Fetch tides whenever selectedDate changes (cached per-date in localStorage)
+  useEffect(() => {
+    let mounted = true;
+    setLoading(true);
+    setError(null);
+    const dateStr = brtDateString(selectedDate);
+    fetchTideExtremes(dateStr)
+      .then((d) => {
+        if (!mounted) return;
+        setExtremes(d);
+        setLoading(false);
+      })
+      .catch((e) => {
+        if (!mounted) return;
+        setError(e.message || "Erro ao carregar marés");
+        setLoading(false);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, [selectedDate]);
+
+  const dayStart = selectedDate;
   const dayEnd = dayStart + 24 * 60 * 60 * 1000 - 1;
 
-  const todayExtremes = useMemo(() => {
+  const todayKey = brtDayKey(currentTime);
+  const selectedKey = brtDayKey(selectedDate);
+  const isViewingToday = todayKey === selectedKey;
+
+  const dayExtremes = useMemo(() => {
     if (!extremes) return [];
-    const k = brtDayKey(currentTime);
-    return extremes.filter((e) => brtDayKey(new Date(e.time).getTime()) === k);
-  }, [extremes, currentTime]);
+    return extremes.filter(
+      (e) => brtDayKey(new Date(e.time).getTime()) === selectedKey,
+    );
+  }, [extremes, selectedKey]);
 
   const upcoming = useMemo(() => {
     if (!extremes) return { high: null as TideExtreme | null, low: null as TideExtreme | null };
-    const future = extremes.filter((e) => new Date(e.time).getTime() > currentTime);
+    const reference = isViewingToday ? currentTime : dayStart;
+    const future = extremes.filter((e) => new Date(e.time).getTime() > reference);
     return {
       high: future.find((e) => e.type === "high") || null,
       low: future.find((e) => e.type === "low") || null,
     };
-  }, [extremes, currentTime]);
+  }, [extremes, currentTime, isViewingToday, dayStart]);
 
   const curve = useMemo(
     () => buildDayCurve(extremes || [], dayStart, dayEnd),
@@ -167,28 +226,38 @@ export function RealTideWidget() {
   );
 
   const trend: "rising" | "falling" = useMemo(() => {
-    const next = (extremes || []).find((e) => new Date(e.time).getTime() > currentTime);
+    const ref = isViewingToday ? currentTime : dayStart;
+    const next = (extremes || []).find((e) => new Date(e.time).getTime() > ref);
     if (!next) return "rising";
     return next.type === "high" ? "rising" : "falling";
-  }, [extremes, currentTime]);
+  }, [extremes, currentTime, isViewingToday, dayStart]);
 
-  const next3Days = useMemo(() => {
-    if (!extremes) return [] as { dayLabel: string; key: string; items: TideExtreme[] }[];
-    const buckets = new Map<string, TideExtreme[]>();
-    for (const e of extremes) {
-      const ts = new Date(e.time).getTime();
-      const key = brtDayKey(ts);
-      if (!buckets.has(key)) buckets.set(key, []);
-      buckets.get(key)!.push(e);
+  // ── Date carousel ────────────────────────────────────────────────────────
+  const yearBounds = useMemo(() => brtYearBounds(currentTime), [currentTime]);
+  const carouselDays = useMemo(() => {
+    const days: number[] = [];
+    for (let t = yearBounds.first; t <= yearBounds.last; t += 86_400_000) {
+      days.push(startOfBrtDayFor(t));
     }
-    return Array.from(buckets.entries())
-      .slice(0, 3)
-      .map(([key, items]) => ({
-        key,
-        dayLabel: formatRelativeDay(new Date(items[0].time).getTime(), currentTime),
-        items,
-      }));
-  }, [extremes, currentTime]);
+    return days;
+  }, [yearBounds.first, yearBounds.last]);
+
+  const selectedBtnRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (selectedBtnRef.current) {
+      selectedBtnRef.current.scrollIntoView({
+        behavior: "smooth",
+        inline: "center",
+        block: "nearest",
+      });
+    }
+  }, [selectedDate]);
+
+  const canPrev = selectedDate - 86_400_000 >= yearBounds.first;
+  const canNext = selectedDate + 86_400_000 <= yearBounds.last;
+  const goPrevDay = () => canPrev && setSelectedDate(selectedDate - 86_400_000);
+  const goNextDay = () => canNext && setSelectedDate(selectedDate + 86_400_000);
 
   // Hover state for controlled tooltip with snap-back to "Agora"
   const [hovered, setHovered] = useState<{ t: number; height: number } | null>(null);
@@ -233,7 +302,7 @@ export function RealTideWidget() {
     );
   }
 
-  if (!extremes) {
+  if (!extremes && loading) {
     return (
       <div className="mx-auto flex w-full max-w-3xl items-center justify-center rounded-3xl border bg-card p-12">
         <Loader2 className="size-6 animate-spin text-ocean" />
@@ -242,8 +311,13 @@ export function RealTideWidget() {
     );
   }
 
-  const todayLabel = formatDay(currentTime);
+  const selectedDayLabel = formatDay(selectedDate);
   const nowLabel = formatHour(currentTime);
+  const headerTitle = isViewingToday
+    ? "Maré de Hoje"
+    : selectedDate < startOfBrtDayFor(currentTime)
+      ? "Maré (passada)"
+      : "Maré (prevista)";
 
   return (
     <article className="mx-auto w-full max-w-3xl overflow-hidden rounded-3xl border bg-card shadow-card">
@@ -255,9 +329,9 @@ export function RealTideWidget() {
             Barra do Jacuípe · BA
           </div>
           <h2 className="mt-1 text-3xl font-semibold leading-tight sm:text-4xl text-primary-foreground">
-            Maré de Hoje
+            {headerTitle}
           </h2>
-          <p className="mt-0.5 text-sm capitalize opacity-70">{todayLabel}</p>
+          <p className="mt-0.5 text-sm capitalize opacity-70">{selectedDayLabel}</p>
         </div>
         <div className="text-right">
           <div className="inline-flex items-center gap-1 rounded-full bg-background/15 px-3 py-1 text-xs font-medium backdrop-blur">
@@ -268,9 +342,78 @@ export function RealTideWidget() {
             )}
             {trend === "falling" ? "Secando" : "Enchendo"}
           </div>
-          <p className="mt-2 text-xs opacity-70">agora · {nowLabel}</p>
+          {isViewingToday && (
+            <p className="mt-2 text-xs opacity-70">agora · {nowLabel}</p>
+          )}
         </div>
       </header>
+
+      {/* Date carousel */}
+      <div className="flex items-center gap-2 border-b bg-muted/20 px-2 py-3 sm:px-4">
+        <button
+          type="button"
+          onClick={goPrevDay}
+          disabled={!canPrev}
+          aria-label="Dia anterior"
+          className="flex size-9 shrink-0 items-center justify-center rounded-full border bg-background text-foreground transition hover:bg-muted disabled:opacity-30"
+        >
+          <ChevronLeft className="size-4" />
+        </button>
+        <div
+          className="flex flex-1 gap-2 overflow-x-auto scroll-smooth py-1"
+          style={{ scrollbarWidth: "none" }}
+        >
+          {carouselDays.map((dayTs) => {
+            const isSelected = brtDayKey(dayTs) === selectedKey;
+            const isToday = brtDayKey(dayTs) === todayKey;
+            return (
+              <button
+                key={dayTs}
+                ref={isSelected ? selectedBtnRef : undefined}
+                type="button"
+                onClick={() => setSelectedDate(dayTs)}
+                className={cn(
+                  "flex min-w-[58px] shrink-0 flex-col items-center gap-0.5 rounded-xl border px-2 py-1.5 text-xs transition",
+                  isSelected
+                    ? "border-ocean bg-ocean text-primary-foreground shadow-sm"
+                    : isToday
+                      ? "border-ocean/40 bg-ocean/5 text-ocean-deep hover:bg-ocean/10"
+                      : "border-border bg-background text-foreground hover:bg-muted",
+                )}
+              >
+                <span
+                  className={cn(
+                    "text-[10px] font-medium uppercase tracking-wider",
+                    isSelected ? "opacity-90" : "opacity-60",
+                  )}
+                >
+                  {isToday ? "Hoje" : DAY_BTN_FMT_WEEKDAY.format(new Date(dayTs)).replace(".", "")}
+                </span>
+                <span className="text-base font-bold leading-none">
+                  {DAY_BTN_FMT_DAY.format(new Date(dayTs))}
+                </span>
+                <span
+                  className={cn(
+                    "text-[10px] capitalize",
+                    isSelected ? "opacity-90" : "opacity-60",
+                  )}
+                >
+                  {DAY_BTN_FMT_MONTH.format(new Date(dayTs)).replace(".", "")}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        <button
+          type="button"
+          onClick={goNextDay}
+          disabled={!canNext}
+          aria-label="Próximo dia"
+          className="flex size-9 shrink-0 items-center justify-center rounded-full border bg-background text-foreground transition hover:bg-muted disabled:opacity-30"
+        >
+          <ChevronRight className="size-4" />
+        </button>
+      </div>
 
       {/* Quick cards */}
       <div className="grid gap-3 p-5 sm:grid-cols-2">
@@ -318,7 +461,7 @@ export function RealTideWidget() {
       <div className="px-2 pb-2 pt-2 sm:px-6">
         <div className="relative h-64 w-full">
           {/* Snap-back floating tooltip — shown when user is NOT hovering */}
-          {!hovered && nowPoint && currentTime >= dayStart && currentTime <= dayEnd && (() => {
+          {isViewingToday && !hovered && nowPoint && currentTime >= dayStart && currentTime <= dayEnd && (() => {
             const pct = ((currentTime - dayStart) / (dayEnd - dayStart)) * 100;
             // Chart inner plotting area roughly excludes YAxis (~30px) and right margin (~60px).
             // We approximate using percentage of full container with offsets.
@@ -404,7 +547,7 @@ export function RealTideWidget() {
                   );
                 }}
               />
-              {currentTime >= dayStart && currentTime <= dayEnd && (
+              {isViewingToday && currentTime >= dayStart && currentTime <= dayEnd && (
                 <ReferenceLine
                   x={currentTime}
                   stroke="hsl(var(--coral))"
@@ -426,12 +569,14 @@ export function RealTideWidget() {
         </div>
       </div>
 
-      {/* Today's extremes list */}
-      {todayExtremes.length > 0 && (
+      {/* Selected day's extremes list */}
+      {dayExtremes.length > 0 && (
         <div className="border-t p-6">
-          <h3 className="mb-3 text-sm font-semibold text-ocean-deep">Marés de Hoje</h3>
+          <h3 className="mb-3 text-sm font-semibold text-ocean-deep capitalize">
+            {isViewingToday ? "Marés de Hoje" : `Marés · ${selectedDayLabel}`}
+          </h3>
           <div className="grid gap-2 sm:grid-cols-2">
-            {todayExtremes.map((e) => (
+            {dayExtremes.map((e) => (
               <div
                 key={e.time}
                 className="flex items-center gap-3 rounded-xl border bg-muted/30 p-3"
@@ -455,43 +600,6 @@ export function RealTideWidget() {
           </div>
         </div>
       )}
-
-      {/* Next 3 days */}
-      <div className="border-t bg-muted/10 p-6">
-        <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-ocean-deep">
-          <Waves className="size-4" />
-          Próximos Dias
-        </h3>
-        <div className="space-y-3">
-          {next3Days.map((bucket) => (
-            <div key={bucket.key} className="rounded-xl border bg-card p-3">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wider capitalize text-muted-foreground">
-                {bucket.dayLabel}
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {bucket.items.map((e) => (
-                  <span
-                    key={e.time}
-                    className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${
-                      e.type === "high"
-                        ? "bg-ocean/10 text-ocean-deep"
-                        : "bg-nature/10 text-nature"
-                    }`}
-                  >
-                    {e.type === "high" ? (
-                      <ArrowUpRight className="size-3" />
-                    ) : (
-                      <ArrowDownRight className="size-3" />
-                    )}
-                    {formatHour(new Date(e.time).getTime())} ·{" "}
-                    {e.height.toFixed(2).replace(".", ",")}m
-                  </span>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
     </article>
   );
 }
