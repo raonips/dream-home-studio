@@ -329,9 +329,9 @@ export function RealTideWidget() {
             Barra do Jacuípe · BA
           </div>
           <h2 className="mt-1 text-3xl font-semibold leading-tight sm:text-4xl text-primary-foreground">
-            Maré de Hoje
+            {headerTitle}
           </h2>
-          <p className="mt-0.5 text-sm capitalize opacity-70">{todayLabel}</p>
+          <p className="mt-0.5 text-sm capitalize opacity-70">{selectedDayLabel}</p>
         </div>
         <div className="text-right">
           <div className="inline-flex items-center gap-1 rounded-full bg-background/15 px-3 py-1 text-xs font-medium backdrop-blur">
@@ -342,9 +342,78 @@ export function RealTideWidget() {
             )}
             {trend === "falling" ? "Secando" : "Enchendo"}
           </div>
-          <p className="mt-2 text-xs opacity-70">agora · {nowLabel}</p>
+          {isViewingToday && (
+            <p className="mt-2 text-xs opacity-70">agora · {nowLabel}</p>
+          )}
         </div>
       </header>
+
+      {/* Date carousel */}
+      <div className="flex items-center gap-2 border-b bg-muted/20 px-2 py-3 sm:px-4">
+        <button
+          type="button"
+          onClick={goPrevDay}
+          disabled={!canPrev}
+          aria-label="Dia anterior"
+          className="flex size-9 shrink-0 items-center justify-center rounded-full border bg-background text-foreground transition hover:bg-muted disabled:opacity-30"
+        >
+          <ChevronLeft className="size-4" />
+        </button>
+        <div
+          className="flex flex-1 gap-2 overflow-x-auto scroll-smooth py-1"
+          style={{ scrollbarWidth: "none" }}
+        >
+          {carouselDays.map((dayTs) => {
+            const isSelected = brtDayKey(dayTs) === selectedKey;
+            const isToday = brtDayKey(dayTs) === todayKey;
+            return (
+              <button
+                key={dayTs}
+                ref={isSelected ? selectedBtnRef : undefined}
+                type="button"
+                onClick={() => setSelectedDate(dayTs)}
+                className={cn(
+                  "flex min-w-[58px] shrink-0 flex-col items-center gap-0.5 rounded-xl border px-2 py-1.5 text-xs transition",
+                  isSelected
+                    ? "border-ocean bg-ocean text-primary-foreground shadow-sm"
+                    : isToday
+                      ? "border-ocean/40 bg-ocean/5 text-ocean-deep hover:bg-ocean/10"
+                      : "border-border bg-background text-foreground hover:bg-muted",
+                )}
+              >
+                <span
+                  className={cn(
+                    "text-[10px] font-medium uppercase tracking-wider",
+                    isSelected ? "opacity-90" : "opacity-60",
+                  )}
+                >
+                  {isToday ? "Hoje" : DAY_BTN_FMT_WEEKDAY.format(new Date(dayTs)).replace(".", "")}
+                </span>
+                <span className="text-base font-bold leading-none">
+                  {DAY_BTN_FMT_DAY.format(new Date(dayTs))}
+                </span>
+                <span
+                  className={cn(
+                    "text-[10px] capitalize",
+                    isSelected ? "opacity-90" : "opacity-60",
+                  )}
+                >
+                  {DAY_BTN_FMT_MONTH.format(new Date(dayTs)).replace(".", "")}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        <button
+          type="button"
+          onClick={goNextDay}
+          disabled={!canNext}
+          aria-label="Próximo dia"
+          className="flex size-9 shrink-0 items-center justify-center rounded-full border bg-background text-foreground transition hover:bg-muted disabled:opacity-30"
+        >
+          <ChevronRight className="size-4" />
+        </button>
+      </div>
 
       {/* Quick cards */}
       <div className="grid gap-3 p-5 sm:grid-cols-2">
