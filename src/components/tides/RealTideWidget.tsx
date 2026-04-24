@@ -10,147 +10,166 @@ import {
   CartesianGrid,
   ReferenceLine,
 } from "recharts";
-import { format, addHours } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { fetchTideExtremes, type TideExtreme } from "@/lib/tideApi";
 
-// Brasília is GMT-3, no DST since 2019
+// Brasília: GMT-3, no DST since 2019
 const BRT_OFFSET_MS = -3 * 60 * 60 * 1000;
+const TZ = "America/Sao_Paulo";
 
-function toBrt(iso: string): Date {
-  const utc = new Date(iso);
-  return new Date(utc.getTime() + BRT_OFFSET_MS);
+const HOUR_FMT = new Intl.DateTimeFormat("pt-BR", {
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+  timeZone: TZ,
+});
+const DAY_FMT = new Intl.DateTimeFormat("pt-BR", {
+  weekday: "long",
+  day: "2-digit",
+  month: "long",
+  timeZone: TZ,
+});
+const SHORT_DAY_FMT = new Intl.DateTimeFormat("pt-BR", {
+  weekday: "short",
+  day: "2-digit",
+  month: "2-digit",
+  timeZone: TZ,
+});
+
+const formatHour = (ts: number) => HOUR_FMT.format(new Date(ts));
+const formatDay = (ts: number) => DAY_FMT.format(new Date(ts));
+
+// YYYY-MM-DD in BRT for grouping/comparing days
+function brtDayKey(ts: number): string {
+  const d = new Date(ts + BRT_OFFSET_MS);
+  return `${d.getUTCFullYear()}-${d.getUTCMonth()}-${d.getUTCDate()}`;
 }
 
-function formatHourBrt(iso: string): string {
-  return format(toBrt(iso), "HH:mm");
+function formatRelativeDay(ts: number, nowTs: number): string {
+  const k = brtDayKey(ts);
+  if (k === brtDayKey(nowTs)) return "Hoje";
+  if (k === brtDayKey(nowTs + 86400000)) return "Amanhã";
+  return SHORT_DAY_FMT.format(new Date(ts));
 }
 
-function formatDayBrt(iso: string): string {
-  return format(toBrt(iso), "EEEE, d 'de' MMMM", { locale: ptBR });
+// Start of "today" in BRT, expressed as a UTC timestamp (ms).
+function startOfBrtDay(nowTs: number): number {
+  const d = new Date(nowTs + BRT_OFFSET_MS);
+  d.setUTCHours(0, 0, 0, 0);
+  return d.getTime() - BRT_OFFSET_MS;
 }
 
-function formatRelativeDay(iso: string): string {
-  const now = new Date(Date.now() + BRT_OFFSET_MS);
-  const d = toBrt(iso);
-  const sameDay =
-    d.getUTCFullYear() === now.getUTCFullYear() &&
-    d.getUTCMonth() === now.getUTCMonth() &&
-    d.getUTCDate() === now.getUTCDate();
-  if (sameDay) return "Hoje";
-  const tomorrow = new Date(now);
-  tomorrow.setUTCDate(now.getUTCDate() + 1);
-  if (
-    d.getUTCFullYear() === tomorrow.getUTCFullYear() &&
-    d.getUTCMonth() === tomorrow.getUTCMonth() &&
-    d.getUTCDate() === tomorrow.getUTCDate()
-  )
-    return "Amanhã";
-  return format(d, "EEE, d/MM", { locale: ptBR });
-}
+// Build a smooth 24h curve for the current BRT day using cosine interpolation
+// between consecutive extremes. Extremes outside the window provide context
+// at the edges so the curve doesn't flat-line at 00:00 / 23:59.
+function buildDayCurve(
+  extremes: TideExtreme[],
+  dayStart: number,
+  dayEnd: number,
+) {
+  if (extremes.length < 2) return [] as { t: number; height: number }[];
+  const sorted = [...extremes].sort(
+    (a, b) => new Date(a.time).getTime() - new Date(b.time).getTime(),
+  );
 
-// Build a smooth curve by interpolating sine between extremes.
-// `key` is unique (includes date) so Recharts ReferenceLine can target a
-// specific point; `label` is the user-visible HH:mm tick.
-function buildCurve(extremes: TideExtreme[]) {
-  if (extremes.length < 2) return [];
-  const points: { t: number; key: string; label: string; height: number; iso: string }[] = [];
-  for (let i = 0; i < extremes.length - 1; i++) {
-    const a = extremes[i];
-    const b = extremes[i + 1];
+  const points: { t: number; height: number }[] = [];
+  for (let i = 0; i < sorted.length - 1; i++) {
+    const a = sorted[i];
+    const b = sorted[i + 1];
     const tA = new Date(a.time).getTime();
     const tB = new Date(b.time).getTime();
-    const steps = 12;
-    for (let s = 0; s < steps; s++) {
+    if (tB < dayStart || tA > dayEnd) continue;
+
+    const steps = 24; // smooth half-cycle
+    for (let s = 0; s <= steps; s++) {
       const f = s / steps;
+      const t = tA + (tB - tA) * f;
+      if (t < dayStart || t > dayEnd) continue;
       const ease = (1 - Math.cos(f * Math.PI)) / 2;
       const h = a.height + (b.height - a.height) * ease;
-      const t = tA + (tB - tA) * f;
-      const iso = new Date(t).toISOString();
-      points.push({
-        t,
-        key: `${t}`,
-        label: formatHourBrt(iso),
-        height: +h.toFixed(2),
-        iso,
-      });
+      points.push({ t, height: +h.toFixed(2) });
     }
   }
-  const last = extremes[extremes.length - 1];
-  const lt = new Date(last.time).getTime();
-  points.push({
-    t: lt,
-    key: `${lt}`,
-    label: formatHourBrt(last.time),
-    height: +last.height.toFixed(2),
-    iso: last.time,
+  // Dedup by timestamp (boundary overlaps)
+  const seen = new Set<number>();
+  return points.filter((p) => {
+    if (seen.has(p.t)) return false;
+    seen.add(p.t);
+    return true;
   });
-  return points;
 }
 
 export function RealTideWidget() {
   const [extremes, setExtremes] = useState<TideExtreme[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [now, setNow] = useState(Date.now());
+  const [currentTime, setCurrentTime] = useState<number>(() => Date.now());
 
   useEffect(() => {
     let mounted = true;
     fetchTideExtremes()
       .then((d) => mounted && setExtremes(d))
       .catch((e) => mounted && setError(e.message || "Erro ao carregar marés"));
-    const t = setInterval(() => setNow(Date.now()), 60_000);
+    const t = setInterval(() => setCurrentTime(Date.now()), 60_000);
     return () => {
       mounted = false;
       clearInterval(t);
     };
   }, []);
 
+  const dayStart = useMemo(() => startOfBrtDay(currentTime), [currentTime]);
+  const dayEnd = dayStart + 24 * 60 * 60 * 1000 - 1;
+
   const todayExtremes = useMemo(() => {
     if (!extremes) return [];
-    const nowBrt = new Date(now + BRT_OFFSET_MS);
-    return extremes.filter((e) => {
-      const d = toBrt(e.time);
-      return (
-        d.getUTCFullYear() === nowBrt.getUTCFullYear() &&
-        d.getUTCMonth() === nowBrt.getUTCMonth() &&
-        d.getUTCDate() === nowBrt.getUTCDate()
-      );
-    });
-  }, [extremes, now]);
+    const k = brtDayKey(currentTime);
+    return extremes.filter((e) => brtDayKey(new Date(e.time).getTime()) === k);
+  }, [extremes, currentTime]);
 
   const upcoming = useMemo(() => {
     if (!extremes) return { high: null as TideExtreme | null, low: null as TideExtreme | null };
-    const future = extremes.filter((e) => new Date(e.time).getTime() > now);
+    const future = extremes.filter((e) => new Date(e.time).getTime() > currentTime);
     return {
       high: future.find((e) => e.type === "high") || null,
       low: future.find((e) => e.type === "low") || null,
     };
-  }, [extremes, now]);
+  }, [extremes, currentTime]);
 
-  const curve = useMemo(() => buildCurve(extremes || []), [extremes]);
+  const curve = useMemo(
+    () => buildDayCurve(extremes || [], dayStart, dayEnd),
+    [extremes, dayStart, dayEnd],
+  );
 
   const trend: "rising" | "falling" = useMemo(() => {
-    const next = (extremes || []).find((e) => new Date(e.time).getTime() > now);
+    const next = (extremes || []).find((e) => new Date(e.time).getTime() > currentTime);
     if (!next) return "rising";
     return next.type === "high" ? "rising" : "falling";
-  }, [extremes, now]);
+  }, [extremes, currentTime]);
 
   const next3Days = useMemo(() => {
-    if (!extremes) return [] as { day: string; items: TideExtreme[] }[];
+    if (!extremes) return [] as { dayLabel: string; key: string; items: TideExtreme[] }[];
     const buckets = new Map<string, TideExtreme[]>();
     for (const e of extremes) {
-      const d = toBrt(e.time);
-      const key = `${d.getUTCFullYear()}-${d.getUTCMonth()}-${d.getUTCDate()}`;
+      const ts = new Date(e.time).getTime();
+      const key = brtDayKey(ts);
       if (!buckets.has(key)) buckets.set(key, []);
       buckets.get(key)!.push(e);
     }
     return Array.from(buckets.entries())
       .slice(0, 3)
-      .map(([, items]) => ({
-        day: formatRelativeDay(items[0].time),
+      .map(([key, items]) => ({
+        key,
+        dayLabel: formatRelativeDay(new Date(items[0].time).getTime(), currentTime),
         items,
       }));
-  }, [extremes]);
+  }, [extremes, currentTime]);
+
+  // Clean ticks every 3h within the day window
+  const xTicks = useMemo(() => {
+    const ticks: number[] = [];
+    for (let h = 0; h <= 24; h += 3) {
+      ticks.push(dayStart + h * 60 * 60 * 1000);
+    }
+    return ticks;
+  }, [dayStart]);
 
   if (error) {
     return (
@@ -170,8 +189,8 @@ export function RealTideWidget() {
     );
   }
 
-  const todayLabel = formatDayBrt(new Date(now).toISOString());
-  const nowLabelBrt = format(new Date(now + BRT_OFFSET_MS), "HH:mm");
+  const todayLabel = formatDay(currentTime);
+  const nowLabel = formatHour(currentTime);
 
   return (
     <article className="mx-auto w-full max-w-3xl overflow-hidden rounded-3xl border bg-card shadow-card">
@@ -196,7 +215,7 @@ export function RealTideWidget() {
             )}
             {trend === "falling" ? "Secando" : "Enchendo"}
           </div>
-          <p className="mt-2 text-xs opacity-70">agora · {nowLabelBrt}</p>
+          <p className="mt-2 text-xs opacity-70">agora · {nowLabel}</p>
         </div>
       </header>
 
@@ -210,11 +229,11 @@ export function RealTideWidget() {
           {upcoming.high ? (
             <>
               <p className="mt-2 text-2xl font-bold text-ocean-deep">
-                {formatHourBrt(upcoming.high.time)}
+                {formatHour(new Date(upcoming.high.time).getTime())}
               </p>
               <p className="text-sm text-muted-foreground">
                 {upcoming.high.height.toFixed(2).replace(".", ",")} m ·{" "}
-                {formatRelativeDay(upcoming.high.time)}
+                {formatRelativeDay(new Date(upcoming.high.time).getTime(), currentTime)}
               </p>
             </>
           ) : (
@@ -229,11 +248,11 @@ export function RealTideWidget() {
           {upcoming.low ? (
             <>
               <p className="mt-2 text-2xl font-bold text-nature">
-                {formatHourBrt(upcoming.low.time)}
+                {formatHour(new Date(upcoming.low.time).getTime())}
               </p>
               <p className="text-sm text-muted-foreground">
                 {upcoming.low.height.toFixed(2).replace(".", ",")} m ·{" "}
-                {formatRelativeDay(upcoming.low.time)}
+                {formatRelativeDay(new Date(upcoming.low.time).getTime(), currentTime)}
               </p>
             </>
           ) : (
@@ -255,15 +274,19 @@ export function RealTideWidget() {
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.4} />
               <XAxis
-                dataKey="key"
-                tickFormatter={(_v, i) => curve[i]?.label ?? ""}
+                dataKey="t"
+                type="number"
+                scale="time"
+                domain={[dayStart, dayEnd]}
+                ticks={xTicks}
+                tickFormatter={(v) => formatHour(v as number)}
                 tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
-                interval={Math.max(1, Math.floor(curve.length / 8))}
               />
               <YAxis
                 tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
                 tickFormatter={(v) => `${v}m`}
                 width={40}
+                domain={["auto", "auto"]}
               />
               <Tooltip
                 contentStyle={{
@@ -272,31 +295,24 @@ export function RealTideWidget() {
                   borderRadius: 12,
                   fontSize: 12,
                 }}
-                labelFormatter={(_, payload) => {
-                  const p = payload?.[0]?.payload;
-                  return p ? `${formatRelativeDay(p.iso)} · ${p.label}` : "";
-                }}
+                labelFormatter={(v) => formatHour(v as number)}
                 formatter={(v: number) => [`${v.toFixed(2)} m`, "Altura"]}
               />
-              {(() => {
-                const nowPoint = curve.find((p) => p.t >= now);
-                if (!nowPoint) return null;
-                return (
-                  <ReferenceLine
-                    x={nowPoint.key}
-                    stroke="hsl(var(--coral))"
-                    strokeWidth={2}
-                    strokeDasharray="4 4"
-                    label={{
-                      value: `Agora · ${nowPoint.label}`,
-                      fill: "hsl(var(--coral))",
-                      fontSize: 11,
-                      fontWeight: 600,
-                      position: "top",
-                    }}
-                  />
-                );
-              })()}
+              {currentTime >= dayStart && currentTime <= dayEnd && (
+                <ReferenceLine
+                  x={currentTime}
+                  stroke="hsl(var(--coral))"
+                  strokeWidth={2}
+                  strokeDasharray="4 4"
+                  label={{
+                    value: `Agora · ${nowLabel}`,
+                    fill: "hsl(var(--coral))",
+                    fontSize: 11,
+                    fontWeight: 600,
+                    position: "top",
+                  }}
+                />
+              )}
               <Line
                 type="monotone"
                 dataKey="height"
@@ -304,6 +320,7 @@ export function RealTideWidget() {
                 strokeWidth={3}
                 dot={false}
                 activeDot={{ r: 5, fill: "hsl(var(--ocean))" }}
+                isAnimationActive={false}
               />
             </LineChart>
           </ResponsiveContainer>
@@ -330,7 +347,8 @@ export function RealTideWidget() {
                     {e.type === "high" ? "Maré Alta" : "Maré Baixa"}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {formatHourBrt(e.time)} · {e.height.toFixed(2).replace(".", ",")} m
+                    {formatHour(new Date(e.time).getTime())} ·{" "}
+                    {e.height.toFixed(2).replace(".", ",")} m
                   </p>
                 </div>
               </div>
@@ -347,9 +365,9 @@ export function RealTideWidget() {
         </h3>
         <div className="space-y-3">
           {next3Days.map((bucket) => (
-            <div key={bucket.day} className="rounded-xl border bg-card p-3">
+            <div key={bucket.key} className="rounded-xl border bg-card p-3">
               <p className="mb-2 text-xs font-semibold uppercase tracking-wider capitalize text-muted-foreground">
-                {bucket.day}
+                {bucket.dayLabel}
               </p>
               <div className="flex flex-wrap gap-2">
                 {bucket.items.map((e) => (
@@ -366,7 +384,8 @@ export function RealTideWidget() {
                     ) : (
                       <ArrowDownRight className="size-3" />
                     )}
-                    {formatHourBrt(e.time)} · {e.height.toFixed(2).replace(".", ",")}m
+                    {formatHour(new Date(e.time).getTime())} ·{" "}
+                    {e.height.toFixed(2).replace(".", ",")}m
                   </span>
                 ))}
               </div>
