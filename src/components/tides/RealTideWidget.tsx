@@ -547,7 +547,7 @@ export function RealTideWidget() {
                   );
                 }}
               />
-              {currentTime >= dayStart && currentTime <= dayEnd && (
+              {isViewingToday && currentTime >= dayStart && currentTime <= dayEnd && (
                 <ReferenceLine
                   x={currentTime}
                   stroke="hsl(var(--coral))"
