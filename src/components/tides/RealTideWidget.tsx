@@ -302,7 +302,7 @@ export function RealTideWidget() {
     );
   }
 
-  if (!extremes) {
+  if (!extremes && loading) {
     return (
       <div className="mx-auto flex w-full max-w-3xl items-center justify-center rounded-3xl border bg-card p-12">
         <Loader2 className="size-6 animate-spin text-ocean" />
@@ -311,8 +311,13 @@ export function RealTideWidget() {
     );
   }
 
-  const todayLabel = formatDay(currentTime);
+  const selectedDayLabel = formatDay(selectedDate);
   const nowLabel = formatHour(currentTime);
+  const headerTitle = isViewingToday
+    ? "Maré de Hoje"
+    : selectedDate < startOfBrtDayFor(currentTime)
+      ? "Maré (passada)"
+      : "Maré (prevista)";
 
   return (
     <article className="mx-auto w-full max-w-3xl overflow-hidden rounded-3xl border bg-card shadow-card">
