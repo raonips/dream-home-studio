@@ -59,43 +59,71 @@ function startOfBrtDay(nowTs: number): number {
 }
 
 // Build a smooth 24h curve for the current BRT day using cosine interpolation
-// between consecutive extremes. Extremes outside the window provide context
-// at the edges so the curve doesn't flat-line at 00:00 / 23:59.
+// between consecutive extremes. To guarantee full coverage from 00:00 → 23:59,
+// we synthesize virtual extremes before the first / after the last real ones
+// (mirroring the neighboring half-cycle), so the curve never flat-lines at the
+// edges of the day window.
 function buildDayCurve(
   extremes: TideExtreme[],
   dayStart: number,
   dayEnd: number,
 ) {
   if (extremes.length < 2) return [] as { t: number; height: number }[];
-  const sorted = [...extremes].sort(
-    (a, b) => new Date(a.time).getTime() - new Date(b.time).getTime(),
-  );
+  const sorted = [...extremes]
+    .map((e) => ({ t: new Date(e.time).getTime(), h: e.height, type: e.type }))
+    .sort((a, b) => a.t - b.t);
+
+  // Default semi-diurnal half-cycle (~6h12m) used as fallback period.
+  const DEFAULT_HALF = 6 * 60 * 60 * 1000 + 12 * 60 * 1000;
+
+  // Pad on the left until we cover dayStart
+  while (sorted[0].t > dayStart) {
+    const a = sorted[0];
+    const b = sorted[1];
+    const period = b ? b.t - a.t : DEFAULT_HALF;
+    sorted.unshift({
+      t: a.t - period,
+      h: b ? b.h : a.h, // mirror neighbor height (opposite extreme)
+      type: a.type === "high" ? "low" : "high",
+    });
+  }
+  // Pad on the right until we cover dayEnd
+  while (sorted[sorted.length - 1].t < dayEnd) {
+    const z = sorted[sorted.length - 1];
+    const y = sorted[sorted.length - 2];
+    const period = y ? z.t - y.t : DEFAULT_HALF;
+    sorted.push({
+      t: z.t + period,
+      h: y ? y.h : z.h,
+      type: z.type === "high" ? "low" : "high",
+    });
+  }
 
   const points: { t: number; height: number }[] = [];
   for (let i = 0; i < sorted.length - 1; i++) {
     const a = sorted[i];
     const b = sorted[i + 1];
-    const tA = new Date(a.time).getTime();
-    const tB = new Date(b.time).getTime();
-    if (tB < dayStart || tA > dayEnd) continue;
+    if (b.t < dayStart || a.t > dayEnd) continue;
 
     const steps = 24; // smooth half-cycle
     for (let s = 0; s <= steps; s++) {
       const f = s / steps;
-      const t = tA + (tB - tA) * f;
+      const t = a.t + (b.t - a.t) * f;
       if (t < dayStart || t > dayEnd) continue;
       const ease = (1 - Math.cos(f * Math.PI)) / 2;
-      const h = a.height + (b.height - a.height) * ease;
+      const h = a.h + (b.h - a.h) * ease;
       points.push({ t, height: +h.toFixed(2) });
     }
   }
   // Dedup by timestamp (boundary overlaps)
   const seen = new Set<number>();
-  return points.filter((p) => {
-    if (seen.has(p.t)) return false;
-    seen.add(p.t);
-    return true;
-  });
+  return points
+    .filter((p) => {
+      if (seen.has(p.t)) return false;
+      seen.add(p.t);
+      return true;
+    })
+    .sort((a, b) => a.t - b.t);
 }
 
 export function RealTideWidget() {
