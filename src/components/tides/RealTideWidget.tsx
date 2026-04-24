@@ -45,6 +45,15 @@ function brtDayKey(ts: number): string {
   return `${d.getUTCFullYear()}-${d.getUTCMonth()}-${d.getUTCDate()}`;
 }
 
+// YYYY-MM-DD (zero-padded) — used as cache key & API payload
+function brtDateString(ts: number): string {
+  const d = new Date(ts + BRT_OFFSET_MS);
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(d.getUTCDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 function formatRelativeDay(ts: number, nowTs: number): string {
   const k = brtDayKey(ts);
   if (k === brtDayKey(nowTs)) return "Hoje";
@@ -52,12 +61,34 @@ function formatRelativeDay(ts: number, nowTs: number): string {
   return SHORT_DAY_FMT.format(new Date(ts));
 }
 
-// Start of "today" in BRT, expressed as a UTC timestamp (ms).
-function startOfBrtDay(nowTs: number): number {
-  const d = new Date(nowTs + BRT_OFFSET_MS);
+// Start of given day (BRT) expressed as a UTC timestamp (ms).
+function startOfBrtDayFor(ts: number): number {
+  const d = new Date(ts + BRT_OFFSET_MS);
   d.setUTCHours(0, 0, 0, 0);
   return d.getTime() - BRT_OFFSET_MS;
 }
+
+// Year boundaries in BRT (Jan 1 00:00 → Dec 31 00:00 of currentTime's year)
+function brtYearBounds(nowTs: number): { first: number; last: number } {
+  const d = new Date(nowTs + BRT_OFFSET_MS);
+  const year = d.getUTCFullYear();
+  const first = Date.UTC(year, 0, 1, 0, 0, 0) - BRT_OFFSET_MS;
+  const last = Date.UTC(year, 11, 31, 0, 0, 0) - BRT_OFFSET_MS;
+  return { first, last };
+}
+
+const DAY_BTN_FMT_DAY = new Intl.DateTimeFormat("pt-BR", {
+  day: "2-digit",
+  timeZone: TZ,
+});
+const DAY_BTN_FMT_MONTH = new Intl.DateTimeFormat("pt-BR", {
+  month: "short",
+  timeZone: TZ,
+});
+const DAY_BTN_FMT_WEEKDAY = new Intl.DateTimeFormat("pt-BR", {
+  weekday: "short",
+  timeZone: TZ,
+});
 
 // Build a smooth 24h curve for the current BRT day using cosine interpolation
 // between consecutive extremes. To guarantee full coverage from 00:00 → 23:59,
