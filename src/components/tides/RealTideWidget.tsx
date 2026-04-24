@@ -293,7 +293,7 @@ export function RealTideWidget() {
       <div className="px-2 pb-2 pt-2 sm:px-6">
         <div className="h-64 w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={curve} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+            <LineChart data={curve} margin={{ top: 28, right: 60, left: -10, bottom: 0 }}>
               <defs>
                 <linearGradient id="tideStroke" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="hsl(var(--ocean))" />
@@ -332,12 +332,25 @@ export function RealTideWidget() {
                   stroke="hsl(var(--coral))"
                   strokeWidth={2}
                   strokeDasharray="4 4"
-                  label={{
-                    value: `Agora · ${nowLabel}`,
-                    fill: "hsl(var(--coral))",
-                    fontSize: 11,
-                    fontWeight: 600,
-                    position: "top",
+                  label={(props: any) => {
+                    const { viewBox } = props;
+                    if (!viewBox) return null;
+                    const { x, y } = viewBox;
+                    const dayMid = (dayStart + dayEnd) / 2;
+                    const anchor = currentTime > dayMid ? "end" : "start";
+                    const dx = currentTime > dayMid ? -6 : 6;
+                    return (
+                      <text
+                        x={x + dx}
+                        y={y - 8}
+                        fill="hsl(var(--coral))"
+                        fontSize={11}
+                        fontWeight={600}
+                        textAnchor={anchor}
+                      >
+                        {`Agora · ${nowLabel}`}
+                      </text>
+                    );
                   }}
                 />
               )}
