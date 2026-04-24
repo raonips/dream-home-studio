@@ -193,19 +193,26 @@ export function RealTideWidget() {
   // Hover state for controlled tooltip with snap-back to "Agora"
   const [hovered, setHovered] = useState<{ t: number; height: number } | null>(null);
 
-  // Closest curve point to currentTime — used as snap-back default
+  // Live snap-back point: interpolated at the exact currentTime so it advances every tick
   const nowPoint = useMemo(() => {
     if (!curve.length) return null;
-    let best = curve[0];
-    let bestDiff = Math.abs(curve[0].t - currentTime);
-    for (const p of curve) {
-      const d = Math.abs(p.t - currentTime);
-      if (d < bestDiff) {
-        bestDiff = d;
-        best = p;
+    if (currentTime <= curve[0].t) return { t: currentTime, height: curve[0].height };
+    if (currentTime >= curve[curve.length - 1].t)
+      return { t: currentTime, height: curve[curve.length - 1].height };
+    // Binary-ish linear scan to find bracketing points (curve is sorted by t)
+    let lo = curve[0];
+    let hi = curve[curve.length - 1];
+    for (let i = 1; i < curve.length; i++) {
+      if (curve[i].t >= currentTime) {
+        lo = curve[i - 1];
+        hi = curve[i];
+        break;
       }
     }
-    return best;
+    const span = hi.t - lo.t || 1;
+    const ratio = (currentTime - lo.t) / span;
+    const height = lo.height + (hi.height - lo.height) * ratio;
+    return { t: currentTime, height };
   }, [curve, currentTime]);
 
   // Clean ticks every 3h within the day window
