@@ -1,10 +1,10 @@
 // Tide data fetcher — calls secure Supabase Edge Function `get-tides`.
 // Applies Marinha do Brasil calibration (+1.34 m → Nível de Redução 2026).
-// Caches results in localStorage for 24h to save API credits.
+// Caches results in localStorage per-date to save API credits.
 
 import { supabase } from "@/integrations/supabase/client";
 
-const CACHE_KEY = "tide_cache_v2_barra_jacuipe"; // bumped (calibration applied)
+const CACHE_PREFIX = "tide_data_v3_"; // bumped (per-date cache)
 const CACHE_TTL = 24 * 60 * 60 * 1000; // 24h
 
 // Marinha do Brasil — Nível de Redução offset for Barra do Jacuípe (2026)
@@ -21,10 +21,16 @@ export interface TideCache {
   data: TideExtreme[];
 }
 
-export async function fetchTideExtremes(): Promise<TideExtreme[]> {
+/**
+ * Fetch tide extremes for a specific local date (YYYY-MM-DD in BRT).
+ * Cache key includes the date so navigating between days reuses cached data.
+ */
+export async function fetchTideExtremes(date: string): Promise<TideExtreme[]> {
+  const cacheKey = `${CACHE_PREFIX}${date}`;
+
   if (typeof window !== "undefined") {
     try {
-      const raw = localStorage.getItem(CACHE_KEY);
+      const raw = localStorage.getItem(cacheKey);
       if (raw) {
         const cached: TideCache = JSON.parse(raw);
         if (Date.now() - cached.fetchedAt < CACHE_TTL && cached.data?.length) {
@@ -36,7 +42,9 @@ export async function fetchTideExtremes(): Promise<TideExtreme[]> {
     }
   }
 
-  const { data: payload, error } = await supabase.functions.invoke("get-tides");
+  const { data: payload, error } = await supabase.functions.invoke("get-tides", {
+    body: { date },
+  });
 
   if (error) {
     throw new Error(error.message || "Erro ao chamar get-tides");
@@ -55,7 +63,7 @@ export async function fetchTideExtremes(): Promise<TideExtreme[]> {
   if (typeof window !== "undefined") {
     try {
       localStorage.setItem(
-        CACHE_KEY,
+        cacheKey,
         JSON.stringify({ fetchedAt: Date.now(), data } as TideCache),
       );
     } catch {
