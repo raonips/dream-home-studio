@@ -161,37 +161,64 @@ function buildDayCurve(
 export function RealTideWidget() {
   const [extremes, setExtremes] = useState<TideExtreme[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState<number>(() => Date.now());
+  // Selected date (BRT day start, as UTC ms). Default = today.
+  const [selectedDate, setSelectedDate] = useState<number>(() =>
+    startOfBrtDayFor(Date.now()),
+  );
 
+  // Live clock — only ticks the "Agora" line, doesn't refetch
   useEffect(() => {
-    let mounted = true;
-    fetchTideExtremes()
-      .then((d) => mounted && setExtremes(d))
-      .catch((e) => mounted && setError(e.message || "Erro ao carregar marés"));
     const t = setInterval(() => setCurrentTime(Date.now()), 60_000);
-    return () => {
-      mounted = false;
-      clearInterval(t);
-    };
+    return () => clearInterval(t);
   }, []);
 
-  const dayStart = useMemo(() => startOfBrtDay(currentTime), [currentTime]);
+  // Fetch tides whenever selectedDate changes (cached per-date in localStorage)
+  useEffect(() => {
+    let mounted = true;
+    setLoading(true);
+    setError(null);
+    const dateStr = brtDateString(selectedDate);
+    fetchTideExtremes(dateStr)
+      .then((d) => {
+        if (!mounted) return;
+        setExtremes(d);
+        setLoading(false);
+      })
+      .catch((e) => {
+        if (!mounted) return;
+        setError(e.message || "Erro ao carregar marés");
+        setLoading(false);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, [selectedDate]);
+
+  const dayStart = selectedDate;
   const dayEnd = dayStart + 24 * 60 * 60 * 1000 - 1;
 
-  const todayExtremes = useMemo(() => {
+  const todayKey = brtDayKey(currentTime);
+  const selectedKey = brtDayKey(selectedDate);
+  const isViewingToday = todayKey === selectedKey;
+
+  const dayExtremes = useMemo(() => {
     if (!extremes) return [];
-    const k = brtDayKey(currentTime);
-    return extremes.filter((e) => brtDayKey(new Date(e.time).getTime()) === k);
-  }, [extremes, currentTime]);
+    return extremes.filter(
+      (e) => brtDayKey(new Date(e.time).getTime()) === selectedKey,
+    );
+  }, [extremes, selectedKey]);
 
   const upcoming = useMemo(() => {
     if (!extremes) return { high: null as TideExtreme | null, low: null as TideExtreme | null };
-    const future = extremes.filter((e) => new Date(e.time).getTime() > currentTime);
+    const reference = isViewingToday ? currentTime : dayStart;
+    const future = extremes.filter((e) => new Date(e.time).getTime() > reference);
     return {
       high: future.find((e) => e.type === "high") || null,
       low: future.find((e) => e.type === "low") || null,
     };
-  }, [extremes, currentTime]);
+  }, [extremes, currentTime, isViewingToday, dayStart]);
 
   const curve = useMemo(
     () => buildDayCurve(extremes || [], dayStart, dayEnd),
@@ -199,28 +226,38 @@ export function RealTideWidget() {
   );
 
   const trend: "rising" | "falling" = useMemo(() => {
-    const next = (extremes || []).find((e) => new Date(e.time).getTime() > currentTime);
+    const ref = isViewingToday ? currentTime : dayStart;
+    const next = (extremes || []).find((e) => new Date(e.time).getTime() > ref);
     if (!next) return "rising";
     return next.type === "high" ? "rising" : "falling";
-  }, [extremes, currentTime]);
+  }, [extremes, currentTime, isViewingToday, dayStart]);
 
-  const next3Days = useMemo(() => {
-    if (!extremes) return [] as { dayLabel: string; key: string; items: TideExtreme[] }[];
-    const buckets = new Map<string, TideExtreme[]>();
-    for (const e of extremes) {
-      const ts = new Date(e.time).getTime();
-      const key = brtDayKey(ts);
-      if (!buckets.has(key)) buckets.set(key, []);
-      buckets.get(key)!.push(e);
+  // ── Date carousel ────────────────────────────────────────────────────────
+  const yearBounds = useMemo(() => brtYearBounds(currentTime), [currentTime]);
+  const carouselDays = useMemo(() => {
+    const days: number[] = [];
+    for (let t = yearBounds.first; t <= yearBounds.last; t += 86_400_000) {
+      days.push(startOfBrtDayFor(t));
     }
-    return Array.from(buckets.entries())
-      .slice(0, 3)
-      .map(([key, items]) => ({
-        key,
-        dayLabel: formatRelativeDay(new Date(items[0].time).getTime(), currentTime),
-        items,
-      }));
-  }, [extremes, currentTime]);
+    return days;
+  }, [yearBounds.first, yearBounds.last]);
+
+  const selectedBtnRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (selectedBtnRef.current) {
+      selectedBtnRef.current.scrollIntoView({
+        behavior: "smooth",
+        inline: "center",
+        block: "nearest",
+      });
+    }
+  }, [selectedDate]);
+
+  const canPrev = selectedDate - 86_400_000 >= yearBounds.first;
+  const canNext = selectedDate + 86_400_000 <= yearBounds.last;
+  const goPrevDay = () => canPrev && setSelectedDate(selectedDate - 86_400_000);
+  const goNextDay = () => canNext && setSelectedDate(selectedDate + 86_400_000);
 
   // Hover state for controlled tooltip with snap-back to "Agora"
   const [hovered, setHovered] = useState<{ t: number; height: number } | null>(null);
