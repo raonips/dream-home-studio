@@ -190,6 +190,24 @@ export function RealTideWidget() {
       }));
   }, [extremes, currentTime]);
 
+  // Hover state for controlled tooltip with snap-back to "Agora"
+  const [hovered, setHovered] = useState<{ t: number; height: number } | null>(null);
+
+  // Closest curve point to currentTime — used as snap-back default
+  const nowPoint = useMemo(() => {
+    if (!curve.length) return null;
+    let best = curve[0];
+    let bestDiff = Math.abs(curve[0].t - currentTime);
+    for (const p of curve) {
+      const d = Math.abs(p.t - currentTime);
+      if (d < bestDiff) {
+        bestDiff = d;
+        best = p;
+      }
+    }
+    return best;
+  }, [curve, currentTime]);
+
   // Clean ticks every 3h within the day window
   const xTicks = useMemo(() => {
     const ticks: number[] = [];
