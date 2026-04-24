@@ -461,7 +461,7 @@ export function RealTideWidget() {
       <div className="px-2 pb-2 pt-2 sm:px-6">
         <div className="relative h-64 w-full">
           {/* Snap-back floating tooltip — shown when user is NOT hovering */}
-          {!hovered && nowPoint && currentTime >= dayStart && currentTime <= dayEnd && (() => {
+          {isViewingToday && !hovered && nowPoint && currentTime >= dayStart && currentTime <= dayEnd && (() => {
             const pct = ((currentTime - dayStart) / (dayEnd - dayStart)) * 100;
             // Chart inner plotting area roughly excludes YAxis (~30px) and right margin (~60px).
             // We approximate using percentage of full container with offsets.
