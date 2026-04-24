@@ -569,12 +569,14 @@ export function RealTideWidget() {
         </div>
       </div>
 
-      {/* Today's extremes list */}
-      {todayExtremes.length > 0 && (
+      {/* Selected day's extremes list */}
+      {dayExtremes.length > 0 && (
         <div className="border-t p-6">
-          <h3 className="mb-3 text-sm font-semibold text-ocean-deep">Marés de Hoje</h3>
+          <h3 className="mb-3 text-sm font-semibold text-ocean-deep capitalize">
+            {isViewingToday ? "Marés de Hoje" : `Marés · ${selectedDayLabel}`}
+          </h3>
           <div className="grid gap-2 sm:grid-cols-2">
-            {todayExtremes.map((e) => (
+            {dayExtremes.map((e) => (
               <div
                 key={e.time}
                 className="flex items-center gap-3 rounded-xl border bg-muted/30 p-3"
@@ -598,43 +600,6 @@ export function RealTideWidget() {
           </div>
         </div>
       )}
-
-      {/* Next 3 days */}
-      <div className="border-t bg-muted/10 p-6">
-        <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-ocean-deep">
-          <Waves className="size-4" />
-          Próximos Dias
-        </h3>
-        <div className="space-y-3">
-          {next3Days.map((bucket) => (
-            <div key={bucket.key} className="rounded-xl border bg-card p-3">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wider capitalize text-muted-foreground">
-                {bucket.dayLabel}
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {bucket.items.map((e) => (
-                  <span
-                    key={e.time}
-                    className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${
-                      e.type === "high"
-                        ? "bg-ocean/10 text-ocean-deep"
-                        : "bg-nature/10 text-nature"
-                    }`}
-                  >
-                    {e.type === "high" ? (
-                      <ArrowUpRight className="size-3" />
-                    ) : (
-                      <ArrowDownRight className="size-3" />
-                    )}
-                    {formatHour(new Date(e.time).getTime())} ·{" "}
-                    {e.height.toFixed(2).replace(".", ",")}m
-                  </span>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
     </article>
   );
 }
