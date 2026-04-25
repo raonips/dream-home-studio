@@ -123,7 +123,7 @@ Deno.serve(async (req) => {
     if (data.length > 0) {
       await supabase
         .from("tides_cache")
-        .upsert({ date_string: dateStr, tide_data: data }, { onConflict: "date_string" });
+        .upsert({ date_string: cacheKey, tide_data: data }, { onConflict: "date_string" });
     }
 
     return new Response(
