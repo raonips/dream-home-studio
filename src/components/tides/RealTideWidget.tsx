@@ -297,15 +297,6 @@ export function RealTideWidget() {
     return ticks;
   }, [dayStart]);
 
-  if (error) {
-    return (
-      <div className="mx-auto w-full max-w-3xl rounded-3xl border bg-card p-8 text-center">
-        <p className="text-sm text-destructive">Não foi possível carregar a tábua de marés.</p>
-        <p className="mt-2 text-xs text-muted-foreground">{error}</p>
-      </div>
-    );
-  }
-
   if (!extremes && loading) {
     return (
       <div className="mx-auto flex w-full max-w-3xl items-center justify-center rounded-3xl border bg-card p-12">
@@ -313,6 +304,10 @@ export function RealTideWidget() {
         <span className="ml-3 text-sm text-muted-foreground">Carregando marés...</span>
       </div>
     );
+  }
+
+  if (!extremes && error) {
+    // First load failed entirely — render shell with carousel so user can pick another date.
   }
 
   const selectedDayLabel = formatDay(selectedDate);
