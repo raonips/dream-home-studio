@@ -92,7 +92,8 @@ Deno.serve(async (req) => {
 
     const [yy, mm, dd] = dateStr.split("-").map(Number);
     const startUtcMs = Date.UTC(yy, mm - 1, dd, 0, 0, 0) - BRT_OFFSET_MS;
-    const endUtcMs = Date.UTC(yy, mm - 1, dd, 23, 59, 59) - BRT_OFFSET_MS;
+    // Fetch 48h window so late-night users still see "next" tides on the following day.
+    const endUtcMs = startUtcMs + 48 * 60 * 60 * 1000 - 1;
 
     const url = `https://api.stormglass.io/v2/tide/extremes/point?lat=${LAT}&lng=${LNG}&start=${Math.floor(
       startUtcMs / 1000,
