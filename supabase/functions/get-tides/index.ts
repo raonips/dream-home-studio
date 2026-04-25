@@ -61,11 +61,14 @@ Deno.serve(async (req) => {
       dateStr = `${y}-${m}-${d}`;
     }
 
+    // Cache key bumped to v2 because window expanded from 24h → 48h.
+    const cacheKey = `v2:${dateStr}`;
+
     // 1. Cache HIT? Look up in tides_cache.
     const { data: cached, error: cacheErr } = await supabase
       .from("tides_cache")
       .select("tide_data")
-      .eq("date_string", dateStr)
+      .eq("date_string", cacheKey)
       .maybeSingle();
 
     if (!cacheErr && cached?.tide_data) {
