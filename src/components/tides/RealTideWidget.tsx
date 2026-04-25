@@ -235,7 +235,7 @@ export function RealTideWidget() {
   }, [extremes, currentTime, isViewingToday, dayStart]);
 
   // ── Date carousel ────────────────────────────────────────────────────────
-  const yearBounds = useMemo(() => brtYearBounds(currentTime), [currentTime]);
+  const yearBounds = useMemo(() => carouselBounds(currentTime), [currentTime]);
   const carouselDays = useMemo(() => {
     const days: number[] = [];
     for (let t = yearBounds.first; t <= yearBounds.last; t += 86_400_000) {
