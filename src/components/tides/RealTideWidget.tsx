@@ -246,31 +246,35 @@ export function RealTideWidget() {
   }, [extremes, currentTime, isViewingToday, dayStart]);
 
   // ── Date carousel ────────────────────────────────────────────────────────
-  const yearBounds = useMemo(() => carouselBounds(currentTime), [currentTime]);
-  const carouselDays = useMemo(() => {
-    const days: number[] = [];
-    for (let t = yearBounds.first; t <= yearBounds.last; t += 86_400_000) {
-      days.push(startOfBrtDayFor(t));
-    }
-    return days;
-  }, [yearBounds.first, yearBounds.last]);
+  const carouselDays = useMemo(
+    () => buildCarouselDays(currentTime),
+    // Only rebuild when the *day* changes, not every minute tick.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [brtDayKey(currentTime)],
+  );
+  const firstDay = carouselDays[0];
+  const lastDay = carouselDays[carouselDays.length - 1];
 
   const selectedBtnRef = useRef<HTMLButtonElement>(null);
 
   const didInitialScroll = useRef(false);
   useEffect(() => {
-    if (selectedBtnRef.current) {
-      selectedBtnRef.current.scrollIntoView({
-        behavior: didInitialScroll.current ? "smooth" : "auto",
-        inline: "center",
-        block: "nearest",
-      });
-      didInitialScroll.current = true;
-    }
+    // Wait one frame so layout has settled before measuring scroll position.
+    const id = setTimeout(() => {
+      if (selectedBtnRef.current) {
+        selectedBtnRef.current.scrollIntoView({
+          behavior: didInitialScroll.current ? "smooth" : "auto",
+          inline: "center",
+          block: "nearest",
+        });
+        didInitialScroll.current = true;
+      }
+    }, 100);
+    return () => clearTimeout(id);
   }, [selectedDate]);
 
-  const canPrev = selectedDate - 86_400_000 >= yearBounds.first;
-  const canNext = selectedDate + 86_400_000 <= yearBounds.last;
+  const canPrev = selectedDate - 86_400_000 >= firstDay;
+  const canNext = selectedDate + 86_400_000 <= lastDay;
   const goPrevDay = () => canPrev && setSelectedDate(selectedDate - 86_400_000);
   const goNextDay = () => canNext && setSelectedDate(selectedDate + 86_400_000);
 
