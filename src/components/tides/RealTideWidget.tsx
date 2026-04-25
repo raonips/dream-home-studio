@@ -71,12 +71,23 @@ function startOfBrtDayFor(ts: number): number {
 // Carousel window: 30 days in the past → 25 days in the future (BRT day-aligned).
 const CAROUSEL_PAST_DAYS = 30;
 const CAROUSEL_FUTURE_DAYS = 25;
-function carouselBounds(nowTs: number): { first: number; last: number } {
-  const today = startOfBrtDayFor(nowTs);
-  return {
-    first: today - CAROUSEL_PAST_DAYS * 86_400_000,
-    last: today + CAROUSEL_FUTURE_DAYS * 86_400_000,
-  };
+
+// Build the carousel using calendar arithmetic on the *local BRT date parts*
+// (not by adding 86_400_000 ms repeatedly) so months always match what a
+// human reading the calendar sees — no off-by-one drift.
+function buildCarouselDays(nowTs: number): number[] {
+  const todayStart = startOfBrtDayFor(nowTs);
+  const base = new Date(todayStart + BRT_OFFSET_MS); // UTC parts == BRT date parts
+  const y = base.getUTCFullYear();
+  const m = base.getUTCMonth();
+  const d = base.getUTCDate();
+  const days: number[] = [];
+  for (let offset = -CAROUSEL_PAST_DAYS; offset <= CAROUSEL_FUTURE_DAYS; offset++) {
+    // Date.UTC handles month/year roll-over correctly for any offset.
+    const utcMidnight = Date.UTC(y, m, d + offset, 0, 0, 0);
+    days.push(utcMidnight - BRT_OFFSET_MS); // → BRT 00:00 of that calendar day
+  }
+  return days;
 }
 
 const DAY_BTN_FMT_DAY = new Intl.DateTimeFormat("pt-BR", {
@@ -235,31 +246,35 @@ export function RealTideWidget() {
   }, [extremes, currentTime, isViewingToday, dayStart]);
 
   // ── Date carousel ────────────────────────────────────────────────────────
-  const yearBounds = useMemo(() => carouselBounds(currentTime), [currentTime]);
-  const carouselDays = useMemo(() => {
-    const days: number[] = [];
-    for (let t = yearBounds.first; t <= yearBounds.last; t += 86_400_000) {
-      days.push(startOfBrtDayFor(t));
-    }
-    return days;
-  }, [yearBounds.first, yearBounds.last]);
+  const carouselDays = useMemo(
+    () => buildCarouselDays(currentTime),
+    // Only rebuild when the *day* changes, not every minute tick.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [brtDayKey(currentTime)],
+  );
+  const firstDay = carouselDays[0];
+  const lastDay = carouselDays[carouselDays.length - 1];
 
   const selectedBtnRef = useRef<HTMLButtonElement>(null);
 
   const didInitialScroll = useRef(false);
   useEffect(() => {
-    if (selectedBtnRef.current) {
-      selectedBtnRef.current.scrollIntoView({
-        behavior: didInitialScroll.current ? "smooth" : "auto",
-        inline: "center",
-        block: "nearest",
-      });
-      didInitialScroll.current = true;
-    }
+    // Wait one frame so layout has settled before measuring scroll position.
+    const id = setTimeout(() => {
+      if (selectedBtnRef.current) {
+        selectedBtnRef.current.scrollIntoView({
+          behavior: didInitialScroll.current ? "smooth" : "auto",
+          inline: "center",
+          block: "nearest",
+        });
+        didInitialScroll.current = true;
+      }
+    }, 100);
+    return () => clearTimeout(id);
   }, [selectedDate]);
 
-  const canPrev = selectedDate - 86_400_000 >= yearBounds.first;
-  const canNext = selectedDate + 86_400_000 <= yearBounds.last;
+  const canPrev = selectedDate - 86_400_000 >= firstDay;
+  const canNext = selectedDate + 86_400_000 <= lastDay;
   const goPrevDay = () => canPrev && setSelectedDate(selectedDate - 86_400_000);
   const goNextDay = () => canNext && setSelectedDate(selectedDate + 86_400_000);
 
@@ -374,9 +389,9 @@ export function RealTideWidget() {
                 className={cn(
                   "flex min-w-[58px] shrink-0 flex-col items-center gap-0.5 rounded-xl border px-2 py-1.5 text-xs transition",
                   isSelected
-                    ? "border-ocean bg-ocean text-primary-foreground shadow-sm"
+                    ? "border-ocean-deep bg-ocean-deep text-primary-foreground shadow-md ring-2 ring-ocean-deep/30 scale-[1.04]"
                     : isToday
-                      ? "border-ocean/40 bg-ocean/5 text-ocean-deep hover:bg-ocean/10"
+                      ? "border-ocean/40 bg-background text-ocean-deep hover:bg-ocean/10"
                       : "border-border bg-background text-foreground hover:bg-muted",
                 )}
               >
