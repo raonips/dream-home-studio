@@ -71,12 +71,23 @@ function startOfBrtDayFor(ts: number): number {
 // Carousel window: 30 days in the past → 25 days in the future (BRT day-aligned).
 const CAROUSEL_PAST_DAYS = 30;
 const CAROUSEL_FUTURE_DAYS = 25;
-function carouselBounds(nowTs: number): { first: number; last: number } {
-  const today = startOfBrtDayFor(nowTs);
-  return {
-    first: today - CAROUSEL_PAST_DAYS * 86_400_000,
-    last: today + CAROUSEL_FUTURE_DAYS * 86_400_000,
-  };
+
+// Build the carousel using calendar arithmetic on the *local BRT date parts*
+// (not by adding 86_400_000 ms repeatedly) so months always match what a
+// human reading the calendar sees — no off-by-one drift.
+function buildCarouselDays(nowTs: number): number[] {
+  const todayStart = startOfBrtDayFor(nowTs);
+  const base = new Date(todayStart + BRT_OFFSET_MS); // UTC parts == BRT date parts
+  const y = base.getUTCFullYear();
+  const m = base.getUTCMonth();
+  const d = base.getUTCDate();
+  const days: number[] = [];
+  for (let offset = -CAROUSEL_PAST_DAYS; offset <= CAROUSEL_FUTURE_DAYS; offset++) {
+    // Date.UTC handles month/year roll-over correctly for any offset.
+    const utcMidnight = Date.UTC(y, m, d + offset, 0, 0, 0);
+    days.push(utcMidnight - BRT_OFFSET_MS); // → BRT 00:00 of that calendar day
+  }
+  return days;
 }
 
 const DAY_BTN_FMT_DAY = new Intl.DateTimeFormat("pt-BR", {
