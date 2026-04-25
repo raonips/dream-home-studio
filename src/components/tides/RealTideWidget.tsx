@@ -68,13 +68,15 @@ function startOfBrtDayFor(ts: number): number {
   return d.getTime() - BRT_OFFSET_MS;
 }
 
-// Year boundaries in BRT (Jan 1 00:00 → Dec 31 00:00 of currentTime's year)
-function brtYearBounds(nowTs: number): { first: number; last: number } {
-  const d = new Date(nowTs + BRT_OFFSET_MS);
-  const year = d.getUTCFullYear();
-  const first = Date.UTC(year, 0, 1, 0, 0, 0) - BRT_OFFSET_MS;
-  const last = Date.UTC(year, 11, 31, 0, 0, 0) - BRT_OFFSET_MS;
-  return { first, last };
+// Carousel window: 30 days in the past → 25 days in the future (BRT day-aligned).
+const CAROUSEL_PAST_DAYS = 30;
+const CAROUSEL_FUTURE_DAYS = 25;
+function carouselBounds(nowTs: number): { first: number; last: number } {
+  const today = startOfBrtDayFor(nowTs);
+  return {
+    first: today - CAROUSEL_PAST_DAYS * 86_400_000,
+    last: today + CAROUSEL_FUTURE_DAYS * 86_400_000,
+  };
 }
 
 const DAY_BTN_FMT_DAY = new Intl.DateTimeFormat("pt-BR", {
