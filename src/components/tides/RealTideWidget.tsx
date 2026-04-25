@@ -389,9 +389,9 @@ export function RealTideWidget() {
                 className={cn(
                   "flex min-w-[58px] shrink-0 flex-col items-center gap-0.5 rounded-xl border px-2 py-1.5 text-xs transition",
                   isSelected
-                    ? "border-ocean bg-ocean text-primary-foreground shadow-sm"
+                    ? "border-ocean-deep bg-ocean-deep text-primary-foreground shadow-md ring-2 ring-ocean-deep/30 scale-[1.04]"
                     : isToday
-                      ? "border-ocean/40 bg-ocean/5 text-ocean-deep hover:bg-ocean/10"
+                      ? "border-ocean/40 bg-background text-ocean-deep hover:bg-ocean/10"
                       : "border-border bg-background text-foreground hover:bg-muted",
                 )}
               >
