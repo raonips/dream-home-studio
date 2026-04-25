@@ -61,11 +61,14 @@ Deno.serve(async (req) => {
       dateStr = `${y}-${m}-${d}`;
     }
 
+    // Cache key bumped to v2 because window expanded from 24h → 48h.
+    const cacheKey = `v2:${dateStr}`;
+
     // 1. Cache HIT? Look up in tides_cache.
     const { data: cached, error: cacheErr } = await supabase
       .from("tides_cache")
       .select("tide_data")
-      .eq("date_string", dateStr)
+      .eq("date_string", cacheKey)
       .maybeSingle();
 
     if (!cacheErr && cached?.tide_data) {
@@ -92,7 +95,8 @@ Deno.serve(async (req) => {
 
     const [yy, mm, dd] = dateStr.split("-").map(Number);
     const startUtcMs = Date.UTC(yy, mm - 1, dd, 0, 0, 0) - BRT_OFFSET_MS;
-    const endUtcMs = Date.UTC(yy, mm - 1, dd, 23, 59, 59) - BRT_OFFSET_MS;
+    // Fetch 48h window so late-night users still see "next" tides on the following day.
+    const endUtcMs = startUtcMs + 48 * 60 * 60 * 1000 - 1;
 
     const url = `https://api.stormglass.io/v2/tide/extremes/point?lat=${LAT}&lng=${LNG}&start=${Math.floor(
       startUtcMs / 1000,
@@ -119,7 +123,7 @@ Deno.serve(async (req) => {
     if (data.length > 0) {
       await supabase
         .from("tides_cache")
-        .upsert({ date_string: dateStr, tide_data: data }, { onConflict: "date_string" });
+        .upsert({ date_string: cacheKey, tide_data: data }, { onConflict: "date_string" });
     }
 
     return new Response(

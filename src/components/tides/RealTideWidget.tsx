@@ -459,7 +459,7 @@ export function RealTideWidget() {
               </p>
               <p className="text-sm text-muted-foreground">
                 {upcoming.high.height.toFixed(2).replace(".", ",")} m ·{" "}
-                {formatRelativeDay(new Date(upcoming.high.time).getTime(), currentTime)}
+                {formatRelativeDay(new Date(upcoming.high.time).getTime(), isViewingToday ? currentTime : selectedDate)}
               </p>
             </>
           ) : (
@@ -478,7 +478,7 @@ export function RealTideWidget() {
               </p>
               <p className="text-sm text-muted-foreground">
                 {upcoming.low.height.toFixed(2).replace(".", ",")} m ·{" "}
-                {formatRelativeDay(new Date(upcoming.low.time).getTime(), currentTime)}
+                {formatRelativeDay(new Date(upcoming.low.time).getTime(), isViewingToday ? currentTime : selectedDate)}
               </p>
             </>
           ) : (
