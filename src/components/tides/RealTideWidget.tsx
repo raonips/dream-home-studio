@@ -615,6 +615,8 @@ export function RealTideWidget() {
           </div>
         </div>
       )}
+        </>
+      )}
     </article>
   );
 }
