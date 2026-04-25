@@ -246,13 +246,15 @@ export function RealTideWidget() {
 
   const selectedBtnRef = useRef<HTMLButtonElement>(null);
 
+  const didInitialScroll = useRef(false);
   useEffect(() => {
     if (selectedBtnRef.current) {
       selectedBtnRef.current.scrollIntoView({
-        behavior: "smooth",
+        behavior: didInitialScroll.current ? "smooth" : "auto",
         inline: "center",
         block: "nearest",
       });
+      didInitialScroll.current = true;
     }
   }, [selectedDate]);
 
