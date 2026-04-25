@@ -1,6 +1,8 @@
 // Edge Function: get-tides
-// Proxies Stormglass API to keep the API key secret.
 // Returns tide extremes for Barra do Jacuípe, BA for a specific local date (BRT).
+// Uses Supabase table `tides_cache` as persistent cache to avoid repeat Stormglass calls.
+
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,8 +13,6 @@ const corsHeaders = {
 
 const LAT = -12.7031;
 const LNG = -38.1322;
-
-// Brasília fixed offset (no DST since 2019): UTC-3
 const BRT_OFFSET_MS = -3 * 60 * 60 * 1000;
 
 function isValidDateStr(s: unknown): s is string {
@@ -26,17 +26,19 @@ Deno.serve(async (req) => {
 
   try {
     const apiKey = Deno.env.get("STORMGLASS_API_KEY");
-    if (!apiKey) {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+    if (!supabaseUrl || !serviceKey) {
       return new Response(
-        JSON.stringify({ error: "STORMGLASS_API_KEY not configured" }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
+        JSON.stringify({ error: "Supabase env not configured" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    // Parse optional `date` (YYYY-MM-DD, BRT local). Defaults to "today" in BRT.
+    const supabase = createClient(supabaseUrl, serviceKey);
+
+    // Parse `date` (YYYY-MM-DD, BRT). Default = today (BRT).
     let dateStr: string | undefined;
     try {
       if (req.method === "POST") {
@@ -48,7 +50,7 @@ Deno.serve(async (req) => {
         if (isValidDateStr(q)) dateStr = q;
       }
     } catch {
-      // ignore parse errors → default to today
+      // ignore
     }
 
     if (!dateStr) {
@@ -59,8 +61,35 @@ Deno.serve(async (req) => {
       dateStr = `${y}-${m}-${d}`;
     }
 
-    // Compose 00:00:00 and 23:59:59 of the selected BRT date as UTC timestamps.
-    // BRT 00:00 of YYYY-MM-DD = UTC 03:00 of same date.
+    // 1. Cache HIT? Look up in tides_cache.
+    const { data: cached, error: cacheErr } = await supabase
+      .from("tides_cache")
+      .select("tide_data")
+      .eq("date_string", dateStr)
+      .maybeSingle();
+
+    if (!cacheErr && cached?.tide_data) {
+      return new Response(
+        JSON.stringify({ data: cached.tide_data, date: dateStr, cached: true }),
+        {
+          status: 200,
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "application/json",
+            "Cache-Control": "public, max-age=3600",
+          },
+        },
+      );
+    }
+
+    // 2. Cache MISS — call Stormglass.
+    if (!apiKey) {
+      return new Response(
+        JSON.stringify({ error: "STORMGLASS_API_KEY not configured" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
     const [yy, mm, dd] = dateStr.split("-").map(Number);
     const startUtcMs = Date.UTC(yy, mm - 1, dd, 0, 0, 0) - BRT_OFFSET_MS;
     const endUtcMs = Date.UTC(yy, mm - 1, dd, 23, 59, 59) - BRT_OFFSET_MS;
@@ -69,18 +98,13 @@ Deno.serve(async (req) => {
       startUtcMs / 1000,
     )}&end=${Math.floor(endUtcMs / 1000)}`;
 
-    const res = await fetch(url, {
-      headers: { Authorization: apiKey },
-    });
+    const res = await fetch(url, { headers: { Authorization: apiKey } });
 
     if (!res.ok) {
       const text = await res.text();
       return new Response(
         JSON.stringify({ error: `Stormglass error ${res.status}`, details: text }),
-        {
-          status: 502,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
+        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
@@ -91,14 +115,24 @@ Deno.serve(async (req) => {
       type: d.type,
     }));
 
-    return new Response(JSON.stringify({ data, date: dateStr }), {
-      status: 200,
-      headers: {
-        ...corsHeaders,
-        "Content-Type": "application/json",
-        "Cache-Control": "public, max-age=3600",
+    // 3. Save to cache (best-effort upsert).
+    if (data.length > 0) {
+      await supabase
+        .from("tides_cache")
+        .upsert({ date_string: dateStr, tide_data: data }, { onConflict: "date_string" });
+    }
+
+    return new Response(
+      JSON.stringify({ data, date: dateStr, cached: false }),
+      {
+        status: 200,
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json",
+          "Cache-Control": "public, max-age=3600",
+        },
       },
-    });
+    );
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Unknown error";
     return new Response(JSON.stringify({ error: msg }), {

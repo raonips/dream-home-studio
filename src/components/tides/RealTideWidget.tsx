@@ -68,13 +68,15 @@ function startOfBrtDayFor(ts: number): number {
   return d.getTime() - BRT_OFFSET_MS;
 }
 
-// Year boundaries in BRT (Jan 1 00:00 → Dec 31 00:00 of currentTime's year)
-function brtYearBounds(nowTs: number): { first: number; last: number } {
-  const d = new Date(nowTs + BRT_OFFSET_MS);
-  const year = d.getUTCFullYear();
-  const first = Date.UTC(year, 0, 1, 0, 0, 0) - BRT_OFFSET_MS;
-  const last = Date.UTC(year, 11, 31, 0, 0, 0) - BRT_OFFSET_MS;
-  return { first, last };
+// Carousel window: 30 days in the past → 25 days in the future (BRT day-aligned).
+const CAROUSEL_PAST_DAYS = 30;
+const CAROUSEL_FUTURE_DAYS = 25;
+function carouselBounds(nowTs: number): { first: number; last: number } {
+  const today = startOfBrtDayFor(nowTs);
+  return {
+    first: today - CAROUSEL_PAST_DAYS * 86_400_000,
+    last: today + CAROUSEL_FUTURE_DAYS * 86_400_000,
+  };
 }
 
 const DAY_BTN_FMT_DAY = new Intl.DateTimeFormat("pt-BR", {
@@ -233,7 +235,7 @@ export function RealTideWidget() {
   }, [extremes, currentTime, isViewingToday, dayStart]);
 
   // ── Date carousel ────────────────────────────────────────────────────────
-  const yearBounds = useMemo(() => brtYearBounds(currentTime), [currentTime]);
+  const yearBounds = useMemo(() => carouselBounds(currentTime), [currentTime]);
   const carouselDays = useMemo(() => {
     const days: number[] = [];
     for (let t = yearBounds.first; t <= yearBounds.last; t += 86_400_000) {
@@ -244,13 +246,15 @@ export function RealTideWidget() {
 
   const selectedBtnRef = useRef<HTMLButtonElement>(null);
 
+  const didInitialScroll = useRef(false);
   useEffect(() => {
     if (selectedBtnRef.current) {
       selectedBtnRef.current.scrollIntoView({
-        behavior: "smooth",
+        behavior: didInitialScroll.current ? "smooth" : "auto",
         inline: "center",
         block: "nearest",
       });
+      didInitialScroll.current = true;
     }
   }, [selectedDate]);
 
@@ -293,15 +297,6 @@ export function RealTideWidget() {
     return ticks;
   }, [dayStart]);
 
-  if (error) {
-    return (
-      <div className="mx-auto w-full max-w-3xl rounded-3xl border bg-card p-8 text-center">
-        <p className="text-sm text-destructive">Não foi possível carregar a tábua de marés.</p>
-        <p className="mt-2 text-xs text-muted-foreground">{error}</p>
-      </div>
-    );
-  }
-
   if (!extremes && loading) {
     return (
       <div className="mx-auto flex w-full max-w-3xl items-center justify-center rounded-3xl border bg-card p-12">
@@ -309,6 +304,10 @@ export function RealTideWidget() {
         <span className="ml-3 text-sm text-muted-foreground">Carregando marés...</span>
       </div>
     );
+  }
+
+  if (!extremes && error) {
+    // First load failed entirely — render shell with carousel so user can pick another date.
   }
 
   const selectedDayLabel = formatDay(selectedDate);
@@ -415,6 +414,22 @@ export function RealTideWidget() {
         </button>
       </div>
 
+      {error ? (
+        <div className="p-8 text-center">
+          <p className="text-base font-medium text-foreground">
+            Dados indisponíveis para esta data.
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Tente uma data mais próxima.
+          </p>
+        </div>
+      ) : loading && !extremes ? (
+        <div className="flex items-center justify-center p-12">
+          <Loader2 className="size-5 animate-spin text-ocean" />
+          <span className="ml-3 text-sm text-muted-foreground">Carregando marés...</span>
+        </div>
+      ) : (
+        <>
       {/* Quick cards */}
       <div className="grid gap-3 p-5 sm:grid-cols-2">
         <div className="rounded-2xl border border-ocean/20 bg-gradient-to-br from-ocean/5 to-ocean/10 p-4">
@@ -599,6 +614,8 @@ export function RealTideWidget() {
             ))}
           </div>
         </div>
+      )}
+        </>
       )}
     </article>
   );

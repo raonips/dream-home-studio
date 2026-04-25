@@ -880,6 +880,24 @@ export type Database = {
         }
         Relationships: []
       }
+      tides_cache: {
+        Row: {
+          created_at: string
+          date_string: string
+          tide_data: Json
+        }
+        Insert: {
+          created_at?: string
+          date_string: string
+          tide_data: Json
+        }
+        Update: {
+          created_at?: string
+          date_string?: string
+          tide_data?: Json
+        }
+        Relationships: []
+      }
       url_redirects: {
         Row: {
           created_at: string

@@ -1,11 +1,10 @@
 // Tide data fetcher — calls secure Supabase Edge Function `get-tides`.
-// Applies Marinha do Brasil calibration (+1.34 m → Nível de Redução 2026).
-// Caches results in localStorage per-date to save API credits.
+// The Edge Function uses a Postgres-backed cache (`tides_cache` table) so
+// repeat requests for the same date never hit the Stormglass API.
+// We keep a tiny in-memory cache here to avoid duplicate calls during a
+// single session (e.g. when the user toggles between two dates quickly).
 
 import { supabase } from "@/integrations/supabase/client";
-
-const CACHE_PREFIX = "tide_data_v3_"; // bumped (per-date cache)
-const CACHE_TTL = 24 * 60 * 60 * 1000; // 24h
 
 // Marinha do Brasil — Nível de Redução offset for Barra do Jacuípe (2026)
 export const MARINHA_OFFSET_M = 1.34;
@@ -16,31 +15,15 @@ export interface TideExtreme {
   type: "high" | "low";
 }
 
-export interface TideCache {
-  fetchedAt: number;
-  data: TideExtreme[];
-}
+const memoryCache = new Map<string, TideExtreme[]>();
 
 /**
  * Fetch tide extremes for a specific local date (YYYY-MM-DD in BRT).
- * Cache key includes the date so navigating between days reuses cached data.
+ * Lazy: only runs when called (i.e. when the user picks a date).
  */
 export async function fetchTideExtremes(date: string): Promise<TideExtreme[]> {
-  const cacheKey = `${CACHE_PREFIX}${date}`;
-
-  if (typeof window !== "undefined") {
-    try {
-      const raw = localStorage.getItem(cacheKey);
-      if (raw) {
-        const cached: TideCache = JSON.parse(raw);
-        if (Date.now() - cached.fetchedAt < CACHE_TTL && cached.data?.length) {
-          return cached.data;
-        }
-      }
-    } catch {
-      // ignore
-    }
-  }
+  const hit = memoryCache.get(date);
+  if (hit) return hit;
 
   const { data: payload, error } = await supabase.functions.invoke("get-tides", {
     body: { date },
@@ -60,16 +43,6 @@ export async function fetchTideExtremes(date: string): Promise<TideExtreme[]> {
     type: d.type,
   }));
 
-  if (typeof window !== "undefined") {
-    try {
-      localStorage.setItem(
-        cacheKey,
-        JSON.stringify({ fetchedAt: Date.now(), data } as TideCache),
-      );
-    } catch {
-      // quota — ignore
-    }
-  }
-
+  memoryCache.set(date, data);
   return data;
 }
