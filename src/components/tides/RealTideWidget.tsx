@@ -414,6 +414,22 @@ export function RealTideWidget() {
         </button>
       </div>
 
+      {error ? (
+        <div className="p-8 text-center">
+          <p className="text-base font-medium text-foreground">
+            Dados indisponíveis para esta data.
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Tente uma data mais próxima.
+          </p>
+        </div>
+      ) : loading && !extremes ? (
+        <div className="flex items-center justify-center p-12">
+          <Loader2 className="size-5 animate-spin text-ocean" />
+          <span className="ml-3 text-sm text-muted-foreground">Carregando marés...</span>
+        </div>
+      ) : (
+        <>
       {/* Quick cards */}
       <div className="grid gap-3 p-5 sm:grid-cols-2">
         <div className="rounded-2xl border border-ocean/20 bg-gradient-to-br from-ocean/5 to-ocean/10 p-4">
