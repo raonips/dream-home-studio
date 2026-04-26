@@ -255,23 +255,22 @@ export function RealTideWidget() {
   const firstDay = carouselDays[0];
   const lastDay = carouselDays[carouselDays.length - 1];
 
-  const selectedBtnRef = useRef<HTMLButtonElement>(null);
+  const activeButtonRef = useRef<HTMLButtonElement>(null);
 
   const didInitialScroll = useRef(false);
   useEffect(() => {
-    // Wait one frame so layout has settled before measuring scroll position.
+    // 200ms ensures the carousel DOM + layout is fully painted before we
+    // measure scroll position — critical on first mount.
     const id = setTimeout(() => {
-      if (selectedBtnRef.current) {
-        selectedBtnRef.current.scrollIntoView({
-          behavior: didInitialScroll.current ? "smooth" : "auto",
-          inline: "center",
-          block: "nearest",
-        });
-        didInitialScroll.current = true;
-      }
-    }, 100);
+      activeButtonRef.current?.scrollIntoView({
+        behavior: didInitialScroll.current ? "smooth" : "auto",
+        inline: "center",
+        block: "nearest",
+      });
+      didInitialScroll.current = true;
+    }, 200);
     return () => clearTimeout(id);
-  }, [selectedDate]);
+  }, [selectedDate, carouselDays]);
 
   const canPrev = selectedDate - 86_400_000 >= firstDay;
   const canNext = selectedDate + 86_400_000 <= lastDay;
@@ -383,9 +382,13 @@ export function RealTideWidget() {
             return (
               <button
                 key={dayTs}
-                ref={isSelected ? selectedBtnRef : undefined}
+                ref={isSelected ? activeButtonRef : null}
                 type="button"
-                onClick={() => setSelectedDate(dayTs)}
+                onClick={() => {
+                  // Use the exact dayTs from this iteration — no offsets,
+                  // no timezone conversions, no addDays. Prevents off-by-one.
+                  setSelectedDate(dayTs);
+                }}
                 className={cn(
                   "flex min-w-[58px] shrink-0 flex-col items-center gap-0.5 rounded-xl border px-2 py-1.5 text-xs transition",
                   isSelected
