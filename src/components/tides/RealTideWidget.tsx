@@ -256,20 +256,37 @@ export function RealTideWidget() {
   const lastDay = carouselDays[carouselDays.length - 1];
 
   const activeButtonRef = useRef<HTMLButtonElement>(null);
+  const carouselScrollRef = useRef<HTMLDivElement>(null);
 
   const didInitialScroll = useRef(false);
   useEffect(() => {
-    // 200ms ensures the carousel DOM + layout is fully painted before we
-    // measure scroll position — critical on first mount.
-    const id = setTimeout(() => {
-      activeButtonRef.current?.scrollIntoView({
+    // Center the active button *within the carousel scroller only* —
+    // never scroll the whole page (which would yank the viewport on load).
+    const center = () => {
+      const container = carouselScrollRef.current;
+      const btn = activeButtonRef.current;
+      if (!container || !btn) return false;
+      const target =
+        btn.offsetLeft - container.clientWidth / 2 + btn.clientWidth / 2;
+      container.scrollTo({
+        left: Math.max(0, target),
         behavior: didInitialScroll.current ? "smooth" : "auto",
-        inline: "center",
-        block: "nearest",
       });
       didInitialScroll.current = true;
-    }, 200);
-    return () => clearTimeout(id);
+      return true;
+    };
+    // Try on the next frame, then again after layout settles.
+    const raf = requestAnimationFrame(() => {
+      if (!center()) {
+        // ref not attached yet — retry after paint
+        setTimeout(center, 100);
+      }
+    });
+    const fallback = setTimeout(center, 250);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(fallback);
+    };
   }, [selectedDate, carouselDays]);
 
   const canPrev = selectedDate - 86_400_000 >= firstDay;
@@ -373,6 +390,7 @@ export function RealTideWidget() {
           <ChevronLeft className="size-4" />
         </button>
         <div
+          ref={carouselScrollRef}
           className="flex flex-1 gap-2 overflow-x-auto scroll-smooth py-1"
           style={{ scrollbarWidth: "none" }}
         >
