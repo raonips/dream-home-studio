@@ -267,8 +267,15 @@ export function RealTideWidget() {
       const container = carouselScrollRef.current;
       const btn = activeButtonRef.current;
       if (!container || !btn) return false;
+
+      const containerRect = container.getBoundingClientRect();
+      const btnRect = btn.getBoundingClientRect();
       const target =
-        btn.offsetLeft - container.clientWidth / 2 + btn.clientWidth / 2;
+        container.scrollLeft +
+        (btnRect.left - containerRect.left) -
+        container.clientWidth / 2 +
+        btnRect.width / 2;
+
       container.scrollTo({
         left: Math.max(0, target),
         behavior: didInitialScroll.current ? "smooth" : "auto",
