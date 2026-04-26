@@ -260,6 +260,7 @@ export function RealTideWidget() {
 
   const didInitialScroll = useRef(false);
   useEffect(() => {
+    if (loading) return;
     // Center the active button *within the carousel scroller only* —
     // never scroll the whole page (which would yank the viewport on load).
     const center = () => {
@@ -287,7 +288,7 @@ export function RealTideWidget() {
       cancelAnimationFrame(raf);
       clearTimeout(fallback);
     };
-  }, [selectedDate, carouselDays]);
+  }, [selectedDate, carouselDays, loading]);
 
   const canPrev = selectedDate - 86_400_000 >= firstDay;
   const canNext = selectedDate + 86_400_000 <= lastDay;
