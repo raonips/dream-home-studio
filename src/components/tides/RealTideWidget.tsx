@@ -12,6 +12,7 @@ import {
 } from "recharts";
 import { fetchTideExtremes, type TideExtreme } from "@/lib/tideApi";
 import { cn } from "@/lib/utils";
+import { DEFAULT_TIDE_REGION_SLUG, getTideRegion } from "@/lib/tideRegions";
 
 // Brasília: GMT-3, no DST since 2019
 const BRT_OFFSET_MS = -3 * 60 * 60 * 1000;
@@ -171,7 +172,12 @@ function buildDayCurve(
     .sort((a, b) => a.t - b.t);
 }
 
-export function RealTideWidget() {
+interface RealTideWidgetProps {
+  regionSlug?: string;
+}
+
+export function RealTideWidget({ regionSlug = DEFAULT_TIDE_REGION_SLUG }: RealTideWidgetProps) {
+  const region = getTideRegion(regionSlug);
   const [extremes, setExtremes] = useState<TideExtreme[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -187,13 +193,14 @@ export function RealTideWidget() {
     return () => clearInterval(t);
   }, []);
 
-  // Fetch tides whenever selectedDate changes (cached per-date in localStorage)
+  // Fetch tides whenever selectedDate or region changes
   useEffect(() => {
     let mounted = true;
     setLoading(true);
     setError(null);
+    setExtremes(null);
     const dateStr = brtDateString(selectedDate);
-    fetchTideExtremes(dateStr)
+    fetchTideExtremes(dateStr, region.slug)
       .then((d) => {
         if (!mounted) return;
         setExtremes(d);
@@ -207,7 +214,7 @@ export function RealTideWidget() {
     return () => {
       mounted = false;
     };
-  }, [selectedDate]);
+  }, [selectedDate, region.slug]);
 
   const dayStart = selectedDate;
   const dayEnd = dayStart + 24 * 60 * 60 * 1000 - 1;
@@ -364,7 +371,7 @@ export function RealTideWidget() {
         <div>
           <div className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-widest opacity-70">
             <MapPin className="size-3.5" />
-            Barra do Jacuípe · BA
+            {region.name} · BA
           </div>
           <h2 className="mt-1 text-3xl font-semibold leading-tight sm:text-4xl text-primary-foreground">
             {headerTitle}
