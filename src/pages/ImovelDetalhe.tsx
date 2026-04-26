@@ -812,6 +812,7 @@ const ImovelDetalhe = () => {
           location={property.location}
           propertyType={property.property_type}
           price={property.price}
+          bedrooms={property.bedrooms}
         />
 
         <GlobalBlocks pageSlug="imovel_detail" />

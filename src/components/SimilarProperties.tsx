@@ -9,9 +9,19 @@ interface Props {
   location?: string | null;
   propertyType?: string | null;
   price?: number | null;
+  bedrooms?: number | null;
 }
 
-const SimilarProperties = ({ currentId, condominioSlug, location, propertyType, price }: Props) => {
+const LIMIT = 3;
+
+const SimilarProperties = ({
+  currentId,
+  condominioSlug,
+  location,
+  propertyType,
+  price,
+  bedrooms,
+}: Props) => {
   const [items, setItems] = useState<PropertyData[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -19,71 +29,71 @@ const SimilarProperties = ({ currentId, condominioSlug, location, propertyType, 
     let cancelled = false;
     const fetchSimilar = async () => {
       setLoading(true);
-      const minPrice = price ? price * 0.7 : 0;
-      const maxPrice = price ? price * 1.3 : Number.MAX_SAFE_INTEGER;
 
-      let results: PropertyData[] = [];
+      // Cascade requires price to define the ±20% band.
+      const minPrice = price ? price * 0.8 : null;
+      const maxPrice = price ? price * 1.2 : null;
 
-      // Priority 1: same condominio, ±30% price
-      if (condominioSlug) {
-        let q = supabase
+      const collected: PropertyData[] = [];
+      const seen = new Set<string>([currentId]);
+
+      const pushUnique = (rows: PropertyData[] | null) => {
+        if (!rows) return;
+        for (const r of rows) {
+          if (seen.has(r.id)) continue;
+          seen.add(r.id);
+          collected.push(r);
+        }
+      };
+
+      // Phase 1 — same condominio + ±20% price
+      if (condominioSlug && minPrice !== null && maxPrice !== null) {
+        const { data } = await supabase
           .from("properties")
           .select("*")
           .neq("id", currentId)
           .eq("status", "active")
           .eq("condominio_slug", condominioSlug)
-          .limit(4);
-        if (price) q = q.gte("price", minPrice).lte("price", maxPrice);
-        const { data } = await q;
-        if (data) results = data as PropertyData[];
+          .gte("price", minPrice)
+          .lte("price", maxPrice)
+          .limit(10);
+        pushUnique(data as PropertyData[] | null);
       }
 
-      // Priority 2: same location + same property_type, ±30% price
-      if (results.length < 3 && location) {
-        const need = 4 - results.length;
+      // Phase 2 — same location, different condominio + ±20% price
+      if (collected.length < LIMIT && location && minPrice !== null && maxPrice !== null) {
         let q = supabase
           .from("properties")
           .select("*")
           .neq("id", currentId)
           .eq("status", "active")
           .ilike("location", `%${location}%`)
-          .limit(need + results.length);
-        if (propertyType) q = q.eq("property_type", propertyType);
-        if (price) q = q.gte("price", minPrice).lte("price", maxPrice);
+          .gte("price", minPrice)
+          .lte("price", maxPrice)
+          .limit(10);
+        if (condominioSlug) q = q.neq("condominio_slug", condominioSlug);
         const { data } = await q;
-        if (data) {
-          const existing = new Set(results.map(r => r.id));
-          for (const p of data as PropertyData[]) {
-            if (!existing.has(p.id) && results.length < 4) results.push(p);
-          }
-        }
+        pushUnique(data as PropertyData[] | null);
       }
 
-      // Final fallback: any active property of same type
-      if (results.length < 3 && propertyType) {
-        const { data } = await supabase
-          .from("properties")
-          .select("*")
-          .neq("id", currentId)
-          .eq("status", "active")
-          .eq("property_type", propertyType)
-          .limit(4);
-        if (data) {
-          const existing = new Set(results.map(r => r.id));
-          for (const p of data as PropertyData[]) {
-            if (!existing.has(p.id) && results.length < 4) results.push(p);
-          }
-        }
-      }
+      // Phase 3 — tie-break by closest bedroom count
+      const ranked = [...collected].sort((a, b) => {
+        if (bedrooms == null) return 0;
+        const da = Math.abs((a.bedrooms ?? 0) - bedrooms);
+        const db = Math.abs((b.bedrooms ?? 0) - bedrooms);
+        return da - db;
+      });
 
       if (!cancelled) {
-        setItems(results.slice(0, 4));
+        setItems(ranked.slice(0, LIMIT));
         setLoading(false);
       }
     };
     fetchSimilar();
-    return () => { cancelled = true; };
-  }, [currentId, condominioSlug, location, propertyType, price]);
+    return () => {
+      cancelled = true;
+    };
+  }, [currentId, condominioSlug, location, propertyType, price, bedrooms]);
 
   if (loading) {
     return (
@@ -97,11 +107,38 @@ const SimilarProperties = ({ currentId, condominioSlug, location, propertyType, 
 
   return (
     <section className="container py-12 border-t border-border">
-      <h2 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-2">Imóveis Similares</h2>
-      <p className="text-muted-foreground mb-6">Veja outras opções que podem te interessar</p>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <h2 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-2">
+        Imóveis Similares
+      </h2>
+      <p className="text-muted-foreground mb-6">
+        Seleção curada com base em condomínio, faixa de preço e perfil
+      </p>
+
+      {/* Mobile: scroll horizontal com snap */}
+      <div className="md:hidden -mx-4 px-4 overflow-x-auto snap-x snap-mandatory scroll-smooth">
+        <div className="flex gap-4 pb-2">
+          {items.map((p) => (
+            <div
+              key={p.id}
+              className="snap-center shrink-0 w-[88%] first:pl-0 last:pr-0"
+            >
+              <PropertyCard
+                property={p}
+                variant={p.transaction_type === "temporada" ? "temporada" : "venda"}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Desktop: grid de 3 colunas */}
+      <div className="hidden md:grid md:grid-cols-3 gap-6">
         {items.map((p) => (
-          <PropertyCard key={p.id} property={p} variant={p.transaction_type === "temporada" ? "temporada" : "venda"} />
+          <PropertyCard
+            key={p.id}
+            property={p}
+            variant={p.transaction_type === "temporada" ? "temporada" : "venda"}
+          />
         ))}
       </div>
     </section>
