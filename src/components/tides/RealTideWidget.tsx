@@ -382,9 +382,13 @@ export function RealTideWidget() {
             return (
               <button
                 key={dayTs}
-                ref={isSelected ? selectedBtnRef : undefined}
+                ref={isSelected ? activeButtonRef : null}
                 type="button"
-                onClick={() => setSelectedDate(dayTs)}
+                onClick={() => {
+                  // Use the exact dayTs from this iteration — no offsets,
+                  // no timezone conversions, no addDays. Prevents off-by-one.
+                  setSelectedDate(dayTs);
+                }}
                 className={cn(
                   "flex min-w-[58px] shrink-0 flex-col items-center gap-0.5 rounded-xl border px-2 py-1.5 text-xs transition",
                   isSelected
