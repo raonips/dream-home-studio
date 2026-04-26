@@ -390,6 +390,7 @@ export function RealTideWidget() {
           <ChevronLeft className="size-4" />
         </button>
         <div
+          ref={carouselScrollRef}
           className="flex flex-1 gap-2 overflow-x-auto scroll-smooth py-1"
           style={{ scrollbarWidth: "none" }}
         >
