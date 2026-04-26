@@ -884,16 +884,19 @@ export type Database = {
         Row: {
           created_at: string
           date_string: string
+          region_slug: string
           tide_data: Json
         }
         Insert: {
           created_at?: string
           date_string: string
+          region_slug?: string
           tide_data: Json
         }
         Update: {
           created_at?: string
           date_string?: string
+          region_slug?: string
           tide_data?: Json
         }
         Relationships: []
