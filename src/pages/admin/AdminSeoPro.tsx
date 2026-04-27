@@ -522,6 +522,13 @@ const AdminSeoPro = () => {
             </div>
           </TabsContent>
 
+          {/* ── Aba Rotas Customizadas ── */}
+          <TabsContent value="custom-routes">
+            <div className="mt-4">
+              <CustomRoutesManager />
+            </div>
+          </TabsContent>
+
           {/* ── Aba Redirecionamentos ── */}
           <TabsContent value="redirects">
             <div className="mt-4">
