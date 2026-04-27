@@ -703,6 +703,39 @@ export type Database = {
           },
         ]
       }
+      seo_custom_routes: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_indexed: boolean
+          keywords: string | null
+          title: string | null
+          updated_at: string
+          url_path: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_indexed?: boolean
+          keywords?: string | null
+          title?: string | null
+          updated_at?: string
+          url_path: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_indexed?: boolean
+          keywords?: string | null
+          title?: string | null
+          updated_at?: string
+          url_path?: string
+        }
+        Relationships: []
+      }
       seo_overrides: {
         Row: {
           created_at: string
