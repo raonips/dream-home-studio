@@ -159,13 +159,21 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Custom routes (manual SEO entries — e.g. /tabua-de-mares/imbassai)
+    for (const cr of customRoutes) {
+      if (addIfIndexed(entries, cr.url_path, cr.updated_at, "0.8", "weekly")) {
+        stats.custom_routes += 1;
+      }
+    }
+
     const total = stats.properties_venda
       + stats.properties_temporada
       + stats.locais
       + stats.guia_posts
       + stats.guia_categorias
       + stats.condominios
-      + stats.static_pages;
+      + stats.static_pages
+      + stats.custom_routes;
 
     // JSON stats format for admin panel
     if (format === "json") {
