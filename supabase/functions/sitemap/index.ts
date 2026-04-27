@@ -108,6 +108,7 @@ Deno.serve(async (req) => {
       guia_categorias: 0,
       condominios: 0,
       static_pages: 0,
+      custom_routes: 0,
     };
 
     // Static pages
