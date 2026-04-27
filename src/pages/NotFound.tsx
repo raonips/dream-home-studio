@@ -44,7 +44,7 @@ const NotFound = () => {
   const destinations = [
     { to: "/imoveis", label: "Ver Imóveis à Venda", icon: Home, emoji: "🏠" },
     { to: "/guia", label: "Explorar o Guia Local", icon: MapPin, emoji: "📍" },
-    { to: "/tabua-de-mares", label: "Tábua de Marés", icon: Waves, emoji: "🌊" },
+    { to: "/tabua-de-mares/barra-do-jacuipe", label: "Tábua de Marés", icon: Waves, emoji: "🌊" },
   ];
 
   return (
