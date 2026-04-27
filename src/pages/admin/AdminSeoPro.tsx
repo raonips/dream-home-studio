@@ -379,6 +379,10 @@ const AdminSeoPro = () => {
               <FileText className="h-4 w-4" />
               Sitemap e Indexação
             </TabsTrigger>
+            <TabsTrigger value="custom-routes" className="gap-1.5">
+              <Link2 className="h-4 w-4" />
+              Links Manuais
+            </TabsTrigger>
             <TabsTrigger value="redirects" className="gap-1.5">
               <ArrowRightLeft className="h-4 w-4" />
               Redirecionamentos
