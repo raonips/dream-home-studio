@@ -69,14 +69,15 @@ Deno.serve(async (req) => {
   try {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Fetch all data in parallel, including noindex overrides
-    const [propertiesRes, locaisRes, guiaPostsRes, guiaCatsRes, condominiosRes, noindexRes] = await Promise.all([
+    // Fetch all data in parallel, including noindex overrides + custom routes
+    const [propertiesRes, locaisRes, guiaPostsRes, guiaCatsRes, condominiosRes, noindexRes, customRoutesRes] = await Promise.all([
       supabase.from("properties").select("slug, transaction_type, updated_at").eq("status", "active").not("slug", "is", null),
       supabase.from("locais").select("slug, updated_at").eq("ativo", true),
       supabase.from("guia_posts").select("slug, updated_at").eq("status", "publicado"),
       supabase.from("guia_categorias").select("slug, updated_at"),
       supabase.from("condominios").select("slug, updated_at").not("slug", "is", null),
       supabase.from("seo_overrides").select("page_path").eq("is_indexed", false),
+      supabase.from("seo_custom_routes").select("url_path, updated_at").eq("is_indexed", true),
     ]);
 
     const properties = propertiesRes.data || [];
@@ -84,6 +85,7 @@ Deno.serve(async (req) => {
     const guiaPosts = guiaPostsRes.data || [];
     const guiaCats = guiaCatsRes.data || [];
     const condominios = condominiosRes.data || [];
+    const customRoutes = customRoutesRes.data || [];
 
     // Build set of noindex paths
     const noindexPaths = new Set((noindexRes.data || []).map((r: any) => normalizePath(r.page_path)));
@@ -106,6 +108,7 @@ Deno.serve(async (req) => {
       guia_categorias: 0,
       condominios: 0,
       static_pages: 0,
+      custom_routes: 0,
     };
 
     // Static pages
@@ -156,13 +159,21 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Custom routes (manual SEO entries — e.g. /tabua-de-mares/imbassai)
+    for (const cr of customRoutes) {
+      if (addIfIndexed(entries, cr.url_path, cr.updated_at, "0.8", "weekly")) {
+        stats.custom_routes += 1;
+      }
+    }
+
     const total = stats.properties_venda
       + stats.properties_temporada
       + stats.locais
       + stats.guia_posts
       + stats.guia_categorias
       + stats.condominios
-      + stats.static_pages;
+      + stats.static_pages
+      + stats.custom_routes;
 
     // JSON stats format for admin panel
     if (format === "json") {
