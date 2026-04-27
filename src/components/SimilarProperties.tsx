@@ -14,6 +14,32 @@ interface Props {
 
 const LIMIT = 3;
 
+const normalizeText = (value?: string | null) =>
+  (value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const getRegionTerms = (value?: string | null) =>
+  (value || "")
+    .split(/[-,|]/)
+    .map(normalizeText)
+    .filter((term) =>
+      term.length >= 4 &&
+      !term.includes("condominio") &&
+      !["bahia", "brasil"].includes(term)
+    );
+
+const isSameRegion = (candidateLocation?: string | null, regionTerms: string[] = []) => {
+  if (regionTerms.length === 0) return true;
+
+  const normalizedLocation = normalizeText(candidateLocation);
+  return regionTerms.some((term) => normalizedLocation.includes(term));
+};
+
 const SimilarProperties = ({
   currentId,
   condominioSlug,
@@ -35,6 +61,7 @@ const SimilarProperties = ({
       const hasPrice = typeof price === "number" && price > 0;
       const minPrice = hasPrice ? price! * 0.8 : 0;
       const maxPrice = hasPrice ? price! * 1.2 : Number.MAX_SAFE_INTEGER;
+      const regionTerms = getRegionTerms(location);
 
       let resultados: PropertyData[] = [];
 
@@ -59,33 +86,24 @@ const SimilarProperties = ({
       }
 
       // ===== FASE 2: mesma região, condomínio diferente =====
-      if (resultados.length < LIMIT && location) {
-        const excludeIds = [currentId, ...resultados.map((r) => r.id)];
-
-        let q2 = supabase
+      if (resultados.length < LIMIT) {
+        const { data: dataF2, error: errF2 } = await supabase
           .from("properties")
           .select("*")
           .eq("status", "active")
-          .ilike("location", `%${location}%`)
+          .neq("id", currentId)
           .gte("price", minPrice)
           .lte("price", maxPrice)
-          .not("id", "in", `(${excludeIds.join(",")})`)
-          .limit(10);
-
-        if (condominioSlug) {
-          q2 = q2.neq("condominio_slug", condominioSlug);
-        }
-
-        const { data: dataF2, error: errF2 } = await q2;
+          .limit(30);
 
         if (errF2) {
           console.error("[SimilarProperties] Fase 2 erro:", errF2);
         }
         if (dataF2) {
-          // Concatena evitando duplicatas (defesa extra)
-          const seen = new Set(excludeIds);
+          const seen = new Set([currentId, ...resultados.map((r) => r.id)]);
           for (const r of dataF2 as PropertyData[]) {
-            if (!seen.has(r.id)) {
+            const sameCondo = condominioSlug && r.condominio_slug === condominioSlug;
+            if (!seen.has(r.id) && !sameCondo && isSameRegion(r.location, regionTerms)) {
               resultados.push(r);
               seen.add(r.id);
             }
