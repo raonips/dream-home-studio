@@ -27,68 +27,89 @@ const SimilarProperties = ({
 
   useEffect(() => {
     let cancelled = false;
+
     const fetchSimilar = async () => {
       setLoading(true);
 
-      // Cascade requires price to define the ±20% band.
-      const minPrice = price ? price * 0.8 : null;
-      const maxPrice = price ? price * 1.2 : null;
+      // ±20% price band (fallback to wide range if price missing)
+      const hasPrice = typeof price === "number" && price > 0;
+      const minPrice = hasPrice ? price! * 0.8 : 0;
+      const maxPrice = hasPrice ? price! * 1.2 : Number.MAX_SAFE_INTEGER;
 
-      const collected: PropertyData[] = [];
-      const seen = new Set<string>([currentId]);
+      let resultados: PropertyData[] = [];
 
-      const pushUnique = (rows: PropertyData[] | null) => {
-        if (!rows) return;
-        for (const r of rows) {
-          if (seen.has(r.id)) continue;
-          seen.add(r.id);
-          collected.push(r);
-        }
-      };
-
-      // Phase 1 — same condominio + ±20% price
-      if (condominioSlug && minPrice !== null && maxPrice !== null) {
-        const { data } = await supabase
+      // ===== FASE 1: mesmo condomínio + faixa de preço =====
+      if (condominioSlug) {
+        const { data: dataF1, error: errF1 } = await supabase
           .from("properties")
           .select("*")
-          .neq("id", currentId)
           .eq("status", "active")
           .eq("condominio_slug", condominioSlug)
+          .neq("id", currentId)
           .gte("price", minPrice)
           .lte("price", maxPrice)
           .limit(10);
-        pushUnique(data as PropertyData[] | null);
+
+        if (errF1) {
+          console.error("[SimilarProperties] Fase 1 erro:", errF1);
+        }
+        if (dataF1) {
+          resultados = dataF1 as PropertyData[];
+        }
       }
 
-      // Phase 2 — same location, different condominio + ±20% price
-      if (collected.length < LIMIT && location && minPrice !== null && maxPrice !== null) {
-        let q = supabase
+      // ===== FASE 2: mesma região, condomínio diferente =====
+      if (resultados.length < LIMIT && location) {
+        const excludeIds = [currentId, ...resultados.map((r) => r.id)];
+
+        let q2 = supabase
           .from("properties")
           .select("*")
-          .neq("id", currentId)
           .eq("status", "active")
           .ilike("location", `%${location}%`)
           .gte("price", minPrice)
           .lte("price", maxPrice)
+          .not("id", "in", `(${excludeIds.join(",")})`)
           .limit(10);
-        if (condominioSlug) q = q.neq("condominio_slug", condominioSlug);
-        const { data } = await q;
-        pushUnique(data as PropertyData[] | null);
+
+        if (condominioSlug) {
+          q2 = q2.neq("condominio_slug", condominioSlug);
+        }
+
+        const { data: dataF2, error: errF2 } = await q2;
+
+        if (errF2) {
+          console.error("[SimilarProperties] Fase 2 erro:", errF2);
+        }
+        if (dataF2) {
+          // Concatena evitando duplicatas (defesa extra)
+          const seen = new Set(excludeIds);
+          for (const r of dataF2 as PropertyData[]) {
+            if (!seen.has(r.id)) {
+              resultados.push(r);
+              seen.add(r.id);
+            }
+          }
+        }
       }
 
-      // Phase 3 — tie-break by closest bedroom count
-      const ranked = [...collected].sort((a, b) => {
-        if (bedrooms == null) return 0;
-        const da = Math.abs((a.bedrooms ?? 0) - bedrooms);
-        const db = Math.abs((b.bedrooms ?? 0) - bedrooms);
-        return da - db;
-      });
+      // ===== FASE 3: ordenação por proximidade de quartos =====
+      if (typeof bedrooms === "number") {
+        resultados.sort((a, b) => {
+          const da = Math.abs((a.bedrooms ?? 0) - bedrooms);
+          const db = Math.abs((b.bedrooms ?? 0) - bedrooms);
+          return da - db;
+        });
+      }
+
+      const final = resultados.slice(0, LIMIT);
 
       if (!cancelled) {
-        setItems(ranked.slice(0, LIMIT));
+        setItems(final);
         setLoading(false);
       }
     };
+
     fetchSimilar();
     return () => {
       cancelled = true;
