@@ -54,20 +54,20 @@ const SiteFooter = () => {
               <div>
                 <h2 className="font-display text-base font-semibold mb-4 !text-primary-foreground">Principais Buscas</h2>
                 <ul className="space-y-2 text-sm text-primary-foreground/70">
-                  <li><Link to="/vendas?minPrice=800000" className="hover:text-primary transition-colors">Imóveis de Alto Padrão</Link></li>
-                  <li><Link to="/condominios" className="hover:text-primary transition-colors">Condomínio em Barra do Jacuípe</Link></li>
-                  <li><Link to="/condominio/casas-soltas-e-terrenos-independentes-barra-do-jacuipe" className="hover:text-primary transition-colors">Casas Soltas</Link></li>
-                  <li><Link to="/vendas?tipo=terreno" className="hover:text-primary transition-colors">Terrenos à Venda</Link></li>
+                  <li><Link to="/imoveis/vendas?minPrice=800000" className="hover:text-primary transition-colors">Imóveis de Alto Padrão</Link></li>
+                  <li><Link to="/imoveis/condominios" className="hover:text-primary transition-colors">Condomínio em Barra do Jacuípe</Link></li>
+                  <li><Link to="/imoveis/condominio/casas-soltas-e-terrenos-independentes-barra-do-jacuipe" className="hover:text-primary transition-colors">Casas Soltas</Link></li>
+                  <li><Link to="/imoveis/vendas?tipo=terreno" className="hover:text-primary transition-colors">Terrenos à Venda</Link></li>
                 </ul>
               </div>
 
               <div>
                 <h2 className="font-display text-base font-semibold mb-4 !text-primary-foreground">Condomínios em Destaque</h2>
                 <ul className="space-y-2 text-sm text-primary-foreground/70">
-                  <li><Link to="/condominio/condominio-canto-do-sol" className="hover:text-primary transition-colors">Condomínio Canto do Sol</Link></li>
-                  <li><Link to="/condominio/condominio-parque-do-jacuipe" className="hover:text-primary transition-colors">Condomínio Parque do Jacuípe</Link></li>
-                  <li><Link to="/condominio/imoveis-a-venda-no-villas-do-jacuipe-casas-com-acesso-ao-rio-e-alto-padrao" className="hover:text-primary transition-colors">Condomínio Villas do Jacuípe</Link></li>
-                  <li><Link to="/condominio/condominio-aldeias-do-jacuipe" className="hover:text-primary transition-colors">Condomínio Aldeias do Jacuípe</Link></li>
+                  <li><Link to="/imoveis/condominio/condominio-canto-do-sol" className="hover:text-primary transition-colors">Condomínio Canto do Sol</Link></li>
+                  <li><Link to="/imoveis/condominio/condominio-parque-do-jacuipe" className="hover:text-primary transition-colors">Condomínio Parque do Jacuípe</Link></li>
+                  <li><Link to="/imoveis/condominio/imoveis-a-venda-no-villas-do-jacuipe-casas-com-acesso-ao-rio-e-alto-padrao" className="hover:text-primary transition-colors">Condomínio Villas do Jacuípe</Link></li>
+                  <li><Link to="/imoveis/condominio/condominio-aldeias-do-jacuipe" className="hover:text-primary transition-colors">Condomínio Aldeias do Jacuípe</Link></li>
                 </ul>
               </div>
             </>
