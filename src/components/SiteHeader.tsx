@@ -31,7 +31,7 @@ const guiaNavItems: NavItem[] = [
     ],
   },
   { label: "Condomínios", href: "/locais/condominios" },
-  { label: "Tábua de Marés", href: "/tabua-de-mares" },
+  { label: "Tábua de Marés", href: "/tabua-de-mares/barra-do-jacuipe" },
   { label: "Imóveis", href: "/imoveis" },
   // { label: "Blog", href: "/guia" }, // temporariamente oculto
 ];
@@ -41,7 +41,7 @@ const imoveisNavItems: NavItem[] = [
   { label: "Imóveis à Venda", href: "/imoveis/vendas" },
   { label: "Temporada", href: "/imoveis/temporada" },
   { label: "Condomínios", href: "/imoveis/condominios" },
-  { label: "Tábua de Marés", href: "/tabua-de-mares" },
+  { label: "Tábua de Marés", href: "/tabua-de-mares/barra-do-jacuipe" },
   { label: "Contato", href: "/imoveis/contato" },
   { label: "Portal Barra", href: "/" },
 ];

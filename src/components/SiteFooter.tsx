@@ -42,7 +42,7 @@ const SiteFooter = () => {
               <div>
                 <h2 className="font-display text-base font-semibold mb-4 !text-primary-foreground">Utilidades & Dicas</h2>
                 <ul className="space-y-2 text-sm text-primary-foreground/70">
-                  <li><Link to="/tabua-de-mares" className="hover:text-primary transition-colors">Tábua de Marés</Link></li>
+                  <li><Link to="/tabua-de-mares/barra-do-jacuipe" className="hover:text-primary transition-colors">Tábua de Marés</Link></li>
                   <li><Link to="/guia" className="hover:text-primary transition-colors">Dicas e Novidades</Link></li>
                   <li><Link to="/guia/categoria/produtos-para-piscina" className="hover:text-primary transition-colors">Produtos para Piscina</Link></li>
                   <li><Link to="/guia/categoria/servicos" className="hover:text-primary transition-colors">Serviços Locais</Link></li>
