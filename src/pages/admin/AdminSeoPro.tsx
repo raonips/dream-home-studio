@@ -1,7 +1,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Loader2, Save, Search, CheckCircle2, AlertCircle, FileSearch, ExternalLink, Copy, RefreshCw, Home, MapPinned, Newspaper, Building2, FolderOpen, FileText, SearchCheck, Eye, EyeOff, Settings2, ArrowRightLeft } from 'lucide-react';
+import { Loader2, Save, Search, CheckCircle2, AlertCircle, FileSearch, ExternalLink, Copy, RefreshCw, Home, MapPinned, Newspaper, Building2, FolderOpen, FileText, SearchCheck, Eye, EyeOff, Settings2, ArrowRightLeft, Link2 } from 'lucide-react';
 import RedirectsManager from '@/components/admin/RedirectsManager';
+import CustomRoutesManager from '@/components/admin/CustomRoutesManager';
 import { Switch } from '@/components/ui/switch';
 import SeoAdvancedDialog, { type SeoAdvancedValues } from '@/components/admin/SeoAdvancedDialog';
 import OgImageStatusIcon from '@/components/admin/OgImageStatusIcon';
