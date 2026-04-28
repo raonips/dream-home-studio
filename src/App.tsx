@@ -58,9 +58,11 @@ const AdminAdTemplates = lazy(() => import("./pages/admin/AdminAdTemplates"));
 const AdminPlacas = lazy(() => import("./pages/admin/AdminPlacas"));
 
 const AdminSeoPro = lazy(() => import("./pages/admin/AdminSeoPro"));
+const AdminDestinationPages = lazy(() => import("./pages/admin/AdminDestinationPages"));
 const MapaGeral = lazy(() => import("./pages/MapaGeral"));
 const QrRedirect = lazy(() => import("./pages/QrRedirect"));
 const TabuaDeMares = lazy(() => import("./pages/TabuaDeMares"));
+const DestinationPage = lazy(() => import("./pages/DestinationPage"));
 
 // Lazy-loaded layout pieces below the fold
 const SiteFooter = lazy(() => import("@/components/SiteFooter"));
@@ -128,6 +130,7 @@ const App = () => (
                 <Route path="guia-config" element={<Suspense fallback={<RouteLoading />}><AdminGuiaSiteConfig /></Suspense>} />
                 <Route path="guia-seo" element={<Suspense fallback={<RouteLoading />}><AdminGuiaSeoSettings /></Suspense>} />
                 <Route path="locais" element={<Suspense fallback={<RouteLoading />}><AdminLocais /></Suspense>} />
+                <Route path="destino" element={<Suspense fallback={<RouteLoading />}><AdminDestinationPages /></Suspense>} />
                 
                 <Route path="seo-pro" element={<Suspense fallback={<RouteLoading />}><AdminSeoPro /></Suspense>} />
               </Route>
@@ -149,6 +152,7 @@ const App = () => (
                         <Route path="/mapa" element={<MapaGeral />} />
                         <Route path="/tabua-de-mares" element={<TabuaDeMares />} />
                         <Route path="/tabua-de-mares/:region" element={<TabuaDeMares />} />
+                        <Route path="/destino/:slug" element={<DestinationPage />} />
 
                         {/* Imóveis — moved under /imoveis */}
                         <Route path="/imoveis" element={<Index />} />

@@ -1,4 +1,4 @@
-import { LayoutDashboard, Building2, Home, Users, LogOut, LayoutGrid, Globe, Settings, Kanban, Tag, BookOpen, FolderOpen, Briefcase, Newspaper, MapPinned, Megaphone, QrCode, SearchCheck } from 'lucide-react';
+import { LayoutDashboard, Building2, Home, Users, LogOut, LayoutGrid, Globe, Settings, Kanban, Tag, BookOpen, FolderOpen, Briefcase, Newspaper, MapPinned, Megaphone, QrCode, SearchCheck, Compass } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -30,7 +30,7 @@ const AdminSidebar = () => {
   const path = location.pathname;
 
   // Auto-detect context from route
-  const guiaRoutes = ['/admin/guia-posts', '/admin/guia-categorias', '/admin/guia-config', '/admin/guia-seo', '/admin/locais', '/admin/ad-templates'];
+  const guiaRoutes = ['/admin/guia-posts', '/admin/guia-categorias', '/admin/guia-config', '/admin/guia-seo', '/admin/locais', '/admin/ad-templates', '/admin/destino'];
   const isGuiaRoute = guiaRoutes.some((r) => path.startsWith(r));
 
   const [context, setContext] = useState<AdminContext>(isGuiaRoute ? 'guia' : 'imoveis');
@@ -212,6 +212,14 @@ const AdminSidebar = () => {
                     <NavLink to="/admin/locais" className="hover:bg-[hsl(var(--guia-accent))]" activeClassName="bg-[hsl(var(--guia-accent))] text-[hsl(var(--guia-primary))] font-medium">
                       <MapPinned className="mr-2 h-4 w-4" />
                       {!collapsed && <span>Locais</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink to="/admin/destino" className="hover:bg-[hsl(var(--guia-accent))]" activeClassName="bg-[hsl(var(--guia-accent))] text-[hsl(var(--guia-primary))] font-medium">
+                      <Compass className="mr-2 h-4 w-4" />
+                      {!collapsed && <span>O Destino</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

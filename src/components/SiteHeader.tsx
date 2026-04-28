@@ -17,9 +17,9 @@ const guiaNavItems: NavItem[] = [
   {
     label: "O Destino",
     children: [
-      { label: "Praias", href: "/guia/praias" },
-      { label: "Rio Jacuípe", href: "/guia/rio-jacuipe" },
-      { label: "História", href: "/guia/historia" },
+      { label: "Praias", href: "/destino/praias" },
+      { label: "Rio Jacuípe", href: "/destino/rio-jacuipe" },
+      { label: "História", href: "/destino/historia" },
     ],
   },
   {
