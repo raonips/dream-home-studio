@@ -520,8 +520,8 @@ const ImovelDetalhe = () => {
                 </div>
               )}
               <h1 className="font-display text-2xl font-bold text-foreground mb-2">{property.title}</h1>
-              {condo && !isCasasSoltas && (
-                <Link to={`/condominio/${condo.slug}`} className="inline-flex items-center gap-1.5 text-sm text-primary font-medium hover:underline mb-2">
+              {condo && (
+                <Link to={`/imoveis/condominio/${condo.slug}`} className="inline-flex items-center gap-1.5 text-sm text-primary font-medium hover:underline mb-2">
                   <Building2 className="h-3.5 w-3.5" /> {condo.name}
                 </Link>
               )}
@@ -630,8 +630,8 @@ const ImovelDetalhe = () => {
                     </div>
                   )}
                   <h1 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-2">{property.title}</h1>
-                  {condo && !isCasasSoltas && (
-                    <Link to={`/condominio/${condo.slug}`} className="inline-flex items-center gap-1.5 text-sm text-primary font-medium hover:underline mb-2">
+                  {condo && (
+                    <Link to={`/imoveis/condominio/${condo.slug}`} className="inline-flex items-center gap-1.5 text-sm text-primary font-medium hover:underline mb-2">
                       <Building2 className="h-3.5 w-3.5" /> {condo.name}
                     </Link>
                   )}
@@ -695,7 +695,7 @@ const ImovelDetalhe = () => {
               </div>
 
               {/* Condo section */}
-              {condo && !isCasasSoltas && (
+              {condo && (
                 <div className="space-y-6">
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -703,10 +703,10 @@ const ImovelDetalhe = () => {
                     </div>
                     <div>
                       <h2 className="font-display text-2xl font-bold text-foreground">
-                        Infraestrutura do {condo.name}
+                        {isCasasSoltas ? 'Sobre Casas Soltas & Terrenos Independentes' : `Infraestrutura do ${condo.name}`}
                       </h2>
-                      <Link to={`/condominio/${condo.slug}`} className="text-sm text-primary hover:underline">
-                        Ver página completa do condomínio →
+                      <Link to={`/imoveis/condominio/${condo.slug}`} className="text-sm text-primary hover:underline">
+                        {isCasasSoltas ? 'Ver todos os imóveis desta categoria →' : 'Ver página completa do condomínio →'}
                       </Link>
                     </div>
                   </div>
