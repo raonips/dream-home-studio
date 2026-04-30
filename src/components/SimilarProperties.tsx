@@ -64,6 +64,7 @@ const SimilarProperties = ({
       const regionTerms = getRegionTerms(location);
 
       let resultados: PropertyData[] = [];
+      const isCasasSoltas = !!condominioSlug && condominioSlug.includes('casas-soltas');
 
       // ===== FASE 1: mesmo condomínio + faixa de preço =====
       if (condominioSlug) {
@@ -83,10 +84,34 @@ const SimilarProperties = ({
         if (dataF1) {
           resultados = dataF1 as PropertyData[];
         }
+
+        // Para "Casas Soltas", se a faixa de preço não trouxer 3, amplia SEM sair do mesmo slug
+        if (isCasasSoltas && resultados.length < LIMIT) {
+          const { data: dataF1b, error: errF1b } = await supabase
+            .from("properties")
+            .select("*")
+            .eq("status", "active")
+            .eq("condominio_slug", condominioSlug)
+            .neq("id", currentId)
+            .limit(20);
+
+          if (errF1b) {
+            console.error("[SimilarProperties] Fase 1b erro:", errF1b);
+          }
+          if (dataF1b) {
+            const seen = new Set([currentId, ...resultados.map((r) => r.id)]);
+            for (const r of dataF1b as PropertyData[]) {
+              if (!seen.has(r.id)) {
+                resultados.push(r);
+                seen.add(r.id);
+              }
+            }
+          }
+        }
       }
 
-      // ===== FASE 2: mesma região, condomínio diferente =====
-      if (resultados.length < LIMIT) {
+      // ===== FASE 2: mesma região, condomínio diferente (NÃO aplicável a Casas Soltas) =====
+      if (!isCasasSoltas && resultados.length < LIMIT) {
         const { data: dataF2, error: errF2 } = await supabase
           .from("properties")
           .select("*")
