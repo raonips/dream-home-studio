@@ -124,6 +124,8 @@ const AdminCRM = () => {
   const [loading, setLoading] = useState(true);
   const [geladeira, setGeladeira] = useState<Lead[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
   const { toast } = useToast();
 
   const sensors = useSensors(
