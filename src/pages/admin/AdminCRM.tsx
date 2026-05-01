@@ -62,7 +62,7 @@ const DroppableColumn = ({ id, children, className }: { id: string; children: Re
   );
 };
 
-const DraggableCard = ({ lead }: { lead: Lead }) => {
+const DraggableCard = ({ lead, onOpen }: { lead: Lead; onOpen: (l: Lead) => void }) => {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: lead.id });
   const style = transform
     ? { transform: `translate(${transform.x}px, ${transform.y}px)`, zIndex: isDragging ? 50 : undefined }
@@ -74,8 +74,12 @@ const DraggableCard = ({ lead }: { lead: Lead }) => {
       style={style}
       {...listeners}
       {...attributes}
-      className={`bg-card rounded-lg border border-border p-3 space-y-2 shadow-sm cursor-grab active:cursor-grabbing transition-shadow ${
-        isDragging ? 'opacity-50' : ''
+      onClick={(e) => {
+        // Só abre se não foi um drag (dnd-kit consome o evento via PointerSensor distance:5)
+        if (!isDragging) onOpen(lead);
+      }}
+      className={`bg-card rounded-lg border border-border p-3 space-y-2 shadow-sm cursor-pointer hover:border-primary/40 hover:shadow-md transition-all ${
+        isDragging ? 'opacity-50 cursor-grabbing' : ''
       }`}
     >
       <LeadCardContent lead={lead} />
