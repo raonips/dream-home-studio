@@ -313,6 +313,21 @@ const AdminCRM = () => {
           </DragOverlay>
         </DndContext>
       </div>
+
+      <LeadDetailSheet
+        lead={selectedLead}
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+        onSaved={(updated) => {
+          setLeads((prev) => {
+            // Se status mudou, mantém na lista (a coluna recalcula via filter)
+            const exists = prev.some((l) => l.id === updated.id);
+            if (!exists) return prev;
+            return prev.map((l) => (l.id === updated.id ? { ...l, ...updated } : l));
+          });
+          setGeladeira((prev) => prev.map((l) => (l.id === updated.id ? { ...l, ...updated } : l)));
+        }}
+      />
     </>
   );
 };
