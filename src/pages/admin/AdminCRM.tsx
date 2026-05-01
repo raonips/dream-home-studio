@@ -18,6 +18,7 @@ import { Card } from '@/components/ui/card';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { LeadDetailSheet } from '@/components/admin/LeadDetailSheet';
 
 interface Lead {
   id: string;
@@ -32,6 +33,8 @@ interface Lead {
   arquivado: boolean;
   is_read: boolean;
   created_at: string;
+  property_id?: string | null;
+  notes?: string | null;
 }
 
 const COLUMNS = [
