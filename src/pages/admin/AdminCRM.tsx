@@ -289,7 +289,11 @@ const AdminCRM = () => {
                   </div>
 
                   {colLeads.map((lead) => (
-                    <DraggableCard key={lead.id} lead={lead} />
+                    <DraggableCard
+                      key={lead.id}
+                      lead={lead}
+                      onOpen={(l) => { setSelectedLead(l); setSheetOpen(true); }}
+                    />
                   ))}
 
                   {colLeads.length === 0 && (
