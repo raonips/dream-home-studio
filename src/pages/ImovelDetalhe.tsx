@@ -183,6 +183,10 @@ const ImovelDetalhe = () => {
         source: 'imovel_detalhe',
         message: `Interesse no imóvel: ${property?.title || ''}`,
         property_id: property?.id || null,
+        // Radar de Imóveis — auto-preenchimento com base no imóvel de origem
+        radar_preco_alvo: property?.price ?? null,
+        radar_quartos_min: property?.bedrooms ?? null,
+        radar_condominio: (property as any)?.condominio_slug ?? null,
       } as any);
 
       if (error) throw error;
