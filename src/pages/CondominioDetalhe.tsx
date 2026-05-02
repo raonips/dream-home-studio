@@ -206,6 +206,8 @@ const CondominioDetalhe = () => {
         intention: formData.search,
         message: `Busca personalizada no ${condo.name}: ${formData.search}`,
         condominio_id: condo.id,
+        // Radar de Imóveis — pré-preenche região/condomínio
+        radar_condominio: condo.slug || condo.name || null,
       } as any);
 
       if (error) throw error;

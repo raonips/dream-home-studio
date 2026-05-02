@@ -11,7 +11,7 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from '@dnd-kit/core';
-import { Loader2, Phone, Mail, Snowflake, Trash2 } from 'lucide-react';
+import { Loader2, Phone, Mail, Snowflake, Trash2, Home as HomeIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -35,6 +35,9 @@ interface Lead {
   created_at: string;
   property_id?: string | null;
   notes?: string | null;
+  radar_preco_alvo?: number | null;
+  radar_quartos_min?: number | null;
+  radar_condominio?: string | null;
 }
 
 const COLUMNS = [
@@ -62,7 +65,7 @@ const DroppableColumn = ({ id, children, className }: { id: string; children: Re
   );
 };
 
-const DraggableCard = ({ lead, onOpen }: { lead: Lead; onOpen: (l: Lead) => void }) => {
+const DraggableCard = ({ lead, onOpen, matchCount }: { lead: Lead; onOpen: (l: Lead) => void; matchCount?: number }) => {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: lead.id });
   const style = transform
     ? { transform: `translate(${transform.x}px, ${transform.y}px)`, zIndex: isDragging ? 50 : undefined }
@@ -75,19 +78,18 @@ const DraggableCard = ({ lead, onOpen }: { lead: Lead; onOpen: (l: Lead) => void
       {...listeners}
       {...attributes}
       onClick={(e) => {
-        // Só abre se não foi um drag (dnd-kit consome o evento via PointerSensor distance:5)
         if (!isDragging) onOpen(lead);
       }}
       className={`bg-card rounded-lg border border-border p-3 space-y-2 shadow-sm cursor-pointer hover:border-primary/40 hover:shadow-md transition-all ${
         isDragging ? 'opacity-50 cursor-grabbing' : ''
       }`}
     >
-      <LeadCardContent lead={lead} />
+      <LeadCardContent lead={lead} matchCount={matchCount} />
     </div>
   );
 };
 
-const LeadCardContent = ({ lead }: { lead: Lead }) => (
+const LeadCardContent = ({ lead, matchCount }: { lead: Lead; matchCount?: number }) => (
   <>
     <p className="font-semibold text-sm text-foreground leading-tight">{lead.name}</p>
     {lead.intention && (
@@ -108,6 +110,12 @@ const LeadCardContent = ({ lead }: { lead: Lead }) => (
     {lead.message && (
       <p className="text-[11px] text-muted-foreground line-clamp-2">{lead.message}</p>
     )}
+    {matchCount !== undefined && matchCount > 0 && (
+      <div className="flex items-center gap-1.5 rounded-md bg-primary/10 px-2 py-1 text-[11px] font-medium text-primary border border-primary/20">
+        <HomeIcon className="h-3 w-3" />
+        🏠 {matchCount} {matchCount === 1 ? 'Oportunidade' : 'Oportunidades'}
+      </div>
+    )}
     <div className="flex items-center justify-between pt-1">
       <span className="text-[10px] text-muted-foreground">
         {new Date(lead.created_at).toLocaleDateString('pt-BR')}
@@ -126,6 +134,7 @@ const AdminCRM = () => {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [matchCounts, setMatchCounts] = useState<Record<string, number>>({});
   const { toast } = useToast();
 
   const sensors = useSensors(
@@ -154,6 +163,39 @@ const AdminCRM = () => {
   }, []);
 
   useEffect(() => { fetchLeads(); }, [fetchLeads]);
+
+  // Calcula contagem de matches do Radar para cada lead com radar_preco_alvo
+  useEffect(() => {
+    const leadsWithRadar = leads.filter((l: any) => l.radar_preco_alvo && Number(l.radar_preco_alvo) > 0);
+    if (leadsWithRadar.length === 0) {
+      setMatchCounts({});
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const entries = await Promise.all(
+        leadsWithRadar.map(async (l: any) => {
+          const preco = Number(l.radar_preco_alvo);
+          const quartos = l.radar_quartos_min ? Number(l.radar_quartos_min) : null;
+          const cond = (l.radar_condominio || '').trim();
+          let q = supabase
+            .from('properties')
+            .select('id', { count: 'exact', head: true })
+            .eq('status', 'active')
+            .gte('price', preco * 0.8)
+            .lte('price', preco * 1.2);
+          if (quartos && quartos > 0) q = q.gte('bedrooms', quartos);
+          if (cond) q = q.or(`condominio_slug.ilike.%${cond}%,location.ilike.%${cond}%`);
+          const { count } = await q;
+          return [l.id, count || 0] as const;
+        })
+      );
+      if (!cancelled) {
+        setMatchCounts(Object.fromEntries(entries));
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [leads]);
 
   const updateLead = async (id: string, updates: Record<string, any>) => {
     await (supabase.from('leads') as any).update(updates).eq('id', id);
@@ -292,6 +334,7 @@ const AdminCRM = () => {
                     <DraggableCard
                       key={lead.id}
                       lead={lead}
+                      matchCount={matchCounts[lead.id]}
                       onOpen={(l) => { setSelectedLead(l); setSheetOpen(true); }}
                     />
                   ))}
