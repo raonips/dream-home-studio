@@ -11,7 +11,7 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from '@dnd-kit/core';
-import { Loader2, Phone, Mail, Snowflake, Trash2 } from 'lucide-react';
+import { Loader2, Phone, Mail, Snowflake, Trash2, Home as HomeIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -35,6 +35,9 @@ interface Lead {
   created_at: string;
   property_id?: string | null;
   notes?: string | null;
+  radar_preco_alvo?: number | null;
+  radar_quartos_min?: number | null;
+  radar_condominio?: string | null;
 }
 
 const COLUMNS = [
