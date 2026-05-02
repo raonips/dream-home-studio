@@ -334,6 +334,7 @@ const AdminCRM = () => {
                     <DraggableCard
                       key={lead.id}
                       lead={lead}
+                      matchCount={matchCounts[lead.id]}
                       onOpen={(l) => { setSelectedLead(l); setSheetOpen(true); }}
                     />
                   ))}
