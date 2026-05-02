@@ -65,7 +65,7 @@ const DroppableColumn = ({ id, children, className }: { id: string; children: Re
   );
 };
 
-const DraggableCard = ({ lead, onOpen }: { lead: Lead; onOpen: (l: Lead) => void }) => {
+const DraggableCard = ({ lead, onOpen, matchCount }: { lead: Lead; onOpen: (l: Lead) => void; matchCount?: number }) => {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: lead.id });
   const style = transform
     ? { transform: `translate(${transform.x}px, ${transform.y}px)`, zIndex: isDragging ? 50 : undefined }
@@ -78,19 +78,18 @@ const DraggableCard = ({ lead, onOpen }: { lead: Lead; onOpen: (l: Lead) => void
       {...listeners}
       {...attributes}
       onClick={(e) => {
-        // Só abre se não foi um drag (dnd-kit consome o evento via PointerSensor distance:5)
         if (!isDragging) onOpen(lead);
       }}
       className={`bg-card rounded-lg border border-border p-3 space-y-2 shadow-sm cursor-pointer hover:border-primary/40 hover:shadow-md transition-all ${
         isDragging ? 'opacity-50 cursor-grabbing' : ''
       }`}
     >
-      <LeadCardContent lead={lead} />
+      <LeadCardContent lead={lead} matchCount={matchCount} />
     </div>
   );
 };
 
-const LeadCardContent = ({ lead }: { lead: Lead }) => (
+const LeadCardContent = ({ lead, matchCount }: { lead: Lead; matchCount?: number }) => (
   <>
     <p className="font-semibold text-sm text-foreground leading-tight">{lead.name}</p>
     {lead.intention && (
@@ -110,6 +109,12 @@ const LeadCardContent = ({ lead }: { lead: Lead }) => (
     </div>
     {lead.message && (
       <p className="text-[11px] text-muted-foreground line-clamp-2">{lead.message}</p>
+    )}
+    {matchCount !== undefined && matchCount > 0 && (
+      <div className="flex items-center gap-1.5 rounded-md bg-primary/10 px-2 py-1 text-[11px] font-medium text-primary border border-primary/20">
+        <HomeIcon className="h-3 w-3" />
+        🏠 {matchCount} {matchCount === 1 ? 'Oportunidade' : 'Oportunidades'}
+      </div>
     )}
     <div className="flex items-center justify-between pt-1">
       <span className="text-[10px] text-muted-foreground">
