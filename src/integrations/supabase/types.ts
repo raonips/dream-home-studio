@@ -450,6 +450,9 @@ export type Database = {
           notes: string | null
           phone: string | null
           property_id: string | null
+          radar_condominio: string | null
+          radar_preco_alvo: number | null
+          radar_quartos_min: number | null
           source: string | null
           status: string | null
         }
@@ -466,6 +469,9 @@ export type Database = {
           notes?: string | null
           phone?: string | null
           property_id?: string | null
+          radar_condominio?: string | null
+          radar_preco_alvo?: number | null
+          radar_quartos_min?: number | null
           source?: string | null
           status?: string | null
         }
@@ -482,6 +488,9 @@ export type Database = {
           notes?: string | null
           phone?: string | null
           property_id?: string | null
+          radar_condominio?: string | null
+          radar_preco_alvo?: number | null
+          radar_quartos_min?: number | null
           source?: string | null
           status?: string | null
         }
