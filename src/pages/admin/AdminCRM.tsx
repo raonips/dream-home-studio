@@ -134,6 +134,7 @@ const AdminCRM = () => {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [matchCounts, setMatchCounts] = useState<Record<string, number>>({});
   const { toast } = useToast();
 
   const sensors = useSensors(
@@ -162,6 +163,39 @@ const AdminCRM = () => {
   }, []);
 
   useEffect(() => { fetchLeads(); }, [fetchLeads]);
+
+  // Calcula contagem de matches do Radar para cada lead com radar_preco_alvo
+  useEffect(() => {
+    const leadsWithRadar = leads.filter((l: any) => l.radar_preco_alvo && Number(l.radar_preco_alvo) > 0);
+    if (leadsWithRadar.length === 0) {
+      setMatchCounts({});
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const entries = await Promise.all(
+        leadsWithRadar.map(async (l: any) => {
+          const preco = Number(l.radar_preco_alvo);
+          const quartos = l.radar_quartos_min ? Number(l.radar_quartos_min) : null;
+          const cond = (l.radar_condominio || '').trim();
+          let q = supabase
+            .from('properties')
+            .select('id', { count: 'exact', head: true })
+            .eq('status', 'active')
+            .gte('price', preco * 0.8)
+            .lte('price', preco * 1.2);
+          if (quartos && quartos > 0) q = q.gte('bedrooms', quartos);
+          if (cond) q = q.or(`condominio_slug.ilike.%${cond}%,location.ilike.%${cond}%`);
+          const { count } = await q;
+          return [l.id, count || 0] as const;
+        })
+      );
+      if (!cancelled) {
+        setMatchCounts(Object.fromEntries(entries));
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [leads]);
 
   const updateLead = async (id: string, updates: Record<string, any>) => {
     await (supabase.from('leads') as any).update(updates).eq('id', id);
