@@ -447,6 +447,7 @@ export type Database = {
           is_read: boolean
           message: string | null
           name: string | null
+          notes: string | null
           phone: string | null
           property_id: string | null
           source: string | null
@@ -462,6 +463,7 @@ export type Database = {
           is_read?: boolean
           message?: string | null
           name?: string | null
+          notes?: string | null
           phone?: string | null
           property_id?: string | null
           source?: string | null
@@ -477,6 +479,7 @@ export type Database = {
           is_read?: boolean
           message?: string | null
           name?: string | null
+          notes?: string | null
           phone?: string | null
           property_id?: string | null
           source?: string | null

@@ -18,6 +18,7 @@ import { Card } from '@/components/ui/card';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { LeadDetailSheet } from '@/components/admin/LeadDetailSheet';
 
 interface Lead {
   id: string;
@@ -32,6 +33,8 @@ interface Lead {
   arquivado: boolean;
   is_read: boolean;
   created_at: string;
+  property_id?: string | null;
+  notes?: string | null;
 }
 
 const COLUMNS = [
@@ -59,7 +62,7 @@ const DroppableColumn = ({ id, children, className }: { id: string; children: Re
   );
 };
 
-const DraggableCard = ({ lead }: { lead: Lead }) => {
+const DraggableCard = ({ lead, onOpen }: { lead: Lead; onOpen: (l: Lead) => void }) => {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: lead.id });
   const style = transform
     ? { transform: `translate(${transform.x}px, ${transform.y}px)`, zIndex: isDragging ? 50 : undefined }
@@ -71,8 +74,12 @@ const DraggableCard = ({ lead }: { lead: Lead }) => {
       style={style}
       {...listeners}
       {...attributes}
-      className={`bg-card rounded-lg border border-border p-3 space-y-2 shadow-sm cursor-grab active:cursor-grabbing transition-shadow ${
-        isDragging ? 'opacity-50' : ''
+      onClick={(e) => {
+        // Só abre se não foi um drag (dnd-kit consome o evento via PointerSensor distance:5)
+        if (!isDragging) onOpen(lead);
+      }}
+      className={`bg-card rounded-lg border border-border p-3 space-y-2 shadow-sm cursor-pointer hover:border-primary/40 hover:shadow-md transition-all ${
+        isDragging ? 'opacity-50 cursor-grabbing' : ''
       }`}
     >
       <LeadCardContent lead={lead} />
@@ -117,6 +124,8 @@ const AdminCRM = () => {
   const [loading, setLoading] = useState(true);
   const [geladeira, setGeladeira] = useState<Lead[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
   const { toast } = useToast();
 
   const sensors = useSensors(
@@ -280,7 +289,11 @@ const AdminCRM = () => {
                   </div>
 
                   {colLeads.map((lead) => (
-                    <DraggableCard key={lead.id} lead={lead} />
+                    <DraggableCard
+                      key={lead.id}
+                      lead={lead}
+                      onOpen={(l) => { setSelectedLead(l); setSheetOpen(true); }}
+                    />
                   ))}
 
                   {colLeads.length === 0 && (
@@ -300,6 +313,21 @@ const AdminCRM = () => {
           </DragOverlay>
         </DndContext>
       </div>
+
+      <LeadDetailSheet
+        lead={selectedLead}
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+        onSaved={(updated) => {
+          setLeads((prev) => {
+            // Se status mudou, mantém na lista (a coluna recalcula via filter)
+            const exists = prev.some((l) => l.id === updated.id);
+            if (!exists) return prev;
+            return prev.map((l) => (l.id === updated.id ? { ...l, ...updated } : l));
+          });
+          setGeladeira((prev) => prev.map((l) => (l.id === updated.id ? { ...l, ...updated } : l)));
+        }}
+      />
     </>
   );
 };
