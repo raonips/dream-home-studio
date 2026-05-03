@@ -362,10 +362,10 @@ const SeoAdvancedDialog = ({
                 </AccordionContent>
               </AccordionItem>
 
-              {/* ── Social Preview ── */}
+              {/* ── Facebook / LinkedIn Preview ── */}
               <AccordionItem value="social">
                 <AccordionTrigger className="text-sm">
-                  <span className="flex items-center gap-2"><ImageIcon className="h-4 w-4 text-emerald-600" /> Preview Social (WhatsApp / Facebook)</span>
+                  <span className="flex items-center gap-2"><ImageIcon className="h-4 w-4 text-emerald-600" /> Preview Facebook / LinkedIn (Card Grande)</span>
                 </AccordionTrigger>
                 <AccordionContent>
                   <div className="max-w-md rounded-lg overflow-hidden border border-border bg-card shadow-sm">
@@ -385,6 +385,44 @@ const SeoAdvancedDialog = ({
 
                   <div className="mt-3 text-[11px] text-muted-foreground space-y-1">
                     <p><strong>Imagem:</strong> {values.ogImage ? 'customizada desta rota' : entityImage ? 'imagem da entidade (capa)' : fallbackOgImage ? 'fallback global' : 'nenhuma'}</p>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+
+              {/* ── WhatsApp Chat Preview ── */}
+              <AccordionItem value="whatsapp">
+                <AccordionTrigger className="text-sm">
+                  <span className="flex items-center gap-2"><ImageIcon className="h-4 w-4 text-[#25D366]" /> Preview WhatsApp (Chat)</span>
+                </AccordionTrigger>
+                <AccordionContent>
+                  <div
+                    className="rounded-lg p-4 bg-[#e5ddd5]"
+                    style={{
+                      backgroundImage:
+                        "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'><circle cx='20' cy='20' r='1' fill='%23000000' fill-opacity='0.04'/></svg>\")",
+                    }}
+                  >
+                    <div className="flex justify-end">
+                      <div className="max-w-[320px] w-full rounded-lg rounded-tr-sm bg-[#dcf8c6] shadow-sm overflow-hidden">
+                        <div className="p-1">
+                          <div className="rounded-md overflow-hidden bg-white">
+                            {previewImage ? (
+                              <img src={previewImage} alt="OG preview" className="w-full h-32 object-cover bg-muted" />
+                            ) : (
+                              <div className="w-full h-32 bg-muted flex items-center justify-center text-muted-foreground">
+                                <ImageIcon className="h-8 w-8" />
+                              </div>
+                            )}
+                            <div className="p-2 space-y-1">
+                              <p className="text-sm font-bold text-gray-900 leading-tight line-clamp-2">{previewTitle}</p>
+                              {previewDesc && <p className="text-xs text-gray-600 leading-snug line-clamp-2">{previewDesc}</p>}
+                              <p className="text-[10px] text-gray-400 uppercase tracking-wide truncate pt-0.5">{host}</p>
+                            </div>
+                          </div>
+                          <p className="text-xs text-gray-700 px-2 py-1 break-all">{displayUrl}</p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </AccordionContent>
               </AccordionItem>
