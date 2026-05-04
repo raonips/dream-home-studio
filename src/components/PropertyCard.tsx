@@ -59,6 +59,8 @@ const PropertyCard = forwardRef<HTMLDivElement, PropertyCardProps>(
             src={coverImage}
             alt={property.title}
             className="w-full h-full group-hover:scale-105 transition-transform duration-500"
+            width={750}
+            height={563}
             eager={eager}
           />
           {property.highlight_tag && (

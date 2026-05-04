@@ -45,6 +45,8 @@ const HeroSection = () => {
             src={desktop || mobile}
             alt="Litoral de Barra do Jacuípe"
             className="absolute inset-0 w-full h-full object-cover"
+            width={1920}
+            height={1080}
             fetchPriority="high"
             decoding="sync"
             loading="eager"

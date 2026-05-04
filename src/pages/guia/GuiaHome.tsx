@@ -143,6 +143,8 @@ const GuiaHome = () => {
               src={settings.hero_bg_desktop || settings.hero_bg_mobile}
               alt=""
               className="absolute inset-0 w-full h-full object-cover"
+              width={1920}
+              height={1080}
               fetchPriority="high"
               decoding="sync"
               loading="eager"
@@ -305,7 +307,10 @@ const GuiaHome = () => {
           src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1600&q=80"
           alt="Barra do Jacuípe lifestyle"
           className="absolute inset-0 w-full h-full object-cover"
+          width={1600}
+          height={400}
           loading="lazy"
+          decoding="async"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-[hsl(var(--navy))]/70 via-[hsl(var(--navy))]/40 to-transparent" />
         <div className="relative z-10 h-full flex flex-col items-start justify-center container">
@@ -376,7 +381,10 @@ const GuiaHome = () => {
                           src={property.thumbnail_url || property.image_url || "/placeholder.svg"}
                           alt={property.title || "Imóvel"}
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                          width={600}
+                          height={450}
                           loading="lazy"
+                          decoding="async"
                         />
                         {property.highlight_tag && (
                           <span className="absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-medium bg-white/90 backdrop-blur-sm text-foreground shadow-sm">
