@@ -143,6 +143,8 @@ const GuiaHome = () => {
               src={settings.hero_bg_desktop || settings.hero_bg_mobile}
               alt=""
               className="absolute inset-0 w-full h-full object-cover"
+              width={1920}
+              height={1080}
               fetchPriority="high"
               decoding="sync"
               loading="eager"
