@@ -307,7 +307,10 @@ const GuiaHome = () => {
           src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1600&q=80"
           alt="Barra do Jacuípe lifestyle"
           className="absolute inset-0 w-full h-full object-cover"
+          width={1600}
+          height={400}
           loading="lazy"
+          decoding="async"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-[hsl(var(--navy))]/70 via-[hsl(var(--navy))]/40 to-transparent" />
         <div className="relative z-10 h-full flex flex-col items-start justify-center container">
