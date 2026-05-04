@@ -9,6 +9,8 @@ const SafeImage = ({ fallbackSrc = '/placeholder.svg', onError, ...props }: Safe
 
   return (
     <img
+      loading="lazy"
+      decoding="async"
       {...props}
       src={errored ? fallbackSrc : props.src}
       onError={(e) => {
