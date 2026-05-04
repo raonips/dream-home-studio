@@ -33,12 +33,12 @@ const ResponsiveImage = ({
     return (
       <picture>
         <source media="(max-width: 800px)" srcSet={mobileSrc} />
-        <img {...props} src={imgSrc} onError={handleError} />
+        <img loading="lazy" decoding="async" {...props} src={imgSrc} onError={handleError} />
       </picture>
     );
   }
 
-  return <img {...props} src={imgSrc} onError={handleError} />;
+  return <img loading="lazy" decoding="async" {...props} src={imgSrc} onError={handleError} />;
 };
 
 export default ResponsiveImage;
