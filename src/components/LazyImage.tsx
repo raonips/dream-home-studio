@@ -17,6 +17,8 @@ const LazyImage = forwardRef<HTMLDivElement, LazyImageProps>(
           <div className="absolute inset-0 animate-pulse bg-muted" />
         )}
         <img
+          width={props.width ?? 800}
+          height={props.height ?? 600}
           {...props}
           src={errored ? fallbackSrc : props.src}
           loading={eager ? "eager" : "lazy"}
