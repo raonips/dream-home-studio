@@ -381,7 +381,10 @@ const GuiaHome = () => {
                           src={property.thumbnail_url || property.image_url || "/placeholder.svg"}
                           alt={property.title || "Imóvel"}
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                          width={600}
+                          height={450}
                           loading="lazy"
+                          decoding="async"
                         />
                         {property.highlight_tag && (
                           <span className="absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-medium bg-white/90 backdrop-blur-sm text-foreground shadow-sm">
