@@ -51,16 +51,16 @@ const getCategorias = async (): Promise<any[]> => {
   const now = Date.now();
   if (categoriasCache && categoriasCache.expires > now) return categoriasCache.data;
   if (categoriasPromise) return categoriasPromise;
-  categoriasPromise = supabase
-    .from('guia_categorias')
-    .select('id, nome, slug, icone')
-    .limit(50)
-    .then(({ data }) => {
-      const arr = data ?? [];
-      categoriasCache = { data: arr, expires: Date.now() + STATIC_TTL_MS };
-      categoriasPromise = null;
-      return arr;
-    });
+  categoriasPromise = (async () => {
+    const { data } = await supabase
+      .from('guia_categorias')
+      .select('id, nome, slug, icone')
+      .limit(50);
+    const arr = data ?? [];
+    categoriasCache = { data: arr, expires: Date.now() + STATIC_TTL_MS };
+    categoriasPromise = null;
+    return arr;
+  })();
   return categoriasPromise;
 };
 
@@ -68,18 +68,18 @@ const getLocais = async (): Promise<any[]> => {
   const now = Date.now();
   if (locaisCache && locaisCache.expires > now) return locaisCache.data;
   if (locaisPromise) return locaisPromise;
-  locaisPromise = supabase
-    .from('locais')
-    .select('id, nome, slug, categoria, imagem_destaque')
-    .eq('ativo', true)
-    .order('ordem')
-    .limit(100)
-    .then(({ data }) => {
-      const arr = data ?? [];
-      locaisCache = { data: arr, expires: Date.now() + STATIC_TTL_MS };
-      locaisPromise = null;
-      return arr;
-    });
+  locaisPromise = (async () => {
+    const { data } = await supabase
+      .from('locais')
+      .select('id, nome, slug, categoria, imagem_destaque')
+      .eq('ativo', true)
+      .order('ordem')
+      .limit(100);
+    const arr = data ?? [];
+    locaisCache = { data: arr, expires: Date.now() + STATIC_TTL_MS };
+    locaisPromise = null;
+    return arr;
+  })();
   return locaisPromise;
 };
 
