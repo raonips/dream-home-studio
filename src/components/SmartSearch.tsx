@@ -130,7 +130,7 @@ const SmartSearch = ({ variant = 'hero', className, placeholder = 'O que você e
         });
       }
 
-      (localRes.data ?? []).forEach((l: any) => {
+      localData.forEach((l: any) => {
         const { match, score } = fuzzyMatch(l.nome, searchTerm);
         if (match) items.push({ id: l.id, title: l.nome, subtitle: l.categoria, url: `/locais/${l.slug}`, type: 'local', image: l.imagem_destaque, score: hasPropertyIntent ? score - 50 : score });
       });
