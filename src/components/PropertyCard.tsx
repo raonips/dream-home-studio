@@ -1,4 +1,4 @@
-import { forwardRef } from "react";
+import { forwardRef, memo } from "react";
 import { Bed, Bath, Car, Maximize, MessageCircle, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
@@ -121,4 +121,4 @@ const PropertyCard = forwardRef<HTMLDivElement, PropertyCardProps>(
 
 PropertyCard.displayName = 'PropertyCard';
 
-export default PropertyCard;
+export default memo(PropertyCard);
