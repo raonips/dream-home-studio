@@ -38,6 +38,51 @@ function useDebounce<T>(value: T, delay: number): T {
   return debounced;
 }
 
+// ── Module-level cache for static tables (categorias + locais) ──
+// Avoids hitting Supabase on every keystroke. TTL: 5 minutes.
+const STATIC_TTL_MS = 5 * 60 * 1000;
+type CachedTable<T> = { data: T[]; expires: number } | null;
+let categoriasCache: CachedTable<any> = null;
+let locaisCache: CachedTable<any> = null;
+let categoriasPromise: Promise<any[]> | null = null;
+let locaisPromise: Promise<any[]> | null = null;
+
+const getCategorias = async (): Promise<any[]> => {
+  const now = Date.now();
+  if (categoriasCache && categoriasCache.expires > now) return categoriasCache.data;
+  if (categoriasPromise) return categoriasPromise;
+  categoriasPromise = supabase
+    .from('guia_categorias')
+    .select('id, nome, slug, icone')
+    .limit(50)
+    .then(({ data }) => {
+      const arr = data ?? [];
+      categoriasCache = { data: arr, expires: Date.now() + STATIC_TTL_MS };
+      categoriasPromise = null;
+      return arr;
+    });
+  return categoriasPromise;
+};
+
+const getLocais = async (): Promise<any[]> => {
+  const now = Date.now();
+  if (locaisCache && locaisCache.expires > now) return locaisCache.data;
+  if (locaisPromise) return locaisPromise;
+  locaisPromise = supabase
+    .from('locais')
+    .select('id, nome, slug, categoria, imagem_destaque')
+    .eq('ativo', true)
+    .order('ordem')
+    .limit(100)
+    .then(({ data }) => {
+      const arr = data ?? [];
+      locaisCache = { data: arr, expires: Date.now() + STATIC_TTL_MS };
+      locaisPromise = null;
+      return arr;
+    });
+  return locaisPromise;
+};
+
 const SmartSearch = ({ variant = 'hero', className, placeholder = 'O que você está procurando?' }: Props) => {
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
@@ -64,9 +109,9 @@ const SmartSearch = ({ variant = 'hero', className, placeholder = 'O que você e
       const intent = parseSearchIntent(debouncedQuery);
       const searchTerm = intent.cleanQuery || debouncedQuery;
 
-      const [catRes, localRes, propRes] = await Promise.all([
-        supabase.from('guia_categorias').select('id, nome, slug, icone').limit(50),
-        supabase.from('locais').select('id, nome, slug, categoria, imagem_destaque').eq('ativo', true).order('ordem').limit(100),
+      const [catData, localData, propRes] = await Promise.all([
+        getCategorias(),
+        getLocais(),
         supabase.from('properties').select('id, title, slug, location, thumbnail_url, image_url, transaction_type, condominio_slug').eq('status', 'active').limit(200),
       ]);
 
@@ -79,7 +124,7 @@ const SmartSearch = ({ variant = 'hero', className, placeholder = 'O que você e
       const hasPropertyIntent = !!intent.transactionType;
 
       if (!hasPropertyIntent) {
-        (catRes.data ?? []).forEach((c: any) => {
+        catData.forEach((c: any) => {
           const { match, score } = fuzzyMatch(c.nome, searchTerm);
           if (match) items.push({ id: c.id, title: c.nome, url: `/guia/categoria/${c.slug}`, type: 'categoria', icon: c.icone, score });
         });
