@@ -12,12 +12,14 @@ const FeaturedProperties = () => {
   useEffect(() => {
     let cancelled = false;
     const fetchProperties = async () => {
-      // Fetch all featured, then pick 3 randomly client-side
+      // Fetch up to 12 most recent featured, then pick 3 randomly client-side
       const { data, error } = await supabase
         .from("properties")
         .select("id,title,slug,price,price_formatted,location,area,bedrooms,bathrooms,parking,tags,highlight_tag,image_url,thumbnail_url,partnership,property_type,condominio_slug,status,transaction_type,max_guests,daily_rate")
         .eq("status", "active")
-        .eq("is_featured", true);
+        .eq("is_featured", true)
+        .order("created_at", { ascending: false })
+        .limit(12);
 
       if (cancelled) return;
 

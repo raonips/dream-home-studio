@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, memo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import SafeImage from "@/components/SafeImage";
@@ -102,4 +102,4 @@ const PropertyCardInPost = ({ propertyId }: { propertyId: string }) => {
   );
 };
 
-export default PropertyCardInPost;
+export default memo(PropertyCardInPost);

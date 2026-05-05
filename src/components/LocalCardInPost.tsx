@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, memo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import SafeImage from "@/components/SafeImage";
@@ -79,4 +79,4 @@ const LocalCardInPost = ({ localId }: { localId: string }) => {
   );
 };
 
-export default LocalCardInPost;
+export default memo(LocalCardInPost);
