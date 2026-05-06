@@ -61,17 +61,13 @@ const getFallbackImage = (slug: string) =>
   categoryImages[slug] ?? "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&q=80";
 
 const GuiaHome = () => {
-  const [posts, setPosts] = useState<GuiaPost[]>([]);
-  const [categorias, setCategorias] = useState<GuiaCategoria[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [properties, setProperties] = useState<PropertyData[]>([]);
-  const [propsLoading, setPropsLoading] = useState(true);
-  // searchQuery state removed — SmartSearch handles it internally
   const settings = useSiteSettings();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchData = async () => {
+  const { data: postsData, isLoading: postsLoading } = useQuery({
+    queryKey: ["guia-home-posts-and-categorias"],
+    staleTime: 60_000,
+    queryFn: async () => {
       const [postsRes, catRes] = await Promise.all([
         supabase
           .from("guia_posts")
@@ -84,33 +80,34 @@ const GuiaHome = () => {
           .select("*")
           .order("ordem", { ascending: true }),
       ]);
-      setPosts(postsRes.data ?? []);
-      const allCats = catRes.data ?? [];
-      // Prioriza categorias marcadas como destaque; fallback: 6 primeiras por ordem
-      const featured = allCats.filter((c: any) => c.is_featured === true);
-      setCategorias((featured.length > 0 ? featured : allCats).slice(0, 6));
-      setLoading(false);
-    };
-    fetchData();
-  }, []);
+      return {
+        posts: (postsRes.data ?? []) as GuiaPost[],
+        categorias: (catRes.data ?? []) as (GuiaCategoria & { is_featured?: boolean })[],
+      };
+    },
+  });
 
-  useEffect(() => {
-    let cancelled = false;
-    const fetchProps = async () => {
+  const posts: GuiaPost[] = postsData?.posts ?? [];
+  const categorias: GuiaCategoria[] = useMemo(() => {
+    const all = postsData?.categorias ?? [];
+    const featured = all.filter((c: any) => c.is_featured === true);
+    return (featured.length > 0 ? featured : all).slice(0, 6);
+  }, [postsData]);
+  const loading = postsLoading;
+
+  const { data: properties = [], isLoading: propsLoading } = useQuery({
+    queryKey: ["guia-home-featured-properties"],
+    staleTime: 60_000,
+    queryFn: async () => {
       const { data } = await supabase
         .from("properties")
         .select("id,title,slug,price,price_formatted,location,area,bedrooms,bathrooms,parking,tags,highlight_tag,image_url,thumbnail_url,partnership,property_type,condominio_slug,status,transaction_type,max_guests,daily_rate")
         .eq("status", "active")
         .eq("is_featured", true)
         .limit(8);
-      if (!cancelled) {
-        setProperties((data as PropertyData[]) ?? []);
-        setPropsLoading(false);
-      }
-    };
-    fetchProps();
-    return () => { cancelled = true; };
-  }, []);
+      return (data ?? []) as PropertyData[];
+    },
+  });
 
   const getCategoriaName = (id: string | null) =>
     categorias.find((c) => c.id === id)?.nome ?? "";
