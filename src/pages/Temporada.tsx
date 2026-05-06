@@ -63,9 +63,29 @@ const GuestCounter = ({ label, value, onChange, min = 0 }: { label: string; valu
 
 const Temporada = () => {
   const location = useLocation();
-  const [properties, setProperties] = useState<PropertyData[]>([]);
-  const [condominiosOptions, setCondominiosOptions] = useState<CondominioOption[]>([]);
-  const [loading, setLoading] = useState(true);
+
+  const { data: properties = [], isLoading: loading } = useQuery({
+    queryKey: ["temporada-properties"],
+    staleTime: 30_000,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("properties")
+        .select("id,title,slug,price,price_formatted,location,area,bedrooms,bathrooms,parking,tags,highlight_tag,image_url,thumbnail_url,partnership,property_type,condominio_slug,status,transaction_type,max_guests,daily_rate")
+        .eq("status", "active")
+        .in("transaction_type", ["temporada", "ambos"])
+        .order("created_at", { ascending: false });
+      return (data ?? []) as PropertyData[];
+    },
+  });
+
+  const { data: condominiosOptions = [] } = useQuery({
+    queryKey: ["condominios-options"],
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const { data } = await supabase.from("condominios").select("slug, name").order("name");
+      return (data ?? []) as CondominioOption[];
+    },
+  });
 
   const [condominio, setCondominio] = useState("Todos");
   const [checkin, setCheckin] = useState<Date | undefined>();
@@ -79,22 +99,6 @@ const Temporada = () => {
   const [keyword, setKeyword] = useState("");
 
   const totalGuests = adultos + criancas;
-
-  useEffect(() => {
-    let cancelled = false;
-    const fetchData = async () => {
-      const [propertiesRes, condominiosRes] = await Promise.all([
-        supabase.from("properties").select("id,title,slug,price,price_formatted,location,area,bedrooms,bathrooms,parking,tags,highlight_tag,image_url,thumbnail_url,partnership,property_type,condominio_slug,status,transaction_type,max_guests,daily_rate").eq("status", "active").in("transaction_type", ["temporada", "ambos"]).order("created_at", { ascending: false }),
-        supabase.from("condominios").select("slug, name").order("name"),
-      ]);
-      if (cancelled) return;
-      if (propertiesRes.data) setProperties(propertiesRes.data as PropertyData[]);
-      if (condominiosRes.data) setCondominiosOptions(condominiosRes.data);
-      setLoading(false);
-    };
-    fetchData();
-    return () => { cancelled = true; };
-  }, []);
 
   const filtered = useMemo(() => {
     const minVal = parseCurrency(precoMin);
