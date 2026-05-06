@@ -163,12 +163,6 @@ const Imoveis = () => {
     if (condominiosData) setCondominiosOptions(condominiosData);
   }, [condominiosData]);
 
-  // Fetch properties when filters change (reset to page 0)
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    setPage(0);
-
   // Fetch first page reactive to filters via React Query
   const filtersKey = { tipo, precoMin, precoMax, quartos, condominio };
   const { data: firstPageData, isLoading: firstPageLoading } = useQuery({
