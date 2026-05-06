@@ -150,11 +150,18 @@ const Imoveis = () => {
     return query.order("created_at", { ascending: false });
   }, [tipo, precoMin, precoMax, quartos, condominio]);
 
-  // Fetch condominios options once
+  // Fetch condominios options once (cached)
+  const { data: condominiosData } = useQuery({
+    queryKey: ["condominios-options"],
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const { data } = await supabase.from("condominios").select("slug, name").order("name");
+      return (data ?? []) as CondominioOption[];
+    },
+  });
   useEffect(() => {
-    supabase.from("condominios").select("slug, name").order("name")
-      .then(({ data }) => { if (data) setCondominiosOptions(data); });
-  }, []);
+    if (condominiosData) setCondominiosOptions(condominiosData);
+  }, [condominiosData]);
 
   // Fetch properties when filters change (reset to page 0)
   useEffect(() => {
