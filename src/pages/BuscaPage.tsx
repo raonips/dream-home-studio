@@ -27,67 +27,76 @@ const TYPE_CONFIG = {
 const BuscaPage = () => {
   const [params] = useSearchParams();
   const q = params.get('q') || '';
-  const [results, setResults] = useState<SearchResult[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!q.trim()) { setResults([]); setLoading(false); return; }
+  // Cache static tables (categorias + locais) for 5 minutes; properties shorter
+  const { data: catData } = useQuery({
+    queryKey: ['busca-categorias'],
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const { data } = await supabase.from('guia_categorias').select('id, nome, slug, icone, descricao').limit(50);
+      return data ?? [];
+    },
+  });
+  const { data: localData } = useQuery({
+    queryKey: ['busca-locais'],
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const { data } = await supabase.from('locais').select('id, nome, slug, categoria, imagem_destaque, endereco').eq('ativo', true).order('ordem').limit(200);
+      return data ?? [];
+    },
+  });
+  const { data: propData } = useQuery({
+    queryKey: ['busca-properties'],
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data } = await supabase.from('properties').select('id, title, slug, location, thumbnail_url, image_url, transaction_type, price_formatted, condominio_slug').eq('status', 'active').limit(200);
+      return data ?? [];
+    },
+  });
 
-    let cancelled = false;
-    const doSearch = async () => {
-      setLoading(true);
+  const loading = !catData || !localData || !propData;
 
-      const intent = parseSearchIntent(q.trim());
-      const searchTerm = intent.cleanQuery || q.trim();
+  const results = useMemo<SearchResult[]>(() => {
+    if (!q.trim() || loading) return [];
 
-      const [catRes, localRes, propRes] = await Promise.all([
-        supabase.from('guia_categorias').select('id, nome, slug, icone, descricao').limit(50),
-        supabase.from('locais').select('id, nome, slug, categoria, imagem_destaque, endereco').eq('ativo', true).order('ordem').limit(200),
-        supabase.from('properties').select('id, title, slug, location, thumbnail_url, image_url, transaction_type, price_formatted, condominio_slug').eq('status', 'active').limit(200),
-      ]);
+    const intent = parseSearchIntent(q.trim());
+    const searchTerm = intent.cleanQuery || q.trim();
 
-      if (cancelled) return;
+    type Scored = SearchResult & { score: number };
+    const items: Scored[] = [];
+    const hasPropertyIntent = !!intent.transactionType;
 
-      type Scored = SearchResult & { score: number };
-      const items: Scored[] = [];
-      const hasPropertyIntent = !!intent.transactionType;
+    if (!hasPropertyIntent) {
+      (catData ?? []).forEach((c: any) => {
+        const { match, score } = fuzzyMatch(c.nome, searchTerm);
+        if (match) items.push({ id: c.id, title: c.nome, subtitle: c.descricao, url: `/guia/categoria/${c.slug}`, type: 'categoria', icon: c.icone, score });
+      });
+    }
 
-      if (!hasPropertyIntent) {
-        (catRes.data ?? []).forEach((c: any) => {
-          const { match, score } = fuzzyMatch(c.nome, searchTerm);
-          if (match) items.push({ id: c.id, title: c.nome, subtitle: c.descricao, url: `/guia/categoria/${c.slug}`, type: 'categoria', icon: c.icone, score });
-        });
+    (localData ?? []).forEach((l: any) => {
+      const { match, score } = fuzzyMatch(l.nome, searchTerm);
+      if (match) items.push({ id: l.id, title: l.nome, subtitle: l.endereco || l.categoria, url: `/locais/${l.slug}`, type: 'local', image: l.imagem_destaque, score: hasPropertyIntent ? score - 50 : score });
+    });
+
+    (propData ?? []).forEach((p: any) => {
+      const titleMatch = fuzzyMatch(p.title || '', searchTerm);
+      const locationMatch = fuzzyMatch(p.location || '', searchTerm);
+      const condoMatch = fuzzyMatch((p.condominio_slug || '').replace(/-/g, ' '), searchTerm);
+      const bestScore = Math.max(titleMatch.score, locationMatch.score, condoMatch.score);
+      const matched = titleMatch.match || locationMatch.match || condoMatch.match;
+      const isTemporada = p.transaction_type === 'temporada';
+
+      if (intent.transactionType) {
+        if (intent.transactionType === 'temporada' && !isTemporada) return;
+        if (intent.transactionType === 'venda' && isTemporada) return;
       }
 
-      (localRes.data ?? []).forEach((l: any) => {
-        const { match, score } = fuzzyMatch(l.nome, searchTerm);
-        if (match) items.push({ id: l.id, title: l.nome, subtitle: l.endereco || l.categoria, url: `/locais/${l.slug}`, type: 'local', image: l.imagem_destaque, score: hasPropertyIntent ? score - 50 : score });
-      });
+      if (matched) items.push({ id: p.id, title: p.title || 'Imóvel', subtitle: [p.location, p.price_formatted].filter(Boolean).join(' • '), url: `/imoveis/${isTemporada ? 'temporada' : 'venda'}/${p.slug || p.id}`, type: isTemporada ? 'temporada' : 'imovel', image: p.thumbnail_url || p.image_url, score: bestScore + (hasPropertyIntent ? 10 : 0) });
+    });
 
-      (propRes.data ?? []).forEach((p: any) => {
-        const titleMatch = fuzzyMatch(p.title || '', searchTerm);
-        const locationMatch = fuzzyMatch(p.location || '', searchTerm);
-        const condoMatch = fuzzyMatch((p.condominio_slug || '').replace(/-/g, ' '), searchTerm);
-        const bestScore = Math.max(titleMatch.score, locationMatch.score, condoMatch.score);
-        const matched = titleMatch.match || locationMatch.match || condoMatch.match;
-        const isTemporada = p.transaction_type === 'temporada';
-
-        if (intent.transactionType) {
-          if (intent.transactionType === 'temporada' && !isTemporada) return;
-          if (intent.transactionType === 'venda' && isTemporada) return;
-        }
-
-        if (matched) items.push({ id: p.id, title: p.title || 'Imóvel', subtitle: [p.location, p.price_formatted].filter(Boolean).join(' • '), url: `/imoveis/${isTemporada ? 'temporada' : 'venda'}/${p.slug || p.id}`, type: isTemporada ? 'temporada' : 'imovel', image: p.thumbnail_url || p.image_url, score: bestScore + (hasPropertyIntent ? 10 : 0) });
-      });
-
-      items.sort((a, b) => b.score - a.score);
-      setResults(items.map(({ score, ...rest }) => rest));
-      setLoading(false);
-    };
-
-    doSearch();
-    return () => { cancelled = true; };
-  }, [q]);
+    items.sort((a, b) => b.score - a.score);
+    return items.map(({ score, ...rest }) => rest);
+  }, [q, catData, localData, propData, loading]);
 
   const currentIntent = useMemo(() => parseSearchIntent(q), [q]);
 
