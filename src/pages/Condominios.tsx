@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Helmet } from "react-helmet-async";
 import { Link, useLocation } from "react-router-dom";
 import CondominioCardSkeleton from "@/components/CondominioCardSkeleton";
