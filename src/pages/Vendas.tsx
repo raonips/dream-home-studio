@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Helmet } from "react-helmet-async";
 import { Link, useSearchParams, useLocation } from "react-router-dom";
 import { SlidersHorizontal, X, Search } from "lucide-react";
