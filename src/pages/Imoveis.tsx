@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { Helmet } from "react-helmet-async";
 import { Link, useSearchParams } from "react-router-dom";
 import { SlidersHorizontal, X, Loader2 } from "lucide-react";
@@ -149,29 +150,39 @@ const Imoveis = () => {
     return query.order("created_at", { ascending: false });
   }, [tipo, precoMin, precoMax, quartos, condominio]);
 
-  // Fetch condominios options once
+  // Fetch condominios options once (cached)
+  const { data: condominiosData } = useQuery({
+    queryKey: ["condominios-options"],
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const { data } = await supabase.from("condominios").select("slug, name").order("name");
+      return (data ?? []) as CondominioOption[];
+    },
+  });
   useEffect(() => {
-    supabase.from("condominios").select("slug, name").order("name")
-      .then(({ data }) => { if (data) setCondominiosOptions(data); });
-  }, []);
+    if (condominiosData) setCondominiosOptions(condominiosData);
+  }, [condominiosData]);
 
-  // Fetch properties when filters change (reset to page 0)
+  // Fetch first page reactive to filters via React Query
+  const filtersKey = { tipo, precoMin, precoMax, quartos, condominio };
+  const { data: firstPageData, isLoading: firstPageLoading } = useQuery({
+    queryKey: ["imoveis-list", filtersKey],
+    staleTime: 30_000,
+    placeholderData: keepPreviousData,
+    queryFn: async () => {
+      const { data, count } = await buildQuery().range(0, ITEMS_PER_PAGE - 1);
+      return { data: (data ?? []) as PropertyData[], count: count ?? 0 };
+    },
+  });
+
   useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
     setPage(0);
-
-    buildQuery()
-      .range(0, ITEMS_PER_PAGE - 1)
-      .then(({ data, count }) => {
-        if (cancelled) return;
-        if (data) setProperties(data as PropertyData[]);
-        if (count !== null) setTotalCount(count);
-        setLoading(false);
-      });
-
-    return () => { cancelled = true; };
-  }, [buildQuery]);
+    if (firstPageData) {
+      setProperties(firstPageData.data);
+      setTotalCount(firstPageData.count);
+    }
+    setLoading(firstPageLoading);
+  }, [firstPageData, firstPageLoading]);
 
   const loadMore = async () => {
     const nextPage = page + 1;

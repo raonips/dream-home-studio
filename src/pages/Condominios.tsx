@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Helmet } from "react-helmet-async";
 import { Link, useLocation } from "react-router-dom";
 import CondominioCardSkeleton from "@/components/CondominioCardSkeleton";
@@ -32,27 +32,24 @@ interface TagData {
 
 const Condominios = () => {
   const location = useLocation();
-  const [condominios, setCondominios] = useState<CondominioData[]>([]);
-  const [allTags, setAllTags] = useState<TagData[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    let cancelled = false;
-    const fetchCondominios = async () => {
-      const [{ data, error }, { data: tagsData }] = await Promise.all([
+  const { data, isLoading: loading } = useQuery({
+    queryKey: ["condominios-list"],
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const [condRes, tagsRes] = await Promise.all([
         supabase.from("condominios").select("id,name,slug,description,hero_image,images,condominio_tags,location_filter,thumbnail_url").order("name"),
         supabase.from("condominio_tags").select("nome, slug, icone"),
       ]);
+      return {
+        condominios: (condRes.data ?? []) as CondominioData[],
+        tags: (tagsRes.data ?? []) as TagData[],
+      };
+    },
+  });
 
-      if (cancelled) return;
-      if (!error && data) setCondominios(data as CondominioData[]);
-      if (tagsData) setAllTags(tagsData as TagData[]);
-      setLoading(false);
-    };
-
-    fetchCondominios();
-    return () => { cancelled = true; };
-  }, []);
+  const condominios: CondominioData[] = data?.condominios ?? [];
+  const allTags: TagData[] = data?.tags ?? [];
 
   const { visibleItems, sentinelRef, hasMore, currentPage, totalPages } = useInfiniteScroll(condominios, {
     mobilePageSize: 4,

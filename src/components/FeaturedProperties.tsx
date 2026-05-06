@@ -1,54 +1,42 @@
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import PropertyCard, { type PropertyData } from "./PropertyCard";
 import PropertyCardSkeleton from "./PropertyCardSkeleton";
 import { supabase } from "@/integrations/supabase/client";
 
 const DISPLAY_COUNT = 3;
+const LISTING_COLS = "id,title,slug,price,price_formatted,location,area,bedrooms,bathrooms,parking,tags,highlight_tag,image_url,thumbnail_url,partnership,property_type,condominio_slug,status,transaction_type,max_guests,daily_rate";
 
 const FeaturedProperties = () => {
-  const [properties, setProperties] = useState<PropertyData[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    const fetchProperties = async () => {
-      // Fetch up to 12 most recent featured, then pick 3 randomly client-side
+  const { data: pool = [], isLoading: loading } = useQuery({
+    queryKey: ["featured-properties-pool"],
+    staleTime: 60_000,
+    queryFn: async () => {
       const { data, error } = await supabase
         .from("properties")
-        .select("id,title,slug,price,price_formatted,location,area,bedrooms,bathrooms,parking,tags,highlight_tag,image_url,thumbnail_url,partnership,property_type,condominio_slug,status,transaction_type,max_guests,daily_rate")
+        .select(LISTING_COLS)
         .eq("status", "active")
         .eq("is_featured", true)
         .order("created_at", { ascending: false })
         .limit(12);
+      if (error) throw error;
+      if (data && data.length > 0) return data as PropertyData[];
+      // Fallback: latest active
+      const { data: fallback } = await supabase
+        .from("properties")
+        .select(LISTING_COLS)
+        .eq("status", "active")
+        .order("created_at", { ascending: false })
+        .limit(DISPLAY_COUNT);
+      return (fallback ?? []) as PropertyData[];
+    },
+  });
 
-      if (cancelled) return;
-
-      let result: PropertyData[] = [];
-
-      if (!error && data && data.length > 0) {
-        // Shuffle and pick 3
-        const shuffled = [...data].sort(() => Math.random() - 0.5);
-        result = shuffled.slice(0, DISPLAY_COUNT) as PropertyData[];
-      } else if (!error) {
-        // Fallback: latest 3
-        const { data: fallback } = await supabase
-          .from("properties")
-          .select("id,title,slug,price,price_formatted,location,area,bedrooms,bathrooms,parking,tags,highlight_tag,image_url,thumbnail_url,partnership,property_type,condominio_slug,status,transaction_type,max_guests,daily_rate")
-          .eq("status", "active")
-          .order("created_at", { ascending: false })
-          .limit(DISPLAY_COUNT);
-        if (!cancelled && fallback) result = fallback as PropertyData[];
-      }
-
-      if (!cancelled) {
-        setProperties(result);
-        setLoading(false);
-      }
-    };
-
-    fetchProperties();
-    return () => { cancelled = true; };
-  }, []);
+  const properties = useMemo(() => {
+    if (!pool.length) return [] as PropertyData[];
+    const shuffled = [...pool].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, DISPLAY_COUNT);
+  }, [pool]);
 
   return (
     <section id="imoveis" className="py-16 md:py-24 bg-background">
