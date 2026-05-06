@@ -169,17 +169,26 @@ const Imoveis = () => {
     setLoading(true);
     setPage(0);
 
-    buildQuery()
-      .range(0, ITEMS_PER_PAGE - 1)
-      .then(({ data, count }) => {
-        if (cancelled) return;
-        if (data) setProperties(data as PropertyData[]);
-        if (count !== null) setTotalCount(count);
-        setLoading(false);
-      });
+  // Fetch first page reactive to filters via React Query
+  const filtersKey = { tipo, precoMin, precoMax, quartos, condominio };
+  const { data: firstPageData, isLoading: firstPageLoading } = useQuery({
+    queryKey: ["imoveis-list", filtersKey],
+    staleTime: 30_000,
+    placeholderData: keepPreviousData,
+    queryFn: async () => {
+      const { data, count } = await buildQuery().range(0, ITEMS_PER_PAGE - 1);
+      return { data: (data ?? []) as PropertyData[], count: count ?? 0 };
+    },
+  });
 
-    return () => { cancelled = true; };
-  }, [buildQuery]);
+  useEffect(() => {
+    setPage(0);
+    if (firstPageData) {
+      setProperties(firstPageData.data);
+      setTotalCount(firstPageData.count);
+    }
+    setLoading(firstPageLoading);
+  }, [firstPageData, firstPageLoading]);
 
   const loadMore = async () => {
     const nextPage = page + 1;
